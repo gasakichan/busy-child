@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap">
 <style>
-  /* Layout: 画面いっぱいのあそび場。ホームの大きなタイルから15のあそびへ。子どもは触るだけ。 */
+  /* Layout: 画面いっぱいのあそび場。ホームの大きなタイルから16のあそびへ。子どもは触るだけ。 */
   :root {
     --paper: #FFF6E0;
     --ink: #2B3A67;
@@ -73,11 +73,10 @@
   .homegrid {
     position: absolute; inset: 0;
     display: grid; gap: 10px; padding: var(--top) 10px 10px;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
   }
   .tile {
-    grid-column: span 2;
     min-width: 0; min-height: 0; padding: 0; overflow: hidden;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
     border: 0; border-radius: 24px;
@@ -85,11 +84,11 @@
     box-shadow: 0 5px 0 var(--shadow);
   }
   @media (min-aspect-ratio: 4/3) {
-    .homegrid { grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .homegrid { grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(2, 1fr); }
   }
   .tile:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
   .tile .ico { font-size: clamp(36px, min(12vw, 8vh), 84px); line-height: 1; }
-  .tile .lab { font-size: clamp(11px, 3vw, 20px); line-height: 1.15; text-align: center; white-space: nowrap; }
+  .tile .lab { font-size: clamp(11px, 2.9vw, 20px); line-height: 1.15; text-align: center; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; padding: 0 2px; }
 
   /* ふうせん */
   #stage-sky {
@@ -318,35 +317,55 @@
     background: #DDF6EC; display: flex; flex-direction: column;
   }
   @media (min-aspect-ratio: 1/1) { #stage-shop { flex-direction: row; } }
-  .shoptitle {
-    position: absolute; top: 12px; left: 76px; right: 140px; height: 56px; z-index: 3;
-    display: flex; align-items: center; justify-content: center;
-    font-size: clamp(15px, 4.6vw, 26px); white-space: nowrap; touch-action: none;
-  }
-  .reg { flex: 1 1 0; min-height: 0; min-width: 0; padding: 66px 10px 6px; display: flex; }
+  .reg { flex: 1 1 0; min-height: 0; min-width: 0; padding: 6px 10px 6px; display: flex; flex-direction: column; gap: 6px; }
   .regbody {
     flex: 1; min-height: 0; min-width: 0; overflow: hidden; padding: 8px; border-radius: 22px;
     background: #BDEFDC; box-shadow: 0 5px 0 var(--shadow), inset 0 0 0 4px #fff;
     display: flex; flex-direction: column; gap: 6px;
   }
-  .scanrow { flex: 0 0 auto; height: clamp(70px, 11vh, 110px); display: flex; gap: 8px; align-items: center; }
+  /* スキャナー窓: いちばん上（🏠 の となり）。かめらが つかえるときは、窓のなかに ライブえいぞうを うつす */
+  .scanbox { position: relative; flex: 0 0 auto; margin-left: 62px; padding: 0; }
+  .scanbox[data-arr="top"] { padding-top: 46px; }
+  .scanbox[data-arr="bottom"] { padding-bottom: 46px; }
+  .scanbox[data-arr="left"] { padding-left: 46px; }
+  .scanbox[data-arr="right"] { padding-right: 46px; }
   .scanwin {
-    position: relative; flex: 1; height: 100%; min-width: 0; overflow: hidden;
-    border-radius: 16px; border: 4px solid #fff;
-    background: linear-gradient(#18202E, #2D3E58); box-shadow: inset 0 0 0 3px #8795AA, 0 3px 0 var(--shadow);
-    transition: background .15s;
+    position: relative; width: 100%; height: clamp(72px, 10.5vh, 104px); min-width: 0; overflow: hidden; cursor: pointer;
+    border-radius: 16px; border: 4px solid var(--bc, #fff);
+    background: linear-gradient(#18202E, #2D3E58); box-shadow: var(--bs, inset 0 0 0 3px #8795AA, 0 3px 0 var(--shadow));
+    transition: background .15s, border-color .1s; touch-action: manipulation;
   }
-  .scanwin.ok { background: linear-gradient(#1F7A3F, #49D17A); }
+  .scanwin.live { background: #101826; }
+  .scanwin video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; pointer-events: none; }
+  .scanwin .cbox { position: absolute; left: 20%; right: 20%; top: 15%; bottom: 15%; border: 3px dashed rgba(255,255,255,.95); border-radius: 14px; pointer-events: none; box-shadow: 0 0 0 1px rgba(0,0,0,.28), inset 0 0 0 1px rgba(0,0,0,.2); }
+  .scanwin.ok { --bc: #34D96A; background: linear-gradient(#1F7A3F, #49D17A); box-shadow: 0 0 0 3px #CFFFD9, 0 0 26px 10px rgba(52,217,106,.9) !important; }
+  .scanwin.live.ok { background: #101826; }
   .laser {
-    position: absolute; left: 6%; right: 6%; top: 50%; height: 4px; border-radius: 2px;
+    position: absolute; left: 6%; right: 6%; top: 50%; height: 4px; border-radius: 2px; pointer-events: none;
     background: #FF2D2D; box-shadow: 0 0 10px 3px rgba(255,45,45,.75);
     animation: laser 1.8s ease-in-out infinite alternate;
   }
   @keyframes laser { from { top: 18%; } to { top: 78%; } }
-  @media (prefers-reduced-motion: reduce) { .laser { animation: none; } }
-  .scanlbl { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); letter-spacing: .1em; }
-  .campv { flex: 0 0 auto; height: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; border: 4px solid #fff; background: #222; box-shadow: 0 3px 0 var(--shadow); max-height: 96px; }
-  .campv video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  @media (prefers-reduced-motion: reduce) { .laser { animation: none; } .camarrows .ar { animation: none !important; opacity: 1 !important; } }
+  .scanlbl { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); letter-spacing: .1em; pointer-events: none; }
+  .scanwin.live .scanlbl { display: none; }
+  /* 本物のカメラの方向を さす やじるし */
+  .camarrows { position: absolute; inset: 0; pointer-events: none; z-index: 2; --rot: 0deg; --dx: 0px; --dy: -9px; }
+  .camarrows .grp { position: absolute; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .camarrows[data-pos="top"] .grp { left: 0; right: 0; top: 0; height: 46px; }
+  .camarrows[data-pos="bottom"] .grp { left: 0; right: 0; bottom: 0; height: 46px; }
+  .camarrows[data-pos="left"] .grp { left: 0; top: 0; bottom: 0; width: 46px; flex-direction: column; }
+  .camarrows[data-pos="right"] .grp { right: 0; top: 0; bottom: 0; width: 46px; flex-direction: column; }
+  .camarrows[data-pos="right"] { --rot: 90deg; --dx: 9px; --dy: 0px; }
+  .camarrows[data-pos="bottom"] { --rot: 180deg; --dx: 0px; --dy: 9px; }
+  .camarrows[data-pos="left"] { --rot: -90deg; --dx: -9px; --dy: 0px; }
+  .camarrows .ar { display: inline-block; font-size: 28px; line-height: 1; font-style: normal; transform: rotate(var(--rot)); animation: arw 1.1s ease-in-out infinite; animation-delay: calc(var(--i) * .18s); }
+  @keyframes arw { 0%, 100% { transform: translate(0, 0) rotate(var(--rot)); opacity: .3; } 50% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 1; } }
+  .camlbl { flex: 0 0 auto; padding: 2px 10px; border-radius: 14px; background: #fff; color: var(--ink); font-size: clamp(13px, 3.8vw, 18px); line-height: 1.3; white-space: nowrap; box-shadow: 0 2px 0 var(--shadow); }
+  .camarrows[data-pos="left"] .camlbl, .camarrows[data-pos="right"] .camlbl { position: absolute; top: 6px; font-size: 12px; padding: 1px 8px; z-index: 3; }
+  .camarrows[data-pos="left"] .camlbl { left: 54px; }
+  .camarrows[data-pos="right"] .camlbl { right: 54px; }
+  @media (max-width: 420px) { .camarrows .ar.a3 { display: none; } }
   .lcd {
     flex: 0 0 auto; padding: 6px 12px; border-radius: 12px; background: #0F3B27; color: #8CFFA0;
     font-family: "Courier New", ui-monospace, monospace; font-weight: 700; text-shadow: 0 0 6px rgba(76,255,122,.7);
@@ -377,7 +396,7 @@
     flex: 0 0 auto; height: var(--shelfh); min-width: 0; padding: 0 10px 10px;
     display: grid; gap: 6px; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr);
   }
-  @media (min-aspect-ratio: 1/1) { .shelf, .paypanel { flex: 1 1 0; height: auto; padding-top: 76px; } }
+  @media (min-aspect-ratio: 1/1) { .shelf, .paypanel { flex: 1 1 0; height: auto; padding-top: 12px; } }
   .prod {
     min-width: 0; min-height: 0; border: 0; border-radius: 18px; background: var(--c); padding: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
@@ -449,24 +468,30 @@
   .paper .rl { display: flex; justify-content: space-between; gap: 6px; white-space: nowrap; }
   .paper .rt { display: flex; justify-content: space-between; border-top: 2px dashed #bbb; margin-top: 3px; padding-top: 3px; font-size: 16px; }
   .paper .rf { text-align: center; margin-top: 3px; }
-  .setpanel {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 7;
-    width: min(86%, 380px); padding: 16px; border-radius: 22px; background: #fff; box-shadow: 0 8px 0 var(--shadow), 0 0 0 9999px rgba(43,58,103,.35);
-    display: flex; flex-direction: column; gap: 14px; font-size: 16px; touch-action: auto;
-  }
-  .setpanel h3 { margin: 0; font-size: 18px; }
-  .setpanel input[type=range] { width: 100%; height: 36px; }
-  .setpanel .sbtn { min-height: 56px; border: 0; border-radius: 16px; background: #E4F0FF; font-size: 16px; padding: 0 12px; }
-  .setpanel .sbtn[aria-pressed="true"] { background: #FFD21F; }
-  .setpanel .sbtn.close { background: var(--ink); color: #fff; min-height: 64px; }
-
-  .diag { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  /* せってい（おとなよう）: ホームの ⚙️ を 1.5 びょう ながおしで ひらく ぜんがめんシート */
+  .setsheet { position: fixed; inset: 0; z-index: 100; background: #fff; color: var(--ink); display: flex; flex-direction: column; touch-action: auto; }
+  .sethead { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 3px solid #EEF1F8; }
+  .sethead h2 { margin: 0; font-size: clamp(18px, 5vw, 26px); }
+  .setx { flex: 0 0 auto; width: 64px; height: 64px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 30px; line-height: 1; display: grid; place-items: center; }
+  .setbody { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; width: 100%; max-width: 720px; margin: 0 auto; padding: 4px 16px 40px; }
+  .setgrp { padding: 14px 0 12px; border-bottom: 2px solid #F0F3FA; }
+  .setgrp h3 { margin: 0 0 8px; font-size: 18px; }
+  .setgrp .sub { margin: 10px 0 4px; font-size: 14px; opacity: .75; }
+  .setgrp .note { margin: 4px 0 0; font-size: 13px; opacity: .65; font-weight: 700; }
+  .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg button { flex: 1 1 0; min-width: 68px; min-height: 56px; border: 0; border-radius: 16px; background: #E8EEFA; font-size: 18px; padding: 0 10px; }
+  .seg button[aria-pressed="true"] { background: #FFD21F; box-shadow: inset 0 0 0 3px var(--ink); }
+  .setgrp input[type=range] { width: 100%; height: 40px; }
+  .setgrp .sbtn { width: 100%; min-height: 56px; margin-top: 8px; border: 0; border-radius: 16px; background: #E4F0FF; font-size: 18px; padding: 0 12px; }
+  .setmsg { margin: 8px 0 0; padding: 8px 12px; border-radius: 12px; background: #FFE9E6; color: #A52A1E; font-size: 15px; line-height: 1.4; }
+  .diag { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 10px; }
   .diag canvas { width: 160px; height: 120px; border-radius: 12px; background: #222; transform: scaleX(-1); display: block; }
-  .dbar { position: relative; width: 100%; height: 18px; border-radius: 9px; background: #E4F0FF; overflow: visible; }
+  .dbar { position: relative; width: 100%; max-width: 360px; height: 18px; border-radius: 9px; background: #E4F0FF; overflow: visible; }
   .dbar .dfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 9px; background: #8FB8E8; transition: width .06s linear; }
   .dbar .dfill.hot { background: #34B556; }
   .dbar .dthr { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; border-radius: 2px; background: #F2463C; }
   .dstate { font-size: 16px; text-align: center; min-height: 1.3em; }
+  #set-video { position: absolute; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
 
   /* もしもし */
   #stage-phone { background: #FFE9B8; display: flex; flex-direction: column; padding-top: var(--top); }
@@ -605,11 +630,7 @@
     display: flex; flex-direction: column; padding-top: var(--top); font-family: var(--font-abc); font-weight: 700;
   }
   .abc-nav { flex: 0 0 auto; height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .abc-sm { min-width: 52px; height: 44px; border: 0; border-radius: 22px; background: #fff; font-size: 20px; line-height: 1; box-shadow: 0 3px 0 var(--shadow); font-family: inherit; }
-  .abc-sm:active { transform: translateY(2px); }
   .abc-range { min-width: 64px; text-align: center; font-size: 22px; color: #7A5527; }
-  .abc-allbtn { position: absolute; top: 12px; right: 76px; z-index: 6; min-width: 84px; height: 56px; padding: 0 14px; border: 0; border-radius: 28px; background: rgba(255,255,255,.95); font-size: 20px; font-family: inherit; box-shadow: 0 3px 0 var(--shadow); }
-  .abc-allbtn[aria-pressed="true"] { background: #FFD21F; }
   .abc-board {
     position: relative; z-index: 1; align-self: center; flex: 0 0 auto; padding: 14px; border-radius: 28px;
     background:
@@ -654,8 +675,34 @@
     background: repeating-linear-gradient(92deg, rgba(139,94,40,.12) 0 2px, transparent 2px 7px), #EED9B7;
     box-shadow: 0 4px 0 #C79A5A, inset 0 0 0 2px rgba(255,255,255,.45); font-family: var(--font-abc); font-size: calc(var(--s) * .33); font-weight: 700; line-height: 1; letter-spacing: -.02em; text-shadow: 0 2px 0 rgba(60,35,10,.25); }
 
+  /* まいにちとけい */
+  #stage-clock { background: #BDE6FF; display: flex; flex-direction: column; align-items: center; padding: 72px 8px 10px; gap: 10px; }
+  .ck-sky { position: absolute; inset: 0; transition: opacity .8s; }
+  .ck-stars { position: absolute; inset: 0; opacity: 0; transition: opacity .8s; pointer-events: none; }
+  #stage-clock.night .ck-stars { opacity: 1; }
+  .ck-stars i { position: absolute; font-style: normal; font-size: 18px; line-height: 1; animation: twinkle 2.4s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.1); } }
+  .ck-face { position: relative; z-index: 2; flex: 0 0 auto; width: min(80%, calc(100vh - 330px)); aspect-ratio: 1; touch-action: none; cursor: grab; filter: drop-shadow(0 8px 0 rgba(43,58,103,.2)); }
+  .ck-face svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .ck-face .num { font-family: var(--font-display); font-weight: 800; font-size: 22px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .ck-orb { position: absolute; left: 0; top: 0; z-index: 3; width: 48px; height: 48px; margin: -24px 0 0 -24px; font-size: 40px; line-height: 48px; text-align: center; pointer-events: none; transition: transform .25s ease-out; }
+  .ck-side { position: relative; z-index: 2; flex: 0 0 auto; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .ck-card { width: min(100%, 460px); min-height: 96px; padding: 8px 12px; border-radius: 24px; background: #fff; box-shadow: 0 6px 0 var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+  .ck-emo { font-size: clamp(40px, 12vw, 64px); line-height: 1.05; letter-spacing: .06em; }
+  .ck-line { font-size: clamp(16px, 4.6vw, 26px); line-height: 1.25; }
+  .ck-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 460px; padding: 4px 0; }
+  .ck-b { flex: 0 0 auto; width: 60px; height: 60px; padding: 0; border: 0; border-radius: 50%; background: #fff; font-size: 30px; line-height: 1; box-shadow: 0 4px 0 var(--shadow); display: grid; place-items: center; transition: transform .15s; }
+  .ck-b:active { transform: translateY(3px); }
+  .ck-b.on { transform: scale(1.12); background: #FFE48A; box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--ink); }
+  @media (min-aspect-ratio: 4/3) {
+    #stage-clock { flex-direction: row; justify-content: center; padding: 12px 12px 12px 80px; gap: 28px; }
+    .ck-face { width: min(52%, calc(100vh - 48px)); }
+    .ck-side { width: min(44%, 460px); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .slot .cur, .slot.open .an { transition-duration: .01s; transition-delay: 0s; }
+    .ck-stars i, .ck-orb, .ck-sky { animation: none; transition-duration: .01s; }
   }
 </style>
 </head>
@@ -715,13 +762,14 @@
   </section>
 
   <section class="stage" id="stage-shop" aria-label="おみせやさん" hidden>
-    <div class="shoptitle" id="shop-title">おみせやさん</div>
     <div class="reg">
-      <div class="regbody">
-        <div class="scanrow">
-          <div class="scanwin" id="scanwin"><div class="laser"></div><span class="scanlbl">スキャナー</span></div>
-          <div class="campv" id="campv" hidden><video id="cam-video" playsinline muted autoplay></video></div>
+      <div class="scanbox" id="scanbox" data-arr="top">
+        <div class="camarrows" id="camarrows" data-pos="top" hidden>
+          <div class="grp"><i class="ar a1" style="--i:0" aria-hidden="true">⬆️</i><i class="ar a2" style="--i:1" aria-hidden="true">⬆️</i><i class="ar a3" style="--i:2" aria-hidden="true">⬆️</i><span class="camlbl">📷 ここに みせてね</span></div>
         </div>
+        <div class="scanwin" id="scanwin" role="img" aria-label="スキャナーの まど"><video id="cam-video" playsinline muted autoplay hidden></video><div class="cbox" id="cbox" hidden></div><div class="laser"></div><span class="scanlbl">スキャナー</span></div>
+      </div>
+      <div class="regbody">
         <div class="lcd" id="lcd">
           <div class="l1"><span id="lcd-ico"></span><span class="nm" id="lcd-name">いらっしゃいませ</span><span id="lcd-price"></span></div>
           <div class="l2" id="lcd-say"></div>
@@ -739,17 +787,6 @@
       <div class="coins" id="coins"></div>
       <div class="tray" id="tray"><div class="tc" id="tray-coins"></div><div class="tw" id="tray-word"></div></div>
       <div class="receipt" id="receipt" hidden><div class="rslot"></div><div class="rwin"><div class="paper" id="paper-r"></div></div></div>
-    </div>
-    <div class="setpanel" id="setpanel" hidden>
-      <h3>おとなの設定</h3>
-      <label>かんど（1〜5、5が いちばん びんかん）: <span id="thr-val">3</span>
-        <input type="range" id="thr" min="1" max="5" step="1" value="3"></label>
-      <div class="diag" id="diag">
-        <canvas id="diag-cv" width="160" height="120" aria-label="カメラの しんだん"></canvas>
-        <div class="dbar"><i class="dfill" id="dfill"></i><i class="dthr" id="dthr"></i></div>
-        <div class="dstate" id="dstate" aria-live="off">カメラなし</div>
-      </div>
-      <button class="sbtn close" id="setclose" type="button">とじる</button>
     </div>
     <div class="fx" id="fx-shop"></div>
   </section>
@@ -820,16 +857,35 @@
   </section>
 
   <section class="stage" id="stage-abc" aria-label="ABCパズル" hidden>
-    <div class="abc-nav">
-      <button class="abc-sm" id="abc-prev" type="button" aria-label="まえの ラウンド">◀</button>
-      <span class="abc-range" id="abc-range"></span>
-      <button class="abc-sm" id="abc-next" type="button" aria-label="つぎの ラウンド">▶</button>
-    </div>
-    <button class="abc-allbtn" id="abc-all" type="button" aria-pressed="false">ぜんぶ</button>
+    <div class="abc-nav"><span class="abc-range" id="abc-range"></span></div>
     <div class="abc-board" id="abc-board"></div>
     <div class="abc-box" id="abc-box"></div>
     <div class="abc-no" id="abc-no" hidden><i class="b1"></i><i class="b2"></i><i class="b3"></i><b>NO!</b></div>
     <div class="fx" id="fx-abc"></div>
+  </section>
+
+  <section class="stage" id="stage-clock" aria-label="まいにちとけい" hidden>
+    <div class="ck-sky" id="ck-sky-a"></div>
+    <div class="ck-sky" id="ck-sky-b" style="opacity:0"></div>
+    <div class="ck-stars" id="ck-stars"></div>
+    <div class="ck-face" id="ck-face" data-hour="7" role="img" aria-label="とけい">
+      <svg id="ck-svg" viewBox="-100 -100 200 200">
+        <circle r="98" fill="#FF8A5B"/>
+        <circle r="98" fill="none" stroke="#FFC83D" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round" transform="scale(.93)"/>
+        <circle r="86" fill="#fff" stroke="#2B3A67" stroke-opacity=".15" stroke-width="2"/>
+        <g id="ck-ticks"></g>
+        <g id="ck-nums"></g>
+        <g id="ck-mhand"><line x1="0" y1="6" x2="0" y2="-56" stroke="#2F7BF5" stroke-width="5" stroke-linecap="round"/></g>
+        <g id="ck-hhand"><line x1="0" y1="4" x2="0" y2="-38" stroke="#F2463C" stroke-width="11" stroke-linecap="round"/><circle cx="0" cy="-38" r="7" fill="#F2463C"/><circle r="14" fill="#F2463C"/></g>
+        <circle id="ck-hub" r="7" fill="#FFD21F" stroke="#2B3A67" stroke-width="2.5"/>
+      </svg>
+    </div>
+    <div class="ck-orb" id="ck-orb" aria-hidden="true">🌞</div>
+    <div class="ck-side">
+      <div class="ck-card" id="ck-card"><div class="ck-emo" id="ck-emo"></div><div class="ck-line" id="ck-line"></div></div>
+      <div class="ck-btns" id="ck-btns"></div>
+    </div>
+    <div class="fx" id="fx-clock"></div>
   </section>
 
   <div id="bigword" aria-live="polite" hidden></div>
@@ -837,8 +893,40 @@
   <button class="tool homebtn" id="homebtn" type="button" aria-label="ホームへ" hidden>🏠</button>
   <div class="tools">
     <button class="tool" id="clear" type="button" aria-label="けす" hidden>🧽</button>
-    <button class="tool lp" id="camretry" type="button" aria-label="カメラ（ながおし）" hidden>📷</button>
-    <button class="tool lp" id="mute" type="button" aria-label="おとをけす（ながおし）" aria-pressed="false" title="ながおしで きりかえ">🔊</button>
+    <button class="tool lp" id="setbtn" type="button" aria-label="せってい（おとなよう・ながおし）" title="ながおしで ひらく">⚙️</button>
+  </div>
+
+  <div class="setsheet" id="setsheet" role="dialog" aria-label="せってい" hidden>
+    <div class="sethead"><h2>せってい（おとなよう）</h2><button class="setx" id="setx" type="button" aria-label="とじる">✖</button></div>
+    <div class="setbody">
+      <div class="setgrp"><h3>おと</h3>
+        <div class="seg" data-k="sound"><button type="button" data-v="1">あり</button><button type="button" data-v="0">なし</button></div></div>
+      <div class="setgrp"><h3>こえ（よみあげ）</h3>
+        <div class="seg" data-k="voice"><button type="button" data-v="1">あり</button><button type="button" data-v="0">なし</button></div>
+        <p class="note">「なし」だと こうかおん だけに なります。</p></div>
+      <div class="setgrp"><h3>おみせやさん カメラ</h3>
+        <div class="seg" data-k="camOn"><button type="button" data-v="1">つかう</button><button type="button" data-v="0">つかわない</button></div>
+        <p class="sub">かんど: <span id="thr-val">3</span>（1〜5、5が いちばん びんかん）</p>
+        <input type="range" id="thr" min="1" max="5" step="1" value="3" aria-label="かんど">
+        <p class="sub">カメラの いち（やじるしの むき）</p>
+        <div class="seg" data-k="camPos"><button type="button" data-v="top">うえ</button><button type="button" data-v="left">ひだり</button><button type="button" data-v="right">みぎ</button><button type="button" data-v="bottom">した</button></div>
+        <button class="sbtn" id="cam-test" type="button">カメラをためす</button>
+        <p class="setmsg" id="cam-msg" hidden>カメラが つかえません（ブラウザの せっていで きょかしてください）</p>
+        <div class="diag" id="diag" hidden>
+          <canvas id="diag-cv" width="160" height="120" aria-label="カメラの しんだん"></canvas>
+          <div class="dbar"><i class="dfill" id="dfill"></i><i class="dthr" id="dthr"></i></div>
+          <div class="dstate" id="dstate" aria-live="off">カメラなし</div>
+        </div>
+        <video id="set-video" playsinline muted autoplay></video>
+      </div>
+      <div class="setgrp"><h3>ABC パズル</h3>
+        <div class="seg" data-k="abcAll"><button type="button" data-v="0">4もじずつ</button><button type="button" data-v="1">ぜんぶ</button></div>
+        <p class="sub">はじめる もじ</p>
+        <div class="seg" data-k="abcStart"><button type="button" data-v="0">A–D</button><button type="button" data-v="1">E–H</button><button type="button" data-v="2">I–L</button><button type="button" data-v="3">M–P</button><button type="button" data-v="4">Q–T</button><button type="button" data-v="5">U–X</button><button type="button" data-v="6">Y–Z</button></div></div>
+      <div class="setgrp"><h3>とけい</h3>
+        <p class="sub">いまの じかんで はじめる</p>
+        <div class="seg" data-k="clockNow"><button type="button" data-v="0">オフ</button><button type="button" data-v="1">オン</button></div></div>
+    </div>
   </div>
 </div>
 
@@ -872,8 +960,31 @@
   var NUMV = ['', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'];
   var SCALE = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77, 1046.5, 1174.66, 1318.51];
 
+  /* ---------- せってい（おとなよう）。localStorage: ponpon.settings.v1。「おと なし」「こえ なし」は ほぞんしない ---------- */
+  var SET_KEY = 'ponpon.settings.v1';
+  var S = { sound: true, voice: true, camOn: true, sens: 3, camPos: 'top', abcAll: false, abcStart: 0, clockNow: false };
+  (function () {
+    try {
+      var o = JSON.parse(window.localStorage.getItem(SET_KEY) || 'null');
+      if (o && typeof o === 'object') {
+        if (typeof o.camOn === 'boolean') S.camOn = o.camOn;
+        if (o.sens >= 1 && o.sens <= 5) S.sens = Math.round(o.sens);
+        if (/^(top|left|right|bottom)$/.test(o.camPos)) S.camPos = o.camPos;
+        if (typeof o.abcAll === 'boolean') S.abcAll = o.abcAll;
+        if (o.abcStart >= 0 && o.abcStart <= 6) S.abcStart = Math.round(o.abcStart);
+        if (typeof o.clockNow === 'boolean') S.clockNow = o.clockNow;
+      }
+    } catch (e) {}
+  })();
+  function saveSettings() {
+    try {
+      window.localStorage.setItem(SET_KEY, JSON.stringify({ camOn: S.camOn, sens: S.sens, camPos: S.camPos, abcAll: S.abcAll, abcStart: S.abcStart, clockNow: S.clockNow }));
+    } catch (e) {}
+  }
+
   /* ---------- おと ---------- */
-  var ac = null, muted = false;
+  var ac = null, muted = false, voiceOff = false, setOpen = false;
+  function quiet() { return muted || setOpen; }   /* おとなし／せってい を ひらいている あいだは ゲームの おとを ならさない */
   function audio() {
     if (!ac) {
       try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
@@ -885,7 +996,7 @@
     document.addEventListener(ev, function () { audio(); }, { passive: true });
   });
   function tone(f, d, type, v, to, delay) {
-    var c = audio(); if (!c || muted) return;
+    var c = audio(); if (!c || quiet()) return;
     var t0 = c.currentTime + (delay || 0);
     var o = c.createOscillator(), g = c.createGain();
     o.type = type || 'sine';
@@ -898,7 +1009,7 @@
     o.start(t0); o.stop(t0 + d + 0.05);
   }
   function popSound() {
-    var c = audio(); if (!c || muted) return;
+    var c = audio(); if (!c || quiet()) return;
     var len = Math.floor(c.sampleRate * 0.12);
     var buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
     for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
@@ -915,7 +1026,7 @@
   function poyon() { tone(300, 0.25, 'sine', 0.15, 200); }
   function countTone(n) { tone(SCALE[Math.max(0, Math.min(9, n - 1))], 0.22, 'triangle', 0.18); }
   function say(text) {
-    if (muted || !('speechSynthesis' in window)) return;
+    if (quiet() || voiceOff || !('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
@@ -1597,8 +1708,8 @@
   var shelfEl = $('#shelf'), payPanel = $('#paypanel'), coinsEl = $('#coins'), trayEl = $('#tray');
   var trayCoins = $('#tray-coins'), trayWord = $('#tray-word'), receiptEl = $('#receipt'), paperEl = $('#paper-r');
   var lcd = { ico: $('#lcd-ico'), name: $('#lcd-name'), price: $('#lcd-price'), say: $('#lcd-say'), sum: $('#lcd-sum'), tot: $('#lcd-tot') };
-  var payBtn = $('#paybtn'), setPanel = $('#setpanel');
-  var shopOpen = false, shopPhase = 'shop', shopTotal = 0, shopBasket = [], totalTids = [], lpId = 0, payTids = [];
+  var payBtn = $('#paybtn');
+  var shopOpen = false, shopPhase = 'shop', shopTotal = 0, shopBasket = [], totalTids = [], payTids = [];
   var DEN = [1000, 500, 100, 50, 10, 5, 1], payStk = [], payTotalN = 0, payLanded = 0, paidSum = 0, payChips = false, trayCnt = {}, trayOrder = [];
   var payStat = $('#paystat');
 
@@ -1650,7 +1761,7 @@
   function shopScan(prod) {
     if (!shopOpen || shopPhase !== 'shop') return;
     tone(2000, 0.09, 'square', 0.22);
-    scanwin.classList.add('ok'); later(function () { scanwin.classList.remove('ok'); }, 260);
+    camGlow(null); scanwin.classList.add('ok'); later(function () { scanwin.classList.remove('ok'); }, 260);
     var txt = prod.cam ? yen(prod.p) + '！' : prod.n + '、' + yen(prod.p) + '！';
     lcdItem(prod, txt);
     later(function () { if (shopPhase === 'shop') say(txt); }, 250);
@@ -1749,7 +1860,7 @@
     say('おかねを いれてね');
   }
   function billSound() {
-    var c = audio(); if (!c || muted) return;
+    var c = audio(); if (!c || quiet()) return;
     var len = Math.floor(c.sampleRate * 0.11);
     var buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
     for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
@@ -1816,40 +1927,43 @@
     later(function () { lcd.tot.classList.remove('blink'); showCoins(); }, 2000);
   });
 
-  /* おとな用: タイトル長押し 2 秒で設定（かんど 1〜5 と 診断表示） */
-  var camSens = 3;
-  var shopTitle = $('#shop-title'), thrIn = $('#thr');
-  var diagCv = $('#diag-cv'), diagCx = diagCv.getContext('2d'), dFill = $('#dfill'), dThr = $('#dthr'), dState = $('#dstate');
-  var DSTATE = { learn: 'じゅんび', ready: 'まってる', cool: 'ピッ済み' };
-  function diagIdle() { dState.textContent = 'カメラなし'; dFill.style.width = '0%'; }
-  function openSettings() { setPanel.hidden = false; if (!cam.on) diagIdle(); }
-  shopTitle.addEventListener('pointerdown', function (e) {
-    e.preventDefault(); audio(); cancel(lpId);
-    lpId = later(function () { lpId = 0; openSettings(); }, 2000);
-  });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
-    shopTitle.addEventListener(ev, function () { cancel(lpId); lpId = 0; });
-  });
-  thrIn.addEventListener('input', function () {
-    camSens = parseInt(thrIn.value, 10) || 3; $('#thr-val').textContent = String(camSens);
-    if (det) det.setSens(camSens);
-  });
-  $('#setclose').addEventListener('click', function () { setPanel.hidden = true; });
-  /* 診断表示: 設定パネルを開いている間だけ（中央領域の枠つき映像・変化量バー・しきい値線・状態） */
-  function camDiag(r, v) {
-    if (setPanel.hidden) return;
-    try {
-      diagCx.drawImage(v, 0, 0, diagCv.width, diagCv.height);
-      diagCx.lineWidth = 3; diagCx.strokeStyle = '#3CCFB4'; diagCx.setLineDash([6, 4]);
-      var w = diagCv.width, h = diagCv.height;
-      diagCx.strokeRect(Math.round(w * 0.2), Math.round(h * 0.15), Math.round(w * 0.6), Math.round(h * 0.7));
-      diagCx.setLineDash([]);
-    } catch (e) {}
-    dFill.style.width = Math.round(r.level * 100) + '%';
-    dFill.classList.toggle('hot', r.level >= r.thrLevel);
-    dThr.style.left = (r.thrLevel * 100) + '%';
-    dState.textContent = (DSTATE[r.state] || r.state) + '（へんか ' + Math.round(r.frac * 100) + '%）';
+  /* スキャナー窓: かめらの ようすで ふちが ひかる（ちかづけると ひかる）。窓を タップしても スキャンしない */
+  var scanbox = $('#scanbox'), camArrows = $('#camarrows'), camBox = $('#cbox');
+  var camIntroDone = false, guideAt = -1e9;
+  var POSW = { top: 'うえ', left: 'ひだり', right: 'みぎ', bottom: 'した' };
+  function camGlow(r) {
+    if (!r) { scanwin.style.removeProperty('--bc'); scanwin.style.removeProperty('--bs'); return; }
+    if (scanwin.classList.contains('ok')) return;
+    var lv = r.level, th = Math.max(0.05, r.thrLevel || 0.4), t = Math.min(1, lv / th), bc = '#fff', bs;
+    if (lv < 0.03) { scanwin.style.removeProperty('--bc'); scanwin.style.removeProperty('--bs'); return; }
+    if (t >= 0.7) { bc = '#FF9124'; bs = '0 0 ' + Math.round(14 + 14 * t) + 'px ' + Math.round(4 + 4 * t) + 'px rgba(255,145,36,.9), 0 3px 0 rgba(43,58,103,.18)'; }
+    else { bc = '#FFD21F'; bs = '0 0 ' + Math.round(4 + 22 * t) + 'px ' + Math.round(1 + 6 * t) + 'px rgba(255,210,31,' + (0.35 + 0.6 * t).toFixed(2) + '), 0 3px 0 rgba(43,58,103,.18)'; }
+    scanwin.style.setProperty('--bc', bc); scanwin.style.setProperty('--bs', bs);
   }
+  function camLayout() {
+    var pos = POSW[S.camPos] ? S.camPos : 'top';
+    camArrows.setAttribute('data-pos', pos);
+    scanbox.setAttribute('data-arr', cam.on ? pos : 'none');
+    camArrows.hidden = !cam.on;
+    scanwin.classList.toggle('live', cam.on);
+    camVideo.hidden = !cam.on; camBox.hidden = !cam.on;
+    if (!cam.on) camGlow(null);
+  }
+  function scanwinTap() {
+    if (!shopOpen) return;
+    wiggle(scanwin, 3);
+    if (!cam.on) return;
+    var now = performance.now();
+    if (now - guideAt < 3000) return;
+    guideAt = now;
+    var msg = POSW[S.camPos] + 'の カメラに みせてね';
+    say(msg);
+    if (!reduce) camArrows.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: 0.35 }, { transform: 'scale(.95)', offset: 0.65 }, { transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' });
+    camArrows.classList.add('bump'); later(function () { camArrows.classList.remove('bump'); }, 700);
+    lcdMsg('カメラに みせてね', msg);
+  }
+  scanwin.addEventListener('pointerdown', function (e) { e.preventDefault(); audio(); scanwinTap(); });
+  scanwin.addEventListener('click', function (e) { if (e.detail === 0) scanwinTap(); });
 
   /* camdet:begin */
   /* カメラ検出器（DOM に依存しない純粋関数）。feed(rgba, w, h, nowMs) → { scan, level, state, ... } */
@@ -1972,8 +2086,8 @@
   }
   /* camdet:end */
 
-  /* カメラ（使えれば）。失敗しても何も見せず、タッチモードのまま */
-  var camVideo = $('#cam-video'), campv = $('#campv'), camRetry = $('#camretry');
+  /* カメラ（使えれば）。失敗しても何も見せず、タッチモードのまま。せっていで「つかわない」なら getUserMedia を よばない */
+  var camVideo = $('#cam-video');
   var cam = { stream: null, timer: 0, gen: 0, on: false };
   var camWork = document.createElement('canvas'); camWork.width = 64; camWork.height = 48;
   var camCtx = camWork.getContext('2d', { willReadFrequently: true });
@@ -1983,12 +2097,12 @@
     if (cam.timer) { clearInterval(cam.timer); cam.timer = 0; }
     if (cam.stream) { try { cam.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} cam.stream = null; }
     try { camVideo.pause(); camVideo.srcObject = null; } catch (e) {}
-    cam.on = false; campv.hidden = true; det = null;
+    cam.on = false; det = null; camLayout();
   }
-  function camFail() { cam.on = false; campv.hidden = true; camRetry.hidden = !shopOpen; }
+  function camFail() { cam.on = false; camLayout(); }
   function camStart() {
     camStop();
-    camRetry.hidden = true;
+    if (!S.camOn) return;
     var gen = cam.gen, pr;
     try {
       var md = navigator.mediaDevices;
@@ -1998,13 +2112,13 @@
     pr.then(function (stream) {
       if (gen !== cam.gen || !shopOpen) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
       cam.stream = stream; camVideo.muted = true; camVideo.srcObject = stream;
+      cam.on = true; camLayout();
       try { var pp = camVideo.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
-      cam.on = true; campv.hidden = false; camRetry.hidden = true;
-      det = createCamDetector({ sens: camSens });
+      det = createCamDetector({ sens: S.sens });
       cam.timer = setInterval(camTick, 80);
+      if (!camIntroDone) { camIntroDone = true; later(function () { if (shopOpen && cam.on && shopPhase === 'shop') say('カメラに おもちゃを みせてね'); }, 500); }
     }, function () { if (gen === cam.gen) camFail(); });
   }
-  holdButton(camRetry, 1500, function () { audio(); camStart(); });
   /* カメラの品物は名前を言わない: 値段はランダム、かごの箱の色だけ映像の主な色から決める（色名は言わない） */
   var BOXCOL = ['#F2463C', '#2F7BF5', '#FFD21F', '#34B556', '#FF7EB6', '#FF9124', '#9358E0', '#9A5B32'];
   function camColor(d, idx, ch) {
@@ -2047,22 +2161,21 @@
     var d;
     try { camCtx.drawImage(v, 0, 0, 64, 48); d = camCtx.getImageData(0, 0, 64, 48).data; } catch (e) { return; }
     var r = det.feed(d, 64, 48, performance.now());
-    camDiag(r, v);
+    camGlow(r);
     if (r.scan) shopScan(camItem(d, det.changed.idx, det.changed.count));
   }
   games.shop = {
     el: shopStage,
     enter: function () {
-      shopOpen = true; setPanel.hidden = true;
+      shopOpen = true; guideAt = -1e9;
       shopReset();
+      camLayout();
       camStart();
     },
     leave: function () {
       shopOpen = false;
       camStop();
-      cancel(lpId); lpId = 0;
       clearTimers();
-      setPanel.hidden = true; camRetry.hidden = true;
       fxShop.innerHTML = '';
       shopReset();
     }
@@ -2405,7 +2518,7 @@
   var NBIG = 'M0 0H400V400H0Z';
   /* 6まいの えは ぜんぶ オリジナル。r: [path, clip名] の じゅんばん = うえに かさなる じゅんばん */
   var PICS = (function () {
-    var fishBody = ell(225, 200, 130, 90, 0);
+    var fishBody = ell(200, 210, 125, 95, 0);
     var roofTri = 'M20 165L200 38L380 165Z';
     var headC = ell(200, 160, 46, 46, 0), petals = [], i, a;
     for (i = 0; i < 5; i++) {
@@ -2414,16 +2527,19 @@
     }
     var stemRect = 'M166 215H234V392H166Z';
     return [
+      /* おさかな（ひだりむき・6りょういき）: 体=楕円1つ。尾びれ・背びれは体のそと、しまは体のなか（体でクリップ）。むなびれは体のうえ */
       { n: 'おさかな',
         clips: { inBody: fishBody, outBody: NBIG + fishBody },
         r: [
           [fishBody],
-          ['M4 96L140 200L4 304Q22 200 4 96Z', 'outBody'],
-          ['M150 126Q178 14 268 18Q300 70 316 128Z', 'outBody'],
-          ['M175 90H249V310H175Z', 'inBody'],
-          ['M265 90H339V310H265Z', 'inBody']
+          ['M296 192L366 118Q346 165 343 210Q346 255 366 302L296 228Z', 'outBody'],
+          ['M150 136Q164 82 212 82Q248 84 260 136Z', 'outBody'],
+          ['M212 100Q222 210 212 320L250 320Q260 210 250 100Z', 'inBody'],
+          ['M276 100Q286 210 276 320L340 320L340 100Z', 'inBody'],
+          ['M134 248Q134 224 164 222Q190 224 204 250Q182 276 158 272Q134 268 134 248Z']
         ],
-        deco: '<circle cx="138" cy="172" r="22" fill="#fff"/><circle cx="142" cy="174" r="10" fill="#2B3A67" stroke="none"/><path d="M104 222Q120 236 138 224" fill="none"/>' },
+        deco: '<circle cx="125" cy="185" r="20" fill="#fff"/><circle cx="128" cy="187" r="9" fill="#2B3A67" stroke="none"/><path d="M84 222Q96 236 110 226" fill="none" stroke-width="5"/>' +
+          '<path d="M160 158q10 8 20 0M100 252q10 8 20 0M150 290q10 8 20 0" fill="none" stroke-width="4" opacity=".55"/>' },
       { n: 'おうち',
         clips: { outRoof: NBIG + roofTri },
         r: [
@@ -2725,9 +2841,13 @@
 
   /* ====== 15. ABCパズル ====== */
   var abcStage = $('#stage-abc'), abcBoard = $('#abc-board'), abcBox = $('#abc-box'), fxAbc = $('#fx-abc'), abcNo = $('#abc-no');
-  var abcRangeEl = $('#abc-range'), abcAllBtn = $('#abc-all'), abcPrev = $('#abc-prev'), abcNext = $('#abc-next');
+  var abcRangeEl = $('#abc-range');
   var ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  var ABC_SAY = ['ay', 'bee', 'see', 'dee', 'ee', 'eff', 'gee', 'aitch', 'eye', 'jay', 'kay', 'el', 'em', 'en', 'oh', 'pee', 'cue', 'ar', 'ess', 'tee', 'you', 'vee', 'double you', 'ex', 'why', 'zee'];
+  /* 文字名: 英語の声は「大文字 + ピリオド」を 文字名（エイ…）と よむ。まちがえやすい W と Z だけ つづりで わたす */
+  var ABC_SAY = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'P.', 'Q.', 'R.', 'S.', 'T.', 'U.', 'V.', 'double you', 'X.', 'Y.', 'zee'];
+  /* 英語の声が ない たんまつ用: カタカナの よみ */
+  var ABC_KANA = ['エー', 'ビー', 'シー', 'ディー', 'イー', 'エフ', 'ジー', 'エイチ', 'アイ', 'ジェー', 'ケー', 'エル', 'エム', 'エヌ', 'オー', 'ピー', 'キュー', 'アール', 'エス', 'ティー', 'ユー', 'ブイ', 'ダブリュー', 'エックス', 'ワイ', 'ゼット'];
+  var ABC_WORD_KANA = ['アップル', 'ボール', 'キャット', 'ドッグ', 'エッグ', 'フィッシュ', 'グレープス', 'ハット', 'アイスクリーム', 'ジュース', 'カイト', 'ライオン', 'ムーン', 'ノーズ', 'オレンジ', 'ピッグ', 'クイーン', 'ラビット', 'サン', 'タイガー', 'アンブレラ', 'バイオリン', 'ホエール', 'シロフォン', 'ヨーヨー', 'ゼブラ'];
   var ABC_WORD = [['apple', '🍎'], ['ball', '⚽'], ['cat', '🐱'], ['dog', '🐶'], ['egg', '🥚'], ['fish', '🐟'], ['grapes', '🍇'], ['hat', '🎩'], ['ice cream', '🍦'], ['juice', '🧃'],
     ['kite', '🪁'], ['lion', '🦁'], ['moon', '🌙'], ['nose', '👃'], ['orange', '🍊'], ['pig', '🐷'], ['queen', '👸'], ['rabbit', '🐰'], ['sun', '☀️'], ['tiger', '🐯'],
     ['umbrella', '☂️'], ['violin', '🎻'], ['whale', '🐳'], ['xylophone', '🎶'], ['yo-yo', '🪀'], ['zebra', '🦓']];
@@ -2746,22 +2866,54 @@
     var n = parseInt(h.slice(1), 16);
     return 'rgb(' + Math.round((n >> 16 & 255) * 0.55) + ',' + Math.round((n >> 8 & 255) * 0.55) + ',' + Math.round((n & 255) * 0.55) + ')';
   }
-  /* 英語の声: en で始まる声があれば選ぶ。なければ指定せずに読ませる */
-  function sayEn(text, pitch, rate) {
-    if (muted || !('speechSynthesis' in window)) return;
+  /* 英語の声: lang は いつも en-US。voice は みつかった ときだけ つける。
+     iOS などは getVoices() が さいしょ からっぽ → voiceschanged で キャッシュする（lang を つけないと にほんごの こえで「あー」になる） */
+  var enVoices = [], voicesEvt = false, voiceT0 = performance.now();
+  var EN_PREF = ['Samantha', 'Google US English', 'Alex', 'Karen', 'Daniel'];
+  function refreshVoices() {
+    try { enVoices = (window.speechSynthesis.getVoices() || []).slice(); } catch (e) { enVoices = []; }
+  }
+  if ('speechSynthesis' in window) {
+    refreshVoices();
+    try { window.speechSynthesis.onvoiceschanged = function () { voicesEvt = true; refreshVoices(); }; } catch (e) {}
+  }
+  function vlang(v) { return String(v && v.lang || '').replace('_', '-'); }
+  function pickEnVoice() {
+    var i, j, v, l;
+    if (!enVoices.length) refreshVoices();
+    for (j = 0; j < EN_PREF.length; j++) for (i = 0; i < enVoices.length; i++) {
+      v = enVoices[i]; l = vlang(v);
+      if (/^en-US$/i.test(l) && String(v.name || '').indexOf(EN_PREF[j]) >= 0) return v;
+    }
+    for (i = 0; i < enVoices.length; i++) if (/^en-US$/i.test(vlang(enVoices[i]))) return enVoices[i];
+    for (i = 0; i < enVoices.length; i++) if (/^en/i.test(vlang(enVoices[i]))) return enVoices[i];
+    return null;
+  }
+  /* 英語の声が ない: getVoices() に en が ひとつも ない、かつ（voiceschanged が きた か、1 びょう まっても こない） */
+  function noEnglish() {
+    if (!enVoices.length) refreshVoices();
+    for (var i = 0; i < enVoices.length; i++) if (/^en/i.test(vlang(enVoices[i]))) return false;
+    return voicesEvt || (performance.now() - voiceT0 >= 1000);
+  }
+  /* en: 英語の文字列 / ja: 英語の声が ない ときの カタカナ */
+  function sayEn(en, ja, pitch, rate) {
+    if (quiet() || voiceOff || !('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(text), vs = window.speechSynthesis.getVoices() || [], v = null, i;
-      for (i = 0; i < vs.length; i++) if (/^en[-_]US/i.test(vs[i].lang)) { v = vs[i]; break; }
-      if (!v) for (i = 0; i < vs.length; i++) if (/^en/i.test(vs[i].lang)) { v = vs[i]; break; }
-      if (v) { u.voice = v; u.lang = 'en-US'; }
+      var fall = noEnglish(), u = new SpeechSynthesisUtterance(fall ? ja : en);
+      if (fall) u.lang = 'ja-JP';
+      else {
+        u.lang = 'en-US';
+        var v = pickEnVoice();
+        if (v) { try { u.voice = v; } catch (e) {} }
+      }
       u.rate = rate || 0.9; u.pitch = pitch || 1.3; u.volume = 0.95;
       window.speechSynthesis.speak(u);
     } catch (e) {}
   }
   function woodClack() {
     tone(250, 0.05, 'square', 0.2, 170);
-    var c = audio(); if (!c || muted) return;
+    var c = audio(); if (!c || quiet()) return;
     var len = Math.floor(c.sampleRate * 0.04), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0), i;
     for (i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
     var src = c.createBufferSource(); src.buffer = buf;
@@ -2770,7 +2922,7 @@
     src.connect(bp); bp.connect(g); g.connect(c.destination); src.start();
   }
   function boing() {
-    var c = audio(); if (!c || muted) return;
+    var c = audio(); if (!c || quiet()) return;
     var t0 = c.currentTime, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
     o.type = 'sine';
     o.frequency.setValueAtTime(400, t0); o.frequency.exponentialRampToValueAtTime(150, t0 + 0.5);
@@ -2844,8 +2996,6 @@
       abcBox.appendChild(el); abcPieces.push(p);
     });
     abcRangeEl.textContent = abcAll ? 'A–Z' : ABC[lets[0]] + '–' + ABC[lets[lets.length - 1]];
-    abcPrev.hidden = abcAll; abcNext.hidden = abcAll;
-    abcAllBtn.setAttribute('aria-pressed', String(abcAll));
     abcLayout();
   }
   function abcRender(p) {
@@ -2860,7 +3010,7 @@
     p.tx = 0; p.ty = 0; p.lift = 0; p.el.classList.remove('drag'); if (abcSel === p) abcSel = null; abcRender(p);
   }
   function abcTap(p) {
-    sayEn(ABC_SAY[p.li], 1.5, 0.85); bigWord(ABC[p.li], ABC_COL[p.li % 12]); tone(600 + p.li * 12, 0.1, 'triangle', 0.1);
+    sayEn(ABC_SAY[p.li], ABC_KANA[p.li] + '！', 1.5, 0.85); bigWord(ABC[p.li], ABC_COL[p.li % 12]); tone(600 + p.li * 12, 0.1, 'triangle', 0.1);
     if (abcSel === p) abcBack(p); else abcSelect(p);
   }
   function abcBind(p) {
@@ -2877,7 +3027,7 @@
         d.moved = true; p.el.classList.add('drag', 'lift');
         if (abcSel && abcSel !== p) { abcSel.lift = 0; abcRender(abcSel); }
         abcSel = p; p.lift = 0;
-        sayEn(ABC_SAY[p.li], 1.5, 0.85);
+        sayEn(ABC_SAY[p.li], ABC_KANA[p.li] + '！', 1.5, 0.85);
       }
       if (d.moved) { p.tx = dx; p.ty = dy; p.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.2)'; }
     });
@@ -2906,7 +3056,7 @@
     if (abcBusy) return;
     if (h.filled) { wiggle(h.el, 5); return; }
     if (abcSel) { abcAttempt(abcSel, h); return; }
-    sayEn(ABC_SAY[h.li], 1.4, 0.85); tone(440, 0.12, 'triangle', 0.1); bounce(h.el, 6);
+    sayEn(ABC_SAY[h.li], ABC_KANA[h.li] + '！', 1.4, 0.85); tone(440, 0.12, 'triangle', 0.1); bounce(h.el, 6);
   }
   function abcStageDown(e) {
     if (!abcSel || abcBusy) return;
@@ -2940,7 +3090,7 @@
     ], { duration: reduce ? 150 : 380, easing: 'ease-in-out', fill: 'forwards' });
     if (!reduce) p.el.firstChild.animate([{ transform: 'rotate(' + p.rot + 'deg)' }, { transform: 'rotate(0deg)' }], { duration: 380, fill: 'forwards' });
     var li = h.li, w = ABC_WORD[li];
-    sayEn(ABC_SAY[li] + '! ' + w[0] + '!', 1.4, 0.9);
+    sayEn(ABC_SAY[li] + ' ' + w[0].charAt(0).toUpperCase() + w[0].slice(1) + '!', ABC_KANA[li] + '！ ' + ABC_WORD_KANA[li] + '！', 1.4, 0.9);
     bigWord(ABC[li] + '\n' + w[0], ABC_COL[li % 12]);
     an.onfinish = function () {
       if (gen !== abcGen) return;
@@ -3002,8 +3152,8 @@
     };
   }
   function abcGag(h) {
-    var word = pick(['No!', 'Nope!', 'No no no!', 'Noooo!']);
-    sayEn(word, rand(0.6, 1.8), word === 'Noooo!' ? 0.65 : 1.0);
+    var NOS = [['No!', 'ノー！'], ['Nope!', 'ノープ！'], ['No no no!', 'ノー ノー ノー！'], ['Noooo!', 'ノーーー！']], no = pick(NOS);
+    sayEn(no[0], no[1], rand(0.6, 1.8), no[0] === 'Noooo!' ? 0.65 : 1.0);
     boing(); hideWord();
     if (abcNoAnim) { try { abcNoAnim.cancel(); } catch (e) {} abcNoAnim = null; }
     abcNo.hidden = false;
@@ -3036,7 +3186,7 @@
   function abcRoundDone() {
     var lets = abcLetters(), n = lets.length, STEP = 380, wasAll = abcAll;
     if (wasAll) { abcCelebrateAll(true); return; }
-    sayEn(lets.map(function (i) { return ABC_SAY[i]; }).join(', ') + '! Yay!', 1.4, 0.95);
+    sayEn(lets.map(function (i) { return ABC_SAY[i]; }).join(' ') + ' Yay!', lets.map(function (i) { return ABC_KANA[i]; }).join('、') + '！ イェーイ！', 1.4, 0.95);
     abcHoles.forEach(function (h, i) {
       later(function () { bounce(h.el, 26); tone(SCALE[i % 10], 0.2, 'triangle', 0.16); h.el.classList.add('glow'); later(function () { h.el.classList.remove('glow'); }, 320); }, i * STEP);
     });
@@ -3051,7 +3201,7 @@
   /* Z まで行った / ぜんぶ を完成: 26 文字が順に光る「ABC!」の大お祝い。そのあと A に戻る */
   function abcCelebrateAll(fromAllMode) {
     abcAll = true; abcBuild(true);
-    sayEn('ay, bee, see! Yay!', 1.4, 0.95);
+    sayEn('A. B. C. Yay!', 'エー、ビー、シー！ イェーイ！', 1.4, 0.95);
     abcHoles.forEach(function (h, i) {
       later(function () { h.el.classList.add('glow'); tone(SCALE[i % 10], 0.14, 'triangle', 0.14); bounce(h.el, 10); later(function () { h.el.classList.remove('glow'); }, 260); }, i * 130);
     });
@@ -3060,13 +3210,10 @@
       abcAll = !!fromAllMode; abcRound = 0; abcBuild();
     }, 26 * 130 + 100 + 2600);
   }
-  abcPrev.addEventListener('click', function () { if (abcAll) return; audio(); abcRound = (abcRound + 6) % 7; abcBuild(); tone(520, 0.1, 'triangle', 0.1); });
-  abcNext.addEventListener('click', function () { if (abcAll) return; audio(); abcRound = (abcRound + 1) % 7; abcBuild(); tone(660, 0.1, 'triangle', 0.1); });
-  abcAllBtn.addEventListener('click', function () { audio(); abcAll = !abcAll; abcBuild(); tone(560, 0.1, 'triangle', 0.1); });
   games.abc = {
     el: abcStage,
     enter: function () {
-      abcAll = false; abcRound = 0; abcStage.addEventListener('pointerdown', abcStageDown); abcBuild();
+      abcAll = !!S.abcAll; abcRound = Math.max(0, Math.min(6, S.abcStart | 0)); abcStage.addEventListener('pointerdown', abcStageDown); abcBuild();
     },
     leave: function () {
       abcStage.removeEventListener('pointerdown', abcStageDown);
@@ -3078,6 +3225,317 @@
     },
     resize: abcLayout
   };
+
+  /* ====== 16. まいにちとけい ====== */
+  var ckStage = $('#stage-clock'), ckFace = $('#ck-face'), ckHand = $('#ck-hhand'), ckHub = $('#ck-hub'), ckOrb = $('#ck-orb');
+  var ckEmo = $('#ck-emo'), ckLine = $('#ck-line'), ckCard = $('#ck-card'), ckBtns = $('#ck-btns'), fxClock = $('#fx-clock');
+  var ckSkyA = $('#ck-sky-a'), ckSkyB = $('#ck-sky-b'), ckStarsEl = $('#ck-stars');
+  /* ちょうどの じかんだけ。4=よじ 7=しちじ 9=くじ（2さいが きく ただしい よみ） */
+  var HR = ['じゅうにじ', 'いちじ', 'にじ', 'さんじ', 'よじ', 'ごじ', 'ろくじ', 'しちじ', 'はちじ', 'くじ', 'じゅうじ', 'じゅういちじ'];
+  var NUM12 = NUMV.concat(['じゅういち', 'じゅうに']);
+  var CLOCKEMO = ['🕛', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚'];
+  var CK_SCENE = {
+    7: ['しちじ！ おはよう！ あさごはんの じかん！', '🌅🍳🍞'],
+    9: ['くじ！ おでかけの じかん！', '🎒👟'],
+    10: ['じゅうじ！ おそとで あそぼう！', '🛝⚽'],
+    12: ['じゅうにじ！ おひるごはんの じかん！', '🍙🍝'],
+    13: ['いちじ！ おひるねの じかん！', '😴💤'],
+    15: ['さんじ！ おやつの じかん！', '🍪🧃'],
+    17: ['ごじ！ おかたづけの じかん！', '🧸📦'],
+    18: ['ろくじ！ ばんごはんの じかん！', '🍛🥢'],
+    19: ['しちじ！ おふろの じかん！', '🛁🫧'],
+    20: ['はちじ！ おやすみなさい！ ねんねの じかん！', '🌙⭐😴']
+  };
+  var CK_BTN = [[7, '🌅'], [9, '🎒'], [12, '🍙'], [13, '😴'], [15, '🍪'], [18, '🍛'], [19, '🛁'], [20, '🌙']];
+  var CK_SKY = { morning: ['#FFC48A', '#BFE7FF'], day: ['#5BBEFF', '#DDF4FF'], evening: ['#FF8F5E', '#FFD79B'], night: ['#18214D', '#3B4C94'] };
+  var ckHf = 7, ckRaf = 0, ckDrag = null, ckSel = -1, ckPer = '', ckShowB = false, ckNums = [], ckBtnEls = [], ckChimeIds = [];
+  function ckMod(x, m) { return ((x % m) + m) % m; }
+  function ckNorm(d) { d = ckMod(d, 360); return d > 180 ? d - 360 : d; }
+  function ckHour() { return ckMod(Math.round(ckHf), 24); }
+  function ckPeriod(h) { return h >= 6 && h <= 9 ? 'morning' : h >= 10 && h <= 15 ? 'day' : h >= 16 && h <= 18 ? 'evening' : 'night'; }
+  (function () {
+    var ticks = '', nums = '', i, a, x, y;
+    for (i = 0; i < 12; i++) {
+      a = i * 30 * Math.PI / 180;
+      ticks += '<circle cx="' + (78 * Math.sin(a)).toFixed(1) + '" cy="' + (-78 * Math.cos(a)).toFixed(1) + '" r="2.6" fill="#FF8A5B"/>';
+    }
+    $('#ck-ticks').innerHTML = ticks;
+    var g = $('#ck-nums');
+    for (i = 1; i <= 12; i++) {
+      a = i * 30 * Math.PI / 180;
+      x = 62 * Math.sin(a); y = -62 * Math.cos(a);
+      var t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('class', 'num'); t.setAttribute('x', x.toFixed(1)); t.setAttribute('y', y.toFixed(1)); t.setAttribute('data-n', String(i));
+      t.textContent = String(i);
+      t.style.transformBox = 'fill-box'; t.style.transformOrigin = 'center';
+      g.appendChild(t); ckNums[i] = t;
+    }
+    var st = '', sx = [8, 22, 38, 52, 66, 80, 92, 14, 30, 60, 74, 88], sy = [10, 24, 8, 30, 14, 26, 10, 42, 48, 46, 40, 50];
+    for (i = 0; i < sx.length; i++) st += '<i style="left:' + sx[i] + '%;top:' + sy[i] + '%;animation-delay:' + (i * 0.37).toFixed(2) + 's">' + (i % 3 ? '⭐' : '✨') + '</i>';
+    ckStarsEl.innerHTML = st;
+    CK_BTN.forEach(function (bt, j) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'ck-b'; b.textContent = bt[1]; b.setAttribute('data-h', String(bt[0]));
+      b.setAttribute('aria-label', HR[bt[0] % 12]); b.setAttribute('aria-pressed', 'false');
+      onTap(b, function () { ckPress(bt[0]); });
+      ckBtns.appendChild(b); ckBtnEls.push(b);
+    });
+  })();
+  function ckMark() {
+    ckBtnEls.forEach(function (b) { var on = parseInt(b.getAttribute('data-h'), 10) === ckSel; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  }
+  function ckSky(h, instant) {
+    var per = ckPeriod(h);
+    ckStage.classList.toggle('night', per === 'night');
+    if (per === ckPer && !instant) return;
+    ckPer = per;
+    var g = 'linear-gradient(' + CK_SKY[per][0] + ',' + CK_SKY[per][1] + ')';
+    if (instant) {
+      ckSkyA.style.background = g; ckSkyB.style.transition = 'none'; ckSkyB.style.opacity = '0'; ckShowB = false;
+      void ckSkyB.offsetWidth; ckSkyB.style.transition = '';
+    } else if (ckShowB) { ckSkyA.style.background = g; ckSkyB.style.opacity = '0'; ckShowB = false; }
+    else { ckSkyB.style.background = g; ckSkyB.style.opacity = '1'; ckShowB = true; }
+  }
+  /* たいよう・つきが、とけいの ふちの うえを うごく */
+  function ckOrbPos() {
+    var h = ckHour(), sun = h >= 6 && h <= 18, a;
+    if (sun) a = (ckHf - 12) * 15; else a = ((ckHf < 12 ? ckHf + 24 : ckHf) - 24) * 15;
+    var emo = sun ? '🌞' : '🌙';
+    var sr = ckStage.getBoundingClientRect(), fr = ckFace.getBoundingClientRect(), R = fr.width / 2;
+    if (!R) return;
+    var rad = a * Math.PI / 180;
+    var x = fr.left - sr.left + R + Math.sin(rad) * R, y = fr.top - sr.top + R - Math.cos(rad) * R;
+    if (ckOrb.textContent !== emo) { ckOrb.style.transition = 'none'; ckOrb.textContent = emo; ckOrb.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'; void ckOrb.offsetWidth; ckOrb.style.transition = ''; }
+    else ckOrb.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+  }
+  function ckRender() {
+    ckHand.setAttribute('transform', 'rotate(' + (ckMod(ckHf, 12) * 30).toFixed(2) + ')');
+    var h = ckHour();
+    ckFace.setAttribute('data-hour', String(h));
+    ckFace.setAttribute('aria-label', 'とけい ' + HR[h % 12]);
+    ckSky(h, false); ckOrbPos();
+  }
+  function ckTick() { tone(1300, 0.03, 'square', 0.08, 700); }
+  function ckStopAnim() { if (ckRaf) { cancelAnimationFrame(ckRaf); ckRaf = 0; } }
+  function ckStopChime() { ckChimeIds.forEach(cancel); ckChimeIds = []; }
+  function ckSayNight(hr) {
+    if (quiet() || voiceOff || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      var u1 = new SpeechSynthesisUtterance(hr + '！'), u2 = new SpeechSynthesisUtterance('みんな ねんね してるよ');
+      u1.lang = 'ja-JP'; u1.rate = 0.9; u1.pitch = 1.5; u1.volume = 0.9;
+      u2.lang = 'ja-JP'; u2.rate = 0.7; u2.pitch = 0.9; u2.volume = 0.4;
+      window.speechSynthesis.speak(u1); window.speechSynthesis.speak(u2);
+    } catch (e) {}
+  }
+  /* スナップ／とうちゃく: よみあげ + ばめんカード */
+  function ckSettle(h, announce) {
+    ckSel = -1; CK_BTN.forEach(function (b) { if (b[0] === h) ckSel = h; }); ckMark();
+    var sc = CK_SCENE[h], hr = HR[h % 12], night = (h >= 21 || h <= 5), n12 = h % 12 || 12, line;
+    if (sc) { ckEmo.textContent = sc[1]; line = sc[0]; }
+    else if (night) { ckEmo.textContent = '🌙💤'; line = hr + '！ みんな ねんね してるよ…'; }
+    else { ckEmo.textContent = CLOCKEMO[h % 12] + ' ' + n12; line = hr + '！'; }
+    ckLine.textContent = line;
+    ckCard.setAttribute('aria-label', line);
+    if (!announce) return;
+    if (!reduce) ckCard.animate([{ transform: 'scale(.6)', opacity: 0.3 }, { transform: 'scale(1.1)', opacity: 1, offset: 0.55 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420, easing: 'ease-out' });
+    if (sc || !night) say(line); else ckSayNight(hr);
+    countTone(Math.max(1, Math.min(10, n12)));
+    var r = centerIn(ckFace, fxClock);
+    burst(fxClock, r.x, r.y, { n: 6, emoji: ['✨'], far: 1.6 });
+  }
+  function ckSnap() {
+    ckStopAnim();
+    var tgt = Math.round(ckHf), start = ckHf, d = tgt - start, t0 = performance.now();
+    function done() { ckRaf = 0; ckHf = ckMod(tgt, 24); ckRender(); tone(1000, 0.05, 'square', 0.12, 500); ckSettle(ckHour(), true); }
+    if (Math.abs(d) < 0.001 || reduce) { done(); return; }
+    function frame(t) {
+      var k = Math.min(1, (t - t0) / 300), e = 1 - Math.pow(1 - k, 3);
+      ckHf = ckMod(start + d * e, 24); ckRender();
+      if (k < 1) ckRaf = requestAnimationFrame(frame); else done();
+    }
+    ckRaf = requestAnimationFrame(frame);
+  }
+  /* いちにちの ボタン: みじかい はりが くるくる まわって（1じかん 0.12びょう、さいだい 1.5びょう）その じかんへ */
+  function ckSpinTo(h) {
+    ckStopAnim();
+    var start = ckHf, steps = ckMod(h - start, 24), dur = Math.min(1500, Math.ceil(steps) * 120), t0 = performance.now(), lastN = 0;
+    if (steps < 0.001) { ckHf = h; ckRender(); ckSettle(h, true); return; }
+    if (reduce) { ckHf = h; ckRender(); ckSettle(h, true); return; }
+    function frame(t) {
+      var k = Math.min(1, (t - t0) / dur), n = Math.floor(steps * k + 1e-6);
+      ckHf = ckMod(start + steps * k, 24);
+      while (lastN < n) { lastN++; ckTick(); }
+      ckRender();
+      if (k < 1) ckRaf = requestAnimationFrame(frame);
+      else { ckRaf = 0; ckHf = h; ckRender(); ckSettle(h, true); }
+    }
+    ckRaf = requestAnimationFrame(frame);
+  }
+  function ckPress(h) {
+    ckStopChime(); ckSel = h; ckMark();
+    tone(660, 0.08, 'triangle', 0.1);
+    ckSpinTo(h);
+  }
+  function ckNum(n) {
+    say(NUM12[n]); bigWord(NUM12[n], '#FF6F61'); countTone(Math.min(10, n));
+    var t = ckNums[n];
+    if (t && !reduce) t.animate([{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-10px) scale(1.6)', offset: 0.4 }, { transform: 'translateY(0) scale(1)' }], { duration: 420, easing: 'ease-out' });
+  }
+  /* まんなかの まるを タップ: 「ボーン」を いまの じかん（12じかんせい）の かいすう */
+  function ckBong() { tone(196, 1.1, 'sine', 0.32); tone(392, 0.8, 'sine', 0.12); tone(588, 0.45, 'triangle', 0.05); }
+  function ckChime() {
+    ckStopChime(); ckStopAnim();
+    var h = ckHour(), n = h % 12 || 12, i;
+    if (!reduce) ckHub.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: 0.3 }, { transform: 'scale(1)' }], { duration: 400, easing: 'ease-out' });
+    for (i = 1; i <= n; i++) (function (i) {
+      ckChimeIds.push(later(function () {
+        ckBong(); say(NUM12[i]); bigWord(NUM12[i], '#2F7BF5');
+        if (!reduce) ckFace.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)', offset: 0.2 }, { transform: 'scale(1)' }], { duration: 500, easing: 'ease-out' });
+      }, (i - 1) * 1100));
+    })(i);
+    ckChimeIds.push(later(function () { say(HR[h % 12] + '！'); }, n * 1100));
+  }
+  /* とけいの なかを ドラッグ → みじかい はりが ゆびの かくどに ついてくる。はなすと ちかい 〜じに カチッ */
+  function ckGeom() { var r = ckFace.getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, R: r.width / 2 }; }
+  function ckAngle(g, e) { return ckMod(Math.atan2(e.clientX - g.cx, -(e.clientY - g.cy)) * 180 / Math.PI, 360); }
+  ckFace.addEventListener('pointerdown', function (e) {
+    e.preventDefault(); audio();
+    if (ckDrag) return;
+    ckStopAnim(); ckStopChime();
+    try { ckFace.setPointerCapture(e.pointerId); } catch (err) {}
+    ckDrag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, last: Math.round(ckHf) };
+  });
+  ckFace.addEventListener('pointermove', function (e) {
+    var d = ckDrag; if (!d || d.id !== e.pointerId) return;
+    var dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (!d.moved && Math.sqrt(dx * dx + dy * dy) > 10) { d.moved = true; ckSel = -1; ckMark(); }
+    if (!d.moved) return;
+    var g = ckGeom();
+    if (Math.sqrt((e.clientX - g.cx) * (e.clientX - g.cx) + (e.clientY - g.cy) * (e.clientY - g.cy)) < g.R * 0.08) return;
+    var a = ckAngle(g, e), cur = ckMod(ckHf, 12) * 30;
+    ckHf = ckMod(ckHf + ckNorm(a - cur) / 30, 24);
+    var nr = Math.round(ckHf);
+    if (nr !== d.last) { d.last = nr; ckTick(); }
+    ckRender();
+  });
+  function ckUp(e) {
+    var d = ckDrag; if (!d || d.id !== e.pointerId) return;
+    ckDrag = null;
+    try { ckFace.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (d.moved) { ckSnap(); return; }
+    if (e.type === 'pointercancel') return;
+    var g = ckGeom(), dist = Math.sqrt((e.clientX - g.cx) * (e.clientX - g.cx) + (e.clientY - g.cy) * (e.clientY - g.cy)), ru = dist / g.R * 100;
+    if (ru <= 24) ckChime();
+    else if (ru >= 44 && ru <= 94) ckNum(Math.round(ckAngle(g, e) / 30) % 12 || 12);
+    else { tone(520, 0.08, 'sine', 0.06); }
+  }
+  ckFace.addEventListener('pointerup', ckUp);
+  ckFace.addEventListener('pointercancel', ckUp);
+  ckFace.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  games.clock = {
+    el: ckStage,
+    enter: function () {
+      ckHf = S.clockNow ? new Date().getHours() : 7;
+      ckDrag = null; ckPer = '';
+      ckSky(ckHour(), true); ckRender(); ckSettle(ckHour(), false);
+    },
+    leave: function () {
+      ckStopAnim(); ckStopChime(); ckDrag = null; ckSel = -1; ckMark();
+      fxClock.innerHTML = '';
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: function () { ckOrbPos(); }
+  };
+
+  /* ---------- せってい（おとなよう）シート ---------- */
+  var setSheet = $('#setsheet'), setBtn = $('#setbtn'), thrIn = $('#thr'), segs = [].slice.call(setSheet.querySelectorAll('.seg'));
+  var ctBtn = $('#cam-test'), ctVideo = $('#set-video'), ctMsg = $('#cam-msg'), diagEl = $('#diag');
+  var diagCv = $('#diag-cv'), diagCx = diagCv.getContext('2d'), dFill = $('#dfill'), dThr = $('#dthr'), dState = $('#dstate');
+  var DSTATE = { learn: 'じゅんび', ready: 'まってる', cool: 'ピッ済み' };
+  var ct = { stream: null, timer: 0, gen: 0, det: null };
+  function segVal(k) { var v = S[k]; return typeof v === 'boolean' ? (v ? '1' : '0') : String(v); }
+  function segRefresh() {
+    segs.forEach(function (g) {
+      var cv = segVal(g.getAttribute('data-k'));
+      [].forEach.call(g.children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === cv)); });
+    });
+    thrIn.value = String(S.sens); $('#thr-val').textContent = String(S.sens);
+  }
+  function applySettings() {
+    muted = !S.sound; voiceOff = !S.voice;
+    if ((muted || voiceOff) && 'speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+  }
+  segs.forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('button') : null; if (!b || !g.contains(b)) return;
+      var k = g.getAttribute('data-k'), v = b.getAttribute('data-v');
+      if (typeof S[k] === 'boolean') S[k] = v === '1'; else if (typeof S[k] === 'number') S[k] = parseInt(v, 10); else S[k] = v;
+      segRefresh(); applySettings(); saveSettings();
+    });
+  });
+  thrIn.addEventListener('input', function () {
+    S.sens = Math.max(1, Math.min(5, parseInt(thrIn.value, 10) || 3)); $('#thr-val').textContent = String(S.sens);
+    if (ct.det) ct.det.setSens(S.sens);
+    saveSettings();
+  });
+  /* 診断表示: 中央領域の枠つき映像・変化量バー・しきい値線・状態（「カメラをためす」の あいだだけ） */
+  function camDiag(r, v) {
+    try {
+      diagCx.drawImage(v, 0, 0, diagCv.width, diagCv.height);
+      diagCx.lineWidth = 3; diagCx.strokeStyle = '#3CCFB4'; diagCx.setLineDash([6, 4]);
+      var w = diagCv.width, h = diagCv.height;
+      diagCx.strokeRect(Math.round(w * 0.2), Math.round(h * 0.15), Math.round(w * 0.6), Math.round(h * 0.7));
+      diagCx.setLineDash([]);
+    } catch (e) {}
+    dFill.style.width = Math.round(r.level * 100) + '%';
+    dFill.classList.toggle('hot', r.level >= r.thrLevel);
+    dThr.style.left = (r.thrLevel * 100) + '%';
+    dState.textContent = (DSTATE[r.state] || r.state) + '（へんか ' + Math.round(r.frac * 100) + '%）';
+  }
+  function ctStop() {
+    ct.gen++;
+    if (ct.timer) { clearInterval(ct.timer); ct.timer = 0; }
+    if (ct.stream) { try { ct.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} ct.stream = null; }
+    try { ctVideo.pause(); ctVideo.srcObject = null; } catch (e) {}
+    ct.det = null; diagEl.hidden = true; dState.textContent = 'カメラなし'; dFill.style.width = '0%';
+  }
+  function ctTick() {
+    if (!ct.det || ctVideo.readyState < 2) return;
+    var d;
+    try { camCtx.drawImage(ctVideo, 0, 0, 64, 48); d = camCtx.getImageData(0, 0, 64, 48).data; } catch (e) { return; }
+    camDiag(ct.det.feed(d, 64, 48, performance.now()), ctVideo);
+  }
+  function ctStart() {
+    ctStop(); ctMsg.hidden = true;
+    var gen = ct.gen, pr;
+    try {
+      var md = navigator.mediaDevices;
+      if (!md || !md.getUserMedia) { ctMsg.hidden = false; return; }
+      pr = md.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
+    } catch (e) { ctMsg.hidden = false; return; }
+    pr.then(function (stream) {
+      if (gen !== ct.gen || setSheet.hidden) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
+      ct.stream = stream; ctVideo.muted = true; ctVideo.srcObject = stream;
+      try { var pp = ctVideo.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
+      diagEl.hidden = false;
+      ct.det = createCamDetector({ sens: S.sens });
+      ct.timer = setInterval(ctTick, 80);
+    }, function () { if (gen === ct.gen) ctMsg.hidden = false; });
+  }
+  ctBtn.addEventListener('click', function () { audio(); ctStart(); });
+  function openSettings() {
+    setOpen = true;
+    if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    ctMsg.hidden = true; diagEl.hidden = true;
+    segRefresh(); setSheet.hidden = false;
+    var body = setSheet.querySelector('.setbody'); if (body) body.scrollTop = 0;
+  }
+  function closeSettings() {
+    ctStop(); setSheet.hidden = true; setOpen = false; saveSettings();
+  }
+  $('#setx').addEventListener('click', closeSettings);
+  holdButton(setBtn, 1500, openSettings);
 
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
@@ -3096,7 +3554,8 @@
     { id: 'train', ico: '🚂', lab: 'でんしゃ',       c: '#FFC9C9', say: 'でんしゃ！' },
     { id: 'nurie', ico: '🖍️', lab: 'ぬりえ',         c: '#FFD9A8', say: 'ぬりえ！' },
     { id: 'aiueo', ico: 'あ',  lab: 'あいうえお',     c: '#FFE0F0', say: 'あいうえお！' },
-    { id: 'abc',   html: '<span class="abc-ico"><b style="color:#E8362E">A</b><b style="color:#2F6FEF">B</b><b style="color:#2FB34F">C</b></span>', lab: 'ABC', c: '#F6E3BD', say: 'えーびーしー！' }
+    { id: 'abc',   html: '<span class="abc-ico"><b style="color:#E8362E">A</b><b style="color:#2F6FEF">B</b><b style="color:#2FB34F">C</b></span>', lab: 'ABC', c: '#F6E3BD', say: 'えーびーしー！' },
+    { id: 'clock', ico: '🕒', lab: 'とけい',         c: '#CFE8FF', say: 'とけい！' }
   ];
   TILES.forEach(function (t) {
     var b = document.createElement('button');
@@ -3116,21 +3575,12 @@
     cur = name;
     homeEl.hidden = !!name;
     homeBtn.hidden = !name;
+    setBtn.hidden = !!name;
     if (!name) $('#clear').hidden = true;
     if (name) { games[name].el.hidden = false; games[name].enter(); }
   }
   homeBtn.addEventListener('click', function () { audio(); go(null); tone(520, 0.12, 'triangle', 0.1); });
 
-  var mute = $('#mute');
-  holdButton(mute, 1500, function () {
-    if (!muted) tone(880, 0.1, 'triangle', 0.16);   /* 消音にする直前の「ポッ」 */
-    muted = !muted;
-    if (!muted) tone(880, 0.1, 'triangle', 0.16);
-    mute.textContent = muted ? '🔇' : '🔊';
-    mute.setAttribute('aria-pressed', String(muted));
-    mute.setAttribute('aria-label', muted ? 'おとをだす（ながおし）' : 'おとをけす（ながおし）');
-    if (muted && 'speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
-  });
   window.addEventListener('resize', function () {
     if (cur && games[cur].resize) games[cur].resize();
   });
