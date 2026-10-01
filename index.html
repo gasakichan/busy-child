@@ -368,6 +368,8 @@
     display: flex; flex-wrap: wrap; align-content: center; align-items: center; justify-content: flex-start;
     font-size: clamp(22px, 6vw, 34px); line-height: 1.1; overflow: hidden;
   }
+  .basket .bx { position: relative; display: inline-block; width: .85em; height: .75em; margin: 0 .12em; border-radius: 4px; background: var(--c, #FF9124); box-shadow: inset 0 -.22em 0 rgba(0,0,0,.16), inset 0 0 0 2px rgba(0,0,0,.12); }
+  .basket .bx::after { content: ""; position: absolute; left: 38%; width: 24%; top: 0; bottom: 0; background: rgba(255,255,255,.55); }
   .basket .hint { font-size: 13px; opacity: .45; width: 100%; text-align: center; }
   .paybtn {
     flex: 0 0 auto; align-self: center; max-height: 120px; min-width: 92px; min-height: 80px; border: 0; border-radius: 18px; background: #FFD21F; color: var(--ink);
@@ -387,30 +389,64 @@
   }
   .prod:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--shadow); }
   .prod .pe { font-size: clamp(34px, min(6.5vh, 12vw), 80px); line-height: 1.05; }
+  .prod { position: relative; }
+  .prod .pe, .prod .pn { position: relative; left: -12px; }
   .prod .pn { font-size: clamp(12px, 3.4vw, 18px); line-height: 1.1; }
-  .paypanel { flex: 0 0 auto; height: var(--shelfh); min-width: 0; padding: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
-  .coins { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; }
-  .coin {
-    flex: 0 0 auto; width: var(--cs); height: var(--cs); border-radius: 50%; padding: 0;
-    border: 4px solid #C3CAD6; color: #4B5870; font-size: calc(var(--cs) * .3); font-family: "Courier New", ui-monospace, monospace;
-    background: radial-gradient(circle at 34% 28%, #fff 0 12%, #E6EAF0 40%, #AEB6C3 100%);
-    box-shadow: inset 0 0 0 5px rgba(255,255,255,.55), 0 4px 0 var(--shadow);
+  .prod .tag {
+    position: absolute; right: 6px; bottom: 5px; padding: 1px 7px 1px 10px; border-radius: 4px 8px 8px 4px; background: #FFE04A; color: var(--ink);
+    font-size: clamp(12px, 3.4vw, 16px); font-weight: 800; line-height: 1.25; box-shadow: 0 2px 0 rgba(43,58,103,.25);
+    clip-path: polygon(8px 0, 100% 0, 100% 100%, 8px 100%, 0 50%);
   }
-  .coin { position: relative; z-index: 2; }
-  .coin.gone { visibility: hidden; pointer-events: none; }
+  .paypanel { flex: 0 0 auto; height: var(--shelfh); min-width: 0; padding: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
+  .paystat { flex: 0 0 auto; text-align: center; font-size: clamp(16px, 4.6vw, 24px); font-weight: 800; color: var(--ink); min-height: 1.3em; }
+  .coins { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; }
+  /* おかねの山（おもちゃのお金。本物のデザインは写さない） */
+  .stk {
+    position: relative; flex: 0 0 auto; width: 84px; height: 92px; padding: 0; border: 0; border-radius: 16px; background: none;
+    transition: opacity .3s, visibility 0s .3s;
+  }
+  .stk:active .lay { transform: translateY(3px); }
+  .stk.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+  .stk .lay { position: absolute; inset: 0; pointer-events: none; }
+  .stk .bdg {
+    position: absolute; top: 0; right: 0; z-index: 3; min-width: 30px; height: 26px; padding: 0 6px; border-radius: 13px; background: #F2463C; color: #fff;
+    font-size: 16px; line-height: 26px; text-align: center; box-shadow: 0 2px 0 var(--shadow), 0 0 0 2px #fff; pointer-events: none;
+  }
+  .mny { position: absolute; left: 50%; top: 50%; display: block; box-sizing: border-box; width: var(--d); height: var(--d); border-radius: 50%; font-family: "Courier New", ui-monospace, monospace; font-weight: 700; }
+  .mny i { font-style: normal; }
+  .mny .lb { position: absolute; left: 0; right: 0; top: 50%; margin-top: -.5em; text-align: center; line-height: 1; font-size: calc(var(--d) * .32); }
+  .mny .hl { position: absolute; left: 50%; top: 27%; width: 24%; height: 24%; margin-left: -12%; border-radius: 50%; background: #DDF6EC; box-shadow: inset 0 0 0 2px rgba(0,0,0,.2); }
+  .m5 .lb, .m50 .lb { top: auto; bottom: 11%; margin-top: 0; }
+  .m1 { --d: 40px; background: radial-gradient(circle at 34% 28%, #fff 0 14%, #F1F3F6 45%, #D3D8E0 100%); border: 3px solid #E4E8EE; color: #667287; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
+  .m5 { --d: 48px; background: radial-gradient(circle at 34% 28%, #FFF3B0 0 12%, #F6CF4B 45%, #D9A92A 100%); border: 3px solid #E9BF3A; color: #7A5A10; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
+  .m10 { --d: 48px; background: radial-gradient(circle at 34% 28%, #F3B08A 0 12%, #CD7A44 45%, #A25A2B 100%); border: 3px solid #B86B38; color: #fff; box-shadow: 0 2px 0 rgba(43,58,103,.3); }
+  .m50 { --d: 48px; background: radial-gradient(circle at 34% 28%, #fff 0 12%, #DDE2EA 45%, #A9B1BF 100%); border: 3px solid #C3CAD6; color: #4B5870; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
+  .m100 { --d: 58px; background: radial-gradient(circle at 34% 28%, #fff 0 12%, #E6EAF0 40%, #AEB6C3 100%); border: 4px solid #C3CAD6; color: #4B5870; box-shadow: inset 0 0 0 4px rgba(255,255,255,.5), 0 3px 0 rgba(43,58,103,.25); }
+  .m500 { --d: 68px; background: radial-gradient(circle at 34% 28%, #FFF3B0 0 12%, #F6CF4B 42%, #D9A92A 100%); border: 4px solid #E9BF3A; color: #7A5A10; box-shadow: inset 0 0 0 4px rgba(255,255,255,.4), 0 3px 0 rgba(43,58,103,.25); }
+  .m1000 { width: 76px; height: 44px; border-radius: 8px; background: #BFE6FF; border: 3px solid #5BA8E0; color: #1F5F99; box-shadow: 0 3px 0 rgba(43,58,103,.25); }
+  .m1000 .bc { position: absolute; left: 50%; top: 2px; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2px #5BA8E0; font-size: 9px; line-height: 28px; text-align: center; letter-spacing: -.5px; }
+  .m1000 .be { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; line-height: 1; text-align: center; }
+  .m1000 .bs { position: absolute; top: 1px; font-size: 10px; line-height: 1; color: #F2B01F; }
+  .m1000 .bs1 { left: 3px; } .m1000 .bs2 { right: 3px; }
   .tray {
     flex: 0 0 auto; height: 64px; margin: 0 10px; border-radius: 16px; background: #6B7A99; box-shadow: inset 0 5px 0 rgba(0,0,0,.25);
     display: flex; align-items: center; gap: 4px; padding: 0 10px; overflow: hidden; color: #fff;
   }
   .tray .tc { flex: 1; display: flex; flex-wrap: nowrap; gap: 2px; align-items: center; min-width: 0; overflow: hidden; }
-  .tray .tc i { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #B7BFCC); }
-  .tray .tw { flex: 0 0 auto; font-size: 24px; min-width: 3.5em; text-align: right; }
+  .tray .tc { flex-wrap: wrap; align-content: center; }
+  .tray .tm { flex: 0 0 auto; display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #B7BFCC); }
+  .tray .tm.t1 { width: 14px; height: 14px; } .tray .tm.t100 { width: 22px; height: 22px; } .tray .tm.t500 { width: 26px; height: 26px; }
+  .tray .tm.t5, .tray .tm.t500 { background: radial-gradient(circle at 35% 30%, #FFF3B0, #D9A92A); }
+  .tray .tm.t10 { background: radial-gradient(circle at 35% 30%, #F3B08A, #A25A2B); }
+  .tray .tm.t1000 { width: 30px; height: 18px; border-radius: 4px; background: #BFE6FF; box-shadow: inset 0 0 0 2px #5BA8E0; }
+  .tray .chip { display: inline-flex; align-items: center; gap: 3px; margin-right: 6px; font-size: 14px; }
+  .tray .tw { flex: 0 0 auto; font-size: 15px; min-width: 4.6em; text-align: right; }
   .receipt { flex: 1; min-height: 0; margin: 0 10px; display: flex; flex-direction: column; align-items: center; }
   .rslot { flex: 0 0 auto; width: 86%; height: 14px; border-radius: 8px; background: #3E4A63; box-shadow: 0 3px 0 var(--shadow); z-index: 2; }
   .rwin { flex: 1; min-height: 0; width: 76%; overflow: hidden; margin-top: -4px; }
   .paper {
     background: #fff; color: #333; padding: 8px 10px 14px; border-radius: 0 0 6px 6px; box-shadow: 0 3px 0 var(--shadow);
-    font-family: "Courier New", ui-monospace, monospace; font-weight: 700; font-size: 14px; line-height: 1.3;
+    font-family: "Courier New", ui-monospace, monospace; font-weight: 700; font-size: 13px; line-height: 1.25;
     background-image: linear-gradient(transparent 94%, #eee 94%); background-size: 100% 6px;
   }
   .paper .rh { text-align: center; font-size: 16px; border-bottom: 2px dashed #bbb; padding-bottom: 3px; margin-bottom: 3px; }
@@ -639,6 +675,7 @@
     </div>
     <div class="shelf" id="shelf"></div>
     <div class="paypanel" id="paypanel" hidden>
+      <div class="paystat" id="paystat" aria-live="off"></div>
       <div class="coins" id="coins"></div>
       <div class="tray" id="tray"><div class="tc" id="tray-coins"></div><div class="tw" id="tray-word"></div></div>
       <div class="receipt" id="receipt" hidden><div class="rslot"></div><div class="rwin"><div class="paper" id="paper-r"></div></div></div>
@@ -647,7 +684,6 @@
       <h3>おとなの設定</h3>
       <label>感度（しきい値: <span id="thr-val">40</span>）小さいほど敏感
         <input type="range" id="thr" min="15" max="90" step="1" value="40"></label>
-      <button class="sbtn" id="plainbtn" type="button" aria-pressed="false">ふつうのピッ（色判定なし・ランダム）</button>
       <button class="sbtn close" id="setclose" type="button">とじる</button>
     </div>
     <div class="fx" id="fx-shop"></div>
@@ -1450,54 +1486,59 @@
 
   /* ====== 9. おみせやさん ====== */
   function yen(n) {
-    n = Math.max(0, Math.min(9900, Math.floor(n / 100) * 100));
+    n = Math.max(0, Math.min(9999, Math.floor(n)));
     var T = ['', 'せん', 'にせん', 'さんぜん', 'よんせん', 'ごせん', 'ろくせん', 'ななせん', 'はっせん', 'きゅうせん'];
     var Hh = ['', 'ひゃく', 'にひゃく', 'さんびゃく', 'よんひゃく', 'ごひゃく', 'ろっぴゃく', 'ななひゃく', 'はっぴゃく', 'きゅうひゃく'];
-    var parts = [], th = Math.floor(n / 1000), hu = Math.floor((n % 1000) / 100);
+    var Tn = ['', 'じゅう', 'にじゅう', 'さんじゅう', 'よんじゅう', 'ごじゅう', 'ろくじゅう', 'ななじゅう', 'はちじゅう', 'きゅうじゅう'];
+    var O = ['', 'いち', 'に', 'さん', 'よ', 'ご', 'ろく', 'なな', 'はち', 'きゅう'];
+    var parts = [], th = Math.floor(n / 1000), hu = Math.floor((n % 1000) / 100), te = Math.floor((n % 100) / 10), on = n % 10;
     if (T[th]) parts.push(T[th]);
     if (Hh[hu]) parts.push(Hh[hu]);
-    if (!parts.length) parts.push('ぜろ');
-    parts.push('えん');
+    if (Tn[te]) parts.push(Tn[te]);
+    if (on) parts.push(O[on] + 'えん');
+    else { if (!parts.length) parts.push('ぜろ'); parts.push('えん'); }
     return parts.join(' ');
   }
   /* end yen */
 
   var PROD = {
-    carrot:   { e: '🥕', n: 'にんじん', p: 100, c: '#FFD9B8' },
-    tomato:   { e: '🍅', n: 'トマト',   p: 200, c: '#FFC9C4' },
-    apple:    { e: '🍎', n: 'りんご',   p: 100, c: '#FFD0CC' },
-    banana:   { e: '🍌', n: 'バナナ',   p: 300, c: '#FFEFA3' },
-    cucumber: { e: '🥒', n: 'きゅうり', p: 100, c: '#C9F0C9' },
-    pepper:   { e: '🫑', n: 'ピーマン', p: 200, c: '#BFEBB8' },
-    eggplant: { e: '🍆', n: 'なす',     p: 200, c: '#DCCFFF' },
-    peach:    { e: '🍑', n: 'もも',     p: 500, c: '#FFD3E3' },
-    fish:     { e: '🐟', n: 'おさかな', p: 500, c: '#C4E3FF' },
-    egg:      { e: '🥚', n: 'たまご',   p: 300, c: '#FFF3DC' },
-    onigiri:  { e: '🍙', n: 'おにぎり', p: 100, c: '#F1F1F1' }
+    carrot:   { e: '🥕', n: 'にんじん', p: 98, c: '#FFD9B8' },
+    tomato:   { e: '🍅', n: 'トマト',   p: 150, c: '#FFC9C4' },
+    apple:    { e: '🍎', n: 'りんご',   p: 125, c: '#FFD0CC' },
+    banana:   { e: '🍌', n: 'バナナ',   p: 198, c: '#FFEFA3' },
+    cucumber: { e: '🥒', n: 'きゅうり', p: 45, c: '#C9F0C9' },
+    pepper:   { e: '🫑', n: 'ピーマン', p: 76, c: '#BFEBB8' },
+    eggplant: { e: '🍆', n: 'なす',     p: 88, c: '#DCCFFF' },
+    peach:    { e: '🍑', n: 'もも',     p: 550, c: '#FFD3E3' },
+    fish:     { e: '🐟', n: 'おさかな', p: 1280, c: '#C4E3FF' },
+    egg:      { e: '🥚', n: 'たまご',   p: 230, c: '#FFF3DC' },
+    onigiri:  { e: '🍙', n: 'おにぎり', p: 130, c: '#F1F1F1' }
   };
-  var PRODLIST = Object.keys(PROD).map(function (k) { return PROD[k]; });
   var SHELF = ['carrot', 'tomato', 'apple', 'banana', 'cucumber', 'eggplant', 'peach', 'fish'];
   var shopStage = $('#stage-shop'), fxShop = $('#fx-shop'), scanwin = $('#scanwin'), basketEl = $('#basket');
   var shelfEl = $('#shelf'), payPanel = $('#paypanel'), coinsEl = $('#coins'), trayEl = $('#tray');
   var trayCoins = $('#tray-coins'), trayWord = $('#tray-word'), receiptEl = $('#receipt'), paperEl = $('#paper-r');
   var lcd = { ico: $('#lcd-ico'), name: $('#lcd-name'), price: $('#lcd-price'), say: $('#lcd-say'), sum: $('#lcd-sum'), tot: $('#lcd-tot') };
   var payBtn = $('#paybtn'), setPanel = $('#setpanel');
-  var shopOpen = false, shopPhase = 'shop', shopTotal = 0, shopBasket = [], totalTids = [], coinN = 0, coinGot = 0, lpId = 0;
+  var shopOpen = false, shopPhase = 'shop', shopTotal = 0, shopBasket = [], totalTids = [], lpId = 0, payTids = [];
+  var DEN = [1000, 500, 100, 50, 10, 5, 1], payStk = [], payTotalN = 0, payLanded = 0, paidSum = 0, payChips = false, trayCnt = {}, trayOrder = [];
+  var payStat = $('#paystat');
 
   function lcdItem(p, txt) {
-    lcd.ico.textContent = p.e; lcd.name.textContent = p.n; lcd.price.textContent = '¥' + p.p; lcd.say.textContent = txt || '';
+    lcd.ico.textContent = p.e; lcd.name.textContent = p.cam ? 'ピッ！' : p.n; lcd.price.textContent = fmt(p.p); lcd.say.textContent = txt || '';
   }
   function lcdMsg(name, txt) {
     lcd.ico.textContent = ''; lcd.name.textContent = name; lcd.price.textContent = ''; lcd.say.textContent = txt || '';
   }
-  function showTotal(v) { lcd.sum.textContent = '¥' + v; }
+  function fmt(v) { return '¥' + v.toLocaleString('ja-JP'); }
+  function showTotal(v) { lcd.sum.textContent = fmt(v); }
   function animTotal(from, to) {
     totalTids.forEach(cancel); totalTids = [];
     var steps = 8;
     for (var i = 1; i <= steps; i++) {
       (function (i) {
         totalTids.push(later(function () {
-          showTotal(i === steps ? to : Math.round((from + (to - from) * i / steps) / 10) * 10);
+          showTotal(i === steps ? to : Math.round(from + (to - from) * i / steps));
         }, i * 45));
       })(i);
     }
@@ -1509,7 +1550,9 @@
       return;
     }
     shopBasket.forEach(function (it, i) {
-      var s = document.createElement('span'); s.textContent = it.e; basketEl.appendChild(s);
+      var s = document.createElement('span');
+      if (it.cam) { s.className = 'bx'; s.style.setProperty('--c', it.col); s.setAttribute('aria-label', 'はこ'); } else s.textContent = it.e;
+      basketEl.appendChild(s);
       if (popLast && i === shopBasket.length - 1) {
         s.animate([{ transform: 'translateY(-40px) scale(.5)', opacity: 0 }, { transform: 'translateY(0) scale(1.2)', opacity: 1, offset: 0.6 }, { transform: 'translateY(0) scale(1)', opacity: 1 }], { duration: reduce ? 120 : 380, easing: 'ease-out' });
       }
@@ -1517,24 +1560,25 @@
   }
   function shopReset() {
     totalTids.forEach(cancel); totalTids = [];
-    shopPhase = 'shop'; shopTotal = 0; shopBasket = []; coinN = 0; coinGot = 0;
+    shopPhase = 'shop'; shopTotal = 0; shopBasket = [];
+    payTids.forEach(cancel); payTids = []; payStk = []; payTotalN = 0; payLanded = 0; paidSum = 0; trayCnt = {}; trayOrder = [];
     renderBasket(false); showTotal(0);
     lcdMsg('いらっしゃいませ', '');
     lcd.tot.classList.remove('blink');
     shelfEl.hidden = false; payPanel.hidden = true; receiptEl.hidden = true;
-    coinsEl.innerHTML = ''; trayCoins.innerHTML = ''; trayWord.textContent = ''; paperEl.innerHTML = '';
+    coinsEl.innerHTML = ''; trayCoins.innerHTML = ''; trayWord.textContent = ''; paperEl.innerHTML = ''; payStat.textContent = '';
     scanwin.classList.remove('ok');
   }
   function shopScan(prod) {
     if (!shopOpen || shopPhase !== 'shop') return;
     tone(2000, 0.09, 'square', 0.22);
     scanwin.classList.add('ok'); later(function () { scanwin.classList.remove('ok'); }, 260);
-    var txt = prod.n + '、' + yen(prod.p) + '！';
+    var txt = prod.cam ? yen(prod.p) + '！' : prod.n + '、' + yen(prod.p) + '！';
     lcdItem(prod, txt);
     later(function () { if (shopPhase === 'shop') say(txt); }, 250);
-    if (shopBasket.length < 12 && shopTotal + prod.p <= 9900) {
+    if (shopBasket.length < 12 && shopTotal < 9999) {
       var from = shopTotal;
-      shopBasket.push(prod); shopTotal += prod.p;
+      shopBasket.push(prod); shopTotal = Math.min(9999, shopTotal + prod.p);
       renderBasket(true); animTotal(from, shopTotal);
     }
     var r = centerIn(scanwin, fxShop);
@@ -1556,69 +1600,126 @@
   SHELF.forEach(function (k) {
     var p = PROD[k], b = document.createElement('button');
     b.type = 'button'; b.className = 'prod'; b.style.setProperty('--c', p.c);
-    b.setAttribute('aria-label', p.n);
-    b.innerHTML = '<span class="pe">' + p.e + '</span><span class="pn">' + p.n + '</span>';
+    b.setAttribute('aria-label', p.n + ' ' + fmt(p.p));
+    b.innerHTML = '<span class="pe">' + p.e + '</span><span class="pn">' + p.n + '</span><span class="tag">' + fmt(p.p) + '</span>';
     onTap(b, function () { shopTouch(p, b); });
     shelfEl.appendChild(b);
   });
 
-  /* おかいけい */
-  function coinSize(n, w, h) {
-    var gap = 2;
-    for (var s = 150; s >= 80; s -= 2) {
-      var cols = Math.max(1, Math.floor((w + gap) / (s + gap))), rows = Math.ceil(n / cols);
-      if (rows * (s + gap) - gap <= h) return s;
+  /* おかいけい: 合計ちょうどを、大きいお金から順に（貪欲法）そろえる */
+  function greedy(total) {
+    var left = total, out = [];
+    DEN.forEach(function (v) { var n = Math.floor(left / v); if (n > 0) { out.push({ v: v, n: n }); left -= n * v; } });
+    return out;
+  }
+  function mk(v) {
+    var el = document.createElement('span'); el.className = 'mny m' + v;
+    if (v === 1000) el.innerHTML = '<i class="bs bs1">★</i><i class="bs bs2">★</i><i class="bc">1000</i><i class="be">えん</i>';
+    else el.innerHTML = (v === 5 || v === 50 ? '<i class="hl"></i>' : '') + '<i class="lb">' + v + '</i>';
+    return el;
+  }
+  function trayMini(v) { var i = document.createElement('i'); i.className = 'tm t' + v; return i; }
+  function trayRender() {
+    trayCoins.innerHTML = '';
+    if (payChips) {
+      DEN.forEach(function (v) {
+        if (!trayCnt[v]) return;
+        var c = document.createElement('b'); c.className = 'chip';
+        c.appendChild(trayMini(v)); c.appendChild(document.createTextNode('×' + trayCnt[v]));
+        trayCoins.appendChild(c);
+      });
+    } else trayOrder.forEach(function (v) { trayCoins.appendChild(trayMini(v)); });
+  }
+  function renderStack(st) {
+    st.lay.innerHTML = '';
+    var show = Math.min(st.rem, 4);
+    for (var i = show - 1; i >= 0; i--) {
+      var m = mk(st.v); m.style.transform = 'translate(calc(-50% + ' + (i * 2) + 'px), calc(-50% - ' + (i * 2.5) + 'px))';
+      st.lay.appendChild(m);
     }
-    return 80;
+    st.bdg.textContent = '×' + st.rem;
+    if (st.rem <= 0) st.el.classList.add('gone');
+  }
+  function animPaid(from, to) {
+    payTids.forEach(cancel); payTids = [];
+    var steps = 6;
+    for (var i = 1; i <= steps; i++) {
+      (function (i) {
+        payTids.push(later(function () {
+          payStat.textContent = 'はらった: ' + fmt(i === steps ? to : Math.round(from + (to - from) * i / steps)) + ' / ' + fmt(shopTotal);
+        }, i * 40));
+      })(i);
+    }
   }
   function showCoins() {
     if (!shopOpen || shopPhase !== 'pay') return;
-    shelfEl.hidden = true; payPanel.hidden = false; receiptEl.hidden = true; coinsEl.hidden = false; trayEl.hidden = false;
-    coinN = Math.min(10, Math.max(1, Math.round(shopTotal / 100))); coinGot = 0;
+    shelfEl.hidden = true; payPanel.hidden = false; receiptEl.hidden = true; coinsEl.hidden = false; trayEl.hidden = false; payStat.hidden = false;
+    var plan = greedy(shopTotal);
+    payTotalN = 0; plan.forEach(function (p) { payTotalN += p.n; });
+    payLanded = 0; paidSum = 0; payChips = payTotalN > 15; trayCnt = {}; trayOrder = []; payStk = [];
     coinsEl.innerHTML = ''; trayCoins.innerHTML = ''; trayWord.textContent = '';
-    coinsEl.style.setProperty('--cs', coinSize(coinN, coinsEl.clientWidth, coinsEl.clientHeight) + 'px');
-    for (var i = 0; i < coinN; i++) {
+    payStat.textContent = 'はらった: ' + fmt(0) + ' / ' + fmt(shopTotal);
+    plan.forEach(function (p) {
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'coin'; b.textContent = '100'; b.setAttribute('aria-label', 'コイン');
-      onTap(b, (function (b) { return function () { coinTap(b); }; })(b));
-      coinsEl.appendChild(b);
-    }
+      b.type = 'button'; b.className = 'stk'; b.setAttribute('aria-label', yen(p.v));
+      b.innerHTML = '<span class="lay"></span><b class="bdg"></b>';
+      var st = { v: p.v, rem: p.n, el: b, lay: b.firstChild, bdg: b.lastChild };
+      payStk.push(st); coinsEl.appendChild(b); renderStack(st);
+      onTap(b, function () { payTap(st); });
+    });
     lcdMsg('おかねを いれてね', 'おかねを いれてね');
     say('おかねを いれてね');
   }
-  function coinTap(b) {
-    if (b.__t || shopPhase !== 'pay') return;
-    b.__t = true; coinGot++;
-    var k = coinGot;
-    tone(1900, 0.18, 'sine', 0.16, 2300); tone(2600, 0.25, 'sine', 0.1, 0, 0.05);
-    say(NUMV[k]); trayWord.textContent = NUMV[k];
-    var a = centerIn(b, fxShop), t = centerIn(trayEl, fxShop);
-    var an = b.animate([
-      { transform: 'translate(0,0) scale(1)', opacity: 1 },
-      { transform: 'translate(' + (t.x - a.x) + 'px,' + (t.y - a.y) + 'px) scale(.3)', opacity: 0.9 }
+  function billSound() {
+    var c = audio(); if (!c || muted) return;
+    var len = Math.floor(c.sampleRate * 0.11);
+    var buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2500;
+    var g = c.createGain(); g.gain.value = 0.35;
+    src.connect(hp); hp.connect(g); g.connect(c.destination);
+    src.start();
+  }
+  function payTap(st) {
+    if (shopPhase !== 'pay' || st.rem <= 0) return;
+    st.rem--; var from = paidSum; paidSum += st.v;
+    if (st.v === 1000) billSound(); else { tone(1900, 0.18, 'sine', 0.16, 2300); tone(2600, 0.25, 'sine', 0.1, 0, 0.05); }
+    var w = yen(st.v) + '！';
+    say(w); trayWord.textContent = yen(st.v);
+    animPaid(from, paidSum);
+    var a = centerIn(st.lay, fxShop), t = centerIn(trayEl, fxShop);
+    var f = mk(st.v); f.style.left = a.x + 'px'; f.style.top = a.y + 'px'; f.style.transform = 'translate(-50%, -50%)'; fxShop.appendChild(f);
+    renderStack(st);
+    var an = f.animate([
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+      { transform: 'translate(calc(-50% + ' + (t.x - a.x) + 'px), calc(-50% + ' + (t.y - a.y) + 'px)) scale(.45)', opacity: 0.95 }
     ], { duration: reduce ? 120 : 350, easing: 'ease-in', fill: 'forwards' });
     an.onfinish = function () {
-      b.classList.add('gone');
-      var d = document.createElement('i'); trayCoins.appendChild(d);
-      if (shopOpen && coinGot >= coinN && shopPhase === 'pay') finishPay();
+      f.remove();
+      trayCnt[st.v] = (trayCnt[st.v] || 0) + 1; trayOrder.push(st.v); trayRender();
+      payLanded++;
+      if (shopOpen && payLanded >= payTotalN && shopPhase === 'pay') finishPay();
     };
   }
   function finishPay() {
     shopPhase = 'done';
     later(function () {
-      say('ありがとうございました！');
-      lcdMsg('ありがとう', 'ありがとうございました！');
+      say('ちょうど です！ ありがとうございました！');
+      lcdMsg('ありがとう', 'ちょうど です！ ありがとう！');
       arpeggio();
       burst(fxShop, fxShop.clientWidth / 2, fxShop.clientHeight * 0.4, { n: 14, emoji: ['⭐', '🎉', '✨', '💮'], far: 2 });
       showReceipt();
     }, 500);
-    later(shopReset, 500 + 5200);
+    later(shopReset, 500 + 6200);
   }
   function showReceipt() {
-    coinsEl.hidden = true; trayEl.hidden = true; receiptEl.hidden = false;
+    coinsEl.hidden = true; trayEl.hidden = true; payStat.hidden = true; receiptEl.hidden = false;
     var h = '<div class="rh">おみせやさん</div>';
-    shopBasket.forEach(function (it) { h += '<div class="rl"><span>' + it.e + ' ' + it.n + '</span><span>¥' + it.p + '</span></div>'; });
-    h += '<div class="rt"><span>ごうけい</span><span>¥' + shopTotal + '</span></div><div class="rf">ありがとう 🎀</div>';
+    shopBasket.forEach(function (it) { h += '<div class="rl"><span>' + (it.cam ? '📦 しなもの' : it.e + ' ' + it.n) + '</span><span>' + fmt(it.p) + '</span></div>'; });
+    h += '<div class="rt"><span>ごうけい</span><span>' + fmt(shopTotal) + '</span></div>';
+    h += '<div class="rl"><span>おあずかり</span><span>' + fmt(paidSum) + '</span></div>';
+    h += '<div class="rl"><span>おつり</span><span>' + fmt(paidSum - shopTotal) + '</span></div><div class="rf">ありがとう 🎀</div>';
     paperEl.innerHTML = h;
     paperEl.animate([{ transform: 'translateY(-100%)' }, { transform: 'translateY(0)' }], { duration: reduce ? 200 : 1700, easing: 'steps(16, end)', fill: 'forwards' });
     if (!reduce) for (var i = 0; i < 12; i++) tone(150 + (i % 2) * 40, 0.07, 'square', 0.05, 0, i * 0.14);
@@ -1638,8 +1739,8 @@
   });
 
   /* おとな用: タイトル長押し 2 秒で設定 */
-  var thr = 40, plainMode = false;
-  var shopTitle = $('#shop-title'), thrIn = $('#thr'), plainBtn = $('#plainbtn');
+  var thr = 40;
+  var shopTitle = $('#shop-title'), thrIn = $('#thr');
   shopTitle.addEventListener('pointerdown', function (e) {
     e.preventDefault(); audio(); cancel(lpId);
     lpId = later(function () { lpId = 0; setPanel.hidden = false; }, 2000);
@@ -1648,7 +1749,6 @@
     shopTitle.addEventListener(ev, function () { cancel(lpId); lpId = 0; });
   });
   thrIn.addEventListener('input', function () { thr = parseInt(thrIn.value, 10) || 40; $('#thr-val').textContent = String(thr); });
-  plainBtn.addEventListener('click', function () { plainMode = !plainMode; plainBtn.setAttribute('aria-pressed', String(plainMode)); });
   $('#setclose').addEventListener('click', function () { setPanel.hidden = true; });
 
   /* カメラ（使えれば）。失敗しても何も見せず、タッチモードのまま */
@@ -1657,7 +1757,7 @@
   var CN = 64 * 48;
   var camWork = document.createElement('canvas'); camWork.width = 64; camWork.height = 48;
   var camCtx = camWork.getContext('2d', { willReadFrequently: true });
-  var cs = null, camAlt = { red: 0, green: 0, white: 0 };
+  var cs = null;
   function camStop() {
     cam.gen++;
     if (cam.timer) { clearInterval(cam.timer); cam.timer = 0; }
@@ -1688,33 +1788,41 @@
     }, function () { if (gen === cam.gen) camFail(); });
   }
   holdButton(camRetry, 1500, function () { audio(); camStart(); });
-  function camClassify(d, idx, ch) {
-    var bins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], hs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], valid = 0, k;
-    for (k = 0; k < ch; k++) {
+  /* カメラの品物は名前を言わない: 値段はランダム、かごの箱の色だけ映像の主な色から決める（色名は言わない） */
+  var BOXCOL = ['#F2463C', '#2F7BF5', '#FFD21F', '#34B556', '#FF7EB6', '#FF9124', '#9358E0', '#9A5B32'];
+  function camColor(d, idx, ch) {
+    var bins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], valid = 0, k;
+    if (d && idx) for (k = 0; k < ch; k++) {
       var j = idx[k] * 4, r = d[j] / 255, g = d[j + 1] / 255, b = d[j + 2] / 255;
       var mx = Math.max(r, g, b), mn = Math.min(r, g, b), dl = mx - mn, s = mx ? dl / mx : 0;
       if (s < 0.25 || mx < 0.15) continue;
       var h;
       if (mx === r) h = 60 * (((g - b) / dl) % 6); else if (mx === g) h = 60 * ((b - r) / dl + 2); else h = 60 * ((r - g) / dl + 4);
       if (h < 0) h += 360;
-      var sh = (h + 15) % 360, bi = Math.floor(sh / 30);
-      bins[bi]++; hs[bi] += sh; valid++;
+      bins[Math.floor(((h + 15) % 360) / 30)]++; valid++;
     }
-    if (valid < Math.max(10, ch * 0.25)) {
-      camAlt.white++;
-      return camAlt.white % 2 ? PROD.egg : PROD.onigiri;
-    }
+    if (valid < Math.max(10, ch * 0.25)) return pick(BOXCOL);
     var best = 0;
     for (k = 1; k < 12; k++) if (bins[k] > bins[best]) best = k;
-    var hue = (hs[best] / bins[best] - 15 + 360) % 360;
-    if (hue >= 345 || hue < 15) { camAlt.red++; return camAlt.red % 2 ? PROD.tomato : PROD.apple; }
-    if (hue < 40) return PROD.carrot;
-    if (hue < 70) return PROD.banana;
-    if (hue < 170) { camAlt.green++; return camAlt.green % 2 ? PROD.cucumber : PROD.pepper; }
-    if (hue < 250) return PROD.fish;
-    if (hue < 300) return PROD.eggplant;
-    return PROD.peach;
+    var hue = best * 30;
+    if (hue >= 330 || hue < 15) return BOXCOL[0];
+    if (hue < 45) return BOXCOL[5];
+    if (hue < 75) return BOXCOL[2];
+    if (hue < 165) return BOXCOL[3];
+    if (hue < 255) return BOXCOL[1];
+    if (hue < 315) return BOXCOL[6];
+    return BOXCOL[4];
   }
+  function camPrice() {
+    var r = Math.random(), v;
+    if (r < 0.40) v = (1 + Math.floor(Math.random() * 49)) * 10;
+    else if (r < 0.65) v = pick([98, 150, 180, 198, 250, 280, 298, 350, 398, 480, 498]);
+    else if (r < 0.85) v = 1 + Math.floor(Math.random() * 199);
+    else if (r < 0.95) v = (50 + Math.floor(Math.random() * 49)) * 10;
+    else v = (100 + Math.floor(Math.random() * 99)) * 10;
+    return v;
+  }
+  function camItem(d, idx, ch) { return { e: '🏷️', n: '', p: camPrice(), cam: true, col: camColor(d, idx, ch) }; }
   function camTick() {
     var v = camVideo;
     if (!shopOpen || !cam.on || !cs || v.readyState < 2) return;
@@ -1763,7 +1871,7 @@
         cs.presentMs += dt;
         if (cs.presentMs >= 250 && now - cs.lastScan >= 1200) {
           cs.state = 'wait'; cs.releaseMs = 0; cs.lastScan = now; cs.presentMs = 0;
-          shopScan(plainMode ? pick(PRODLIST) : camClassify(d, idx, ch));
+          shopScan(camItem(d, idx, ch));
         }
       } else cs.presentMs = 0;
     } else {
