@@ -665,12 +665,8 @@
   .abc-hole .abc-pc.placed { position: absolute; inset: 0; width: 100%; height: 100%; font-size: var(--fs); transition: none; z-index: 1; pointer-events: none; }
   .abc-pc.placed .abc-g { transform: none; text-shadow: 0 1px 0 var(--pd), 0 2px 0 var(--pd), 0 3px 0 var(--pd), 0 5px 4px rgba(60,35,10,.3); }
   .abc-hole.glow .abc-pc .abc-g { filter: brightness(1.35) drop-shadow(0 0 10px #fff); }
-  .abc-no { position: absolute; left: 50%; top: 42%; z-index: 7; width: clamp(190px, 62vw, 340px); aspect-ratio: 1; pointer-events: none; display: grid; place-items: center; font-family: var(--font-abc); }
-  .abc-no i { position: absolute; clip-path: var(--burst); }
-  .abc-no .b1 { inset: 0; background: #E8262B; }
-  .abc-no .b2 { inset: 4%; background: #fff; }
-  .abc-no .b3 { inset: 9%; background: #FFD21F; }
-  .abc-no b { position: relative; font-size: clamp(66px, 22vw, 150px); font-weight: 700; line-height: 1; color: #E8262B; -webkit-text-stroke: 12px #fff; paint-order: stroke fill; text-shadow: 0 6px 0 rgba(150,0,0,.3); }
+  .abc-finger { position: absolute; left: 0; top: 0; z-index: 7; display: grid; place-items: center; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.95) 0 55%, rgba(255,255,255,.7) 75%, rgba(255,255,255,0) 100%); will-change: transform, opacity; }
+  .abc-finger span { display: block; line-height: 1; transform-origin: 50% 90%; will-change: transform; }
   .abc-ico { --s: clamp(44px, min(13vw, 8.5vh), 88px); display: grid; grid-auto-flow: column; place-content: center; width: var(--s); height: var(--s); border-radius: 22%;
     background: repeating-linear-gradient(92deg, rgba(139,94,40,.12) 0 2px, transparent 2px 7px), #EED9B7;
     box-shadow: 0 4px 0 #C79A5A, inset 0 0 0 2px rgba(255,255,255,.45); font-family: var(--font-abc); font-size: calc(var(--s) * .33); font-weight: 700; line-height: 1; letter-spacing: -.02em; text-shadow: 0 2px 0 rgba(60,35,10,.25); }
@@ -860,7 +856,6 @@
     <div class="abc-nav"><span class="abc-range" id="abc-range"></span></div>
     <div class="abc-board" id="abc-board"></div>
     <div class="abc-box" id="abc-box"></div>
-    <div class="abc-no" id="abc-no" hidden><i class="b1"></i><i class="b2"></i><i class="b3"></i><b>NO!</b></div>
     <div class="fx" id="fx-abc"></div>
   </section>
 
@@ -2840,7 +2835,7 @@
   };
 
   /* ====== 15. ABCパズル ====== */
-  var abcStage = $('#stage-abc'), abcBoard = $('#abc-board'), abcBox = $('#abc-box'), fxAbc = $('#fx-abc'), abcNo = $('#abc-no');
+  var abcStage = $('#stage-abc'), abcBoard = $('#abc-board'), abcBox = $('#abc-box'), fxAbc = $('#fx-abc');
   var abcRangeEl = $('#abc-range');
   var ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   /* 文字名: 英語の声は「大文字 + ピリオド」を 文字名（エイ…）と よむ。まちがえやすい W と Z だけ つづりで わたす */
@@ -2852,16 +2847,8 @@
     ['kite', '🪁'], ['lion', '🦁'], ['moon', '🌙'], ['nose', '👃'], ['orange', '🍊'], ['pig', '🐷'], ['queen', '👸'], ['rabbit', '🐰'], ['sun', '☀️'], ['tiger', '🐯'],
     ['umbrella', '☂️'], ['violin', '🎻'], ['whale', '🐳'], ['xylophone', '🎶'], ['yo-yo', '🪀'], ['zebra', '🦓']];
   var ABC_COL = ['#EF3B33', '#FF8A1F', '#FFC81F', '#2FB34F', '#33BDEB', '#2F6FEF', '#FF6FB1', '#D93AA6', '#8B4FD8', '#14B8A6', '#8DC63F', '#FF6B4A'];
-  var abcAll = false, abcRound = 0, abcHoles = [], abcPieces = [], abcSel = null, abcBusy = false, abcGen = 0, abcNoAnim = null;
+  var abcAll = false, abcRound = 0, abcHoles = [], abcPieces = [], abcSel = null, abcBusy = false, abcGen = 0, abcFinger = null, abcFingerAnims = [], abcFingerT = 0;
   var abcLand = window.matchMedia ? window.matchMedia('(min-aspect-ratio: 4/3)') : { matches: false };
-  abcNo.style.setProperty('--burst', (function () {
-    var pts = [], n = 22, i, a, r;
-    for (i = 0; i < n * 2; i++) {
-      a = (Math.PI * 2 * i) / (n * 2) - Math.PI / 2; r = i % 2 ? 37 : 50;
-      pts.push((50 + r * Math.cos(a)).toFixed(1) + '% ' + (50 + r * Math.sin(a)).toFixed(1) + '%');
-    }
-    return 'polygon(' + pts.join(',') + ')';
-  })());
   function abcDark(h) {
     var n = parseInt(h.slice(1), 16);
     return 'rgb(' + Math.round((n >> 16 & 255) * 0.55) + ',' + Math.round((n >> 8 & 255) * 0.55) + ',' + Math.round((n & 255) * 0.55) + ')';
@@ -2969,7 +2956,7 @@
   }
   function abcBuild(prefilled) {
     abcGen++;
-    abcBoard.innerHTML = ''; abcBox.innerHTML = ''; fxAbc.innerHTML = '';
+    abcFingerClear(); abcBoard.innerHTML = ''; abcBox.innerHTML = ''; fxAbc.innerHTML = '';
     abcHoles = []; abcPieces = []; abcSel = null; abcBusy = !!prefilled;
     var lets = abcLetters(), rows = abcRows(lets.length), k = 0;
     rows.forEach(function (cnt) {
@@ -3123,59 +3110,53 @@
     ], { duration: 1000, easing: 'ease-out' });
     a.onfinish = function () { el.remove(); };
   }
-  /* まちがい: ガツンとはじかれて、ぴょーんと箱に戻る。ギャグ演出（罰ではない） */
+  /* まちがい: こえで「No!」+ ひとさしゆびを ふる。コマは すぐ 箱に もどるだけ */
   function abcWrong(p, h) {
-    var gen = abcGen, hr = h.el.getBoundingClientRect(), nat = abcNatural(p, p.lift);
-    var sx = p.tx, sy = p.ty + (p.lift ? -14 : 0);
-    var vx = hr.left + hr.width / 2 - nat.x, vy = hr.top + hr.height / 2 - nat.y, len = Math.sqrt(vx * vx + vy * vy) || 1;
-    var L = Math.max(len - hr.width * 0.62, len * 0.3), tx = vx / len * L, ty = vy / len * L;
+    var gen = abcGen, sy = p.ty + (p.lift ? -14 : 0), sx = p.tx;
     p.busy = true; if (abcSel === p) abcSel = null;
     p.lift = 0; p.tx = 0; p.ty = 0; p.el.classList.remove('drag', 'lift'); p.el.classList.add('fly'); p.el.style.transition = 'none'; p.el.style.transform = '';
-    var tr = function (x, y, s, r) { return 'translate(' + x + 'px,' + y + 'px) rotate(' + (r || 0) + 'deg) scale(' + s + ')'; };
-    var A = 220, S = 340, J = 720, T = A + S + J, kf, i, t, dir = Math.random() < 0.5 ? -1 : 1, hop = Math.max(90, Math.min(170, hr.width * 1.1));
-    if (reduce) {
-      kf = [{ transform: tr(sx, sy, 1.2), opacity: 1 }, { transform: tr(tx, ty, 1.1), opacity: 0.2, offset: 0.4 }, { transform: tr(0, 0, 1), opacity: 0.2, offset: 0.6 }, { transform: tr(0, 0, 1), opacity: 1 }];
-      T = 500;
-    } else {
-      kf = [{ transform: tr(sx, sy, 1.2), offset: 0 }, { transform: tr(tx, ty, 1.1), offset: A / T }];
-      for (i = 1; i <= 6; i++) kf.push({ transform: tr(tx + (i % 2 ? 7 : -7), ty, 1.1, (i % 2 ? 3 : -3)), offset: (A + S * i / 6) / T });
-      for (i = 1; i <= 14; i++) {
-        t = i / 14;
-        kf.push({ transform: tr(tx * (1 - t), ty * (1 - t) - 4 * hop * t * (1 - t), 1.1 - 0.1 * t + 0.12 * Math.sin(Math.PI * t), t * dir * 720), offset: (A + S + J * t) / T });
-      }
-    }
-    var an = p.el.animate(kf, { duration: T, easing: 'linear' });
-    later(function () { abcGag(h); }, reduce ? 100 : A);
+    var an = p.el.animate([
+      { transform: 'translate(' + sx + 'px,' + sy + 'px) scale(1.2)' },
+      { transform: 'translate(0px,0px) scale(1)' }
+    ], { duration: 260, easing: 'ease-out' });
+    abcGag(h);
     an.onfinish = function () {
       if (gen !== abcGen) return;
       p.el.classList.remove('fly'); p.el.style.transition = ''; p.busy = false;
     };
   }
+  function abcFingerClear() {
+    abcFingerAnims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
+    abcFingerAnims = [];
+    if (abcFingerT) { clearTimeout(abcFingerT); abcFingerT = 0; }
+    if (abcFinger) { abcFinger.remove(); abcFinger = null; }
+  }
   function abcGag(h) {
     var NOS = [['No!', 'ノー！'], ['Nope!', 'ノープ！'], ['No no no!', 'ノー ノー ノー！'], ['Noooo!', 'ノーーー！']], no = pick(NOS);
     sayEn(no[0], no[1], rand(0.6, 1.8), no[0] === 'Noooo!' ? 0.65 : 1.0);
     boing(); hideWord();
-    if (abcNoAnim) { try { abcNoAnim.cancel(); } catch (e) {} abcNoAnim = null; }
-    abcNo.hidden = false;
-    var rot = rand(-10, 10), base = 'translate(-50%,-50%) rotate(', a;
-    a = abcNo.animate(reduce ? [
-      { opacity: 0, transform: base + '0deg) scale(1)' }, { opacity: 1, transform: base + '0deg) scale(1)', offset: 0.2 },
-      { opacity: 1, transform: base + '0deg) scale(1)', offset: 0.8 }, { opacity: 0, transform: base + '0deg) scale(1)' }
-    ] : [
-      { opacity: 0, transform: base + (rot - 14) + 'deg) scale(0)' },
-      { opacity: 1, transform: base + (rot + 4) + 'deg) scale(1.35)', offset: 0.22 },
-      { opacity: 1, transform: base + (rot - 3) + 'deg) scale(.88)', offset: 0.38 },
-      { opacity: 1, transform: base + rot + 'deg) scale(1.05)', offset: 0.52 },
-      { opacity: 1, transform: base + rot + 'deg) scale(1)', offset: 0.8 },
-      { opacity: 0, transform: base + rot + 'deg) scale(1.1)' }
-    ], { duration: reduce ? 600 : 900, easing: 'ease-out', fill: 'forwards' });
-    abcNoAnim = a;
-    a.onfinish = function () { if (abcNoAnim === a) { abcNo.hidden = true; abcNoAnim = null; } };
-    var hl = h.el.firstChild, d = reduce ? 3 : 10;
-    if (h.anim) { try { h.anim.cancel(); } catch (e) {} }
-    h.anim = hl.animate([0, -d, d, -d, d, -d, d, 0].map(function (v) { return { transform: 'rotate(' + v + 'deg)' }; }), { duration: reduce ? 200 : 560, easing: 'ease-in-out' });
-    abcBoard.animate(reduce ? [{ transform: 'translateX(0)' }, { transform: 'translateX(-2px)' }, { transform: 'translateX(0)' }] :
-      [{ transform: 'translateX(0) rotate(0)' }, { transform: 'translateX(-7px) rotate(-.6deg)' }, { transform: 'translateX(7px) rotate(.6deg)' }, { transform: 'translateX(-5px) rotate(-.4deg)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0) rotate(0)' }], { duration: 380, easing: 'ease-out' });
+    abcFingerClear();
+    var br = abcBoard.getBoundingClientRect(), size = Math.round(Math.max(90, Math.min(200, Math.min(br.width, br.height) * 0.3)));
+    var c = centerIn(h.el, fxAbc), D = 900, N = 45, amp = reduce ? 8 : 22, fin = 0.12 / 0.9, fout = 0.82, i, t, k, kfW = [], kfB = [];
+    var box = document.createElement('div'); box.className = 'abc-finger'; box.setAttribute('aria-hidden', 'true');
+    box.style.width = box.style.height = size + 'px';
+    box.style.margin = (-size / 2) + 'px 0 0 ' + (-size / 2) + 'px';
+    var f = document.createElement('span'); f.textContent = '☝️'; f.style.fontSize = Math.round(size * 0.68) + 'px';
+    box.appendChild(f); fxAbc.appendChild(box); abcFinger = box;
+    var tx = 'translate(' + c.x + 'px,' + c.y + 'px) ';
+    for (i = 0; i <= N; i++) {
+      t = i / N;
+      kfW.push({ transform: 'rotate(' + (amp * Math.sin(Math.PI * 2 * 3 * t)).toFixed(2) + 'deg)', offset: t });
+    }
+    k = [
+      { transform: tx + 'scale(.6)', opacity: 0, offset: 0 },
+      { transform: tx + 'scale(1)', opacity: 1, offset: fin },
+      { transform: tx + 'scale(1)', opacity: 1, offset: fout },
+      { transform: tx + 'scale(1)', opacity: 0, offset: 1 }
+    ];
+    abcFingerAnims = [box.animate(k, { duration: D, easing: 'linear', fill: 'forwards' }), f.animate(kfW, { duration: D, easing: 'linear' })];
+    abcFingerAnims[0].onfinish = function () { if (abcFinger === box) abcFingerClear(); };
+    abcFingerT = setTimeout(function () { if (abcFinger === box) abcFingerClear(); }, D + 150);
   }
   function abcFireworks(n) {
     var w = fxAbc.clientWidth, hh = fxAbc.clientHeight, i;
@@ -3219,8 +3200,7 @@
       abcStage.removeEventListener('pointerdown', abcStageDown);
       abcGen++; abcBusy = false; abcSel = null;
       abcBoard.innerHTML = ''; abcBox.innerHTML = ''; fxAbc.innerHTML = ''; abcHoles = []; abcPieces = [];
-      if (abcNoAnim) { try { abcNoAnim.cancel(); } catch (e) {} abcNoAnim = null; }
-      abcNo.hidden = true;
+      abcFingerClear();
       if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     },
     resize: abcLayout
