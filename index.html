@@ -10,8 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap">
 <style>
-  /* Layout: 画面いっぱいのあそび場。ホームの大きなタイルから14のあそびへ。子どもは触るだけ。 */
+  /* Layout: 画面いっぱいのあそび場。ホームの大きなタイルから15のあそびへ。子どもは触るだけ。 */
   :root {
     --paper: #FFF6E0;
     --ink: #2B3A67;
@@ -33,6 +34,7 @@
     --shadow: rgba(43, 58, 103, 0.18);
     --top: 76px;
     --font-display: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-abc: "Fredoka", "Arial Rounded MT Bold", "M PLUS Rounded 1c", sans-serif;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -82,14 +84,8 @@
     background: var(--c); color: var(--fg, var(--ink));
     box-shadow: 0 5px 0 var(--shadow);
   }
-  .tile:nth-child(13) { grid-column: 2 / 4; }
-  .tile:nth-child(14) { grid-column: 4 / 6; }
   @media (min-aspect-ratio: 4/3) {
     .homegrid { grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(3, 1fr); }
-    .tile:nth-child(11) { grid-column: 2 / 4; }
-    .tile:nth-child(12) { grid-column: 4 / 6; }
-    .tile:nth-child(13) { grid-column: 6 / 8; }
-    .tile:nth-child(14) { grid-column: 8 / 10; }
   }
   .tile:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
   .tile .ico { font-size: clamp(36px, min(12vw, 8vh), 84px); line-height: 1; }
@@ -464,6 +460,14 @@
   .setpanel .sbtn[aria-pressed="true"] { background: #FFD21F; }
   .setpanel .sbtn.close { background: var(--ink); color: #fff; min-height: 64px; }
 
+  .diag { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .diag canvas { width: 160px; height: 120px; border-radius: 12px; background: #222; transform: scaleX(-1); display: block; }
+  .dbar { position: relative; width: 100%; height: 18px; border-radius: 9px; background: #E4F0FF; overflow: visible; }
+  .dbar .dfill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 9px; background: #8FB8E8; transition: width .06s linear; }
+  .dbar .dfill.hot { background: #34B556; }
+  .dbar .dthr { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; border-radius: 2px; background: #F2463C; }
+  .dstate { font-size: 16px; text-align: center; min-height: 1.3em; }
+
   /* もしもし */
   #stage-phone { background: #FFE9B8; display: flex; flex-direction: column; padding-top: var(--top); }
   .phdisp { display: flex; justify-content: center; gap: 10px; padding: 0 12px; }
@@ -594,6 +598,62 @@
     .ai-btns { justify-content: center; }
   }
 
+  /* ABCパズル（木のアルファベットはめこみ） */
+  #stage-abc {
+    --cs: 100px; --fs: 78px; --ps: 100px; --pfs: 78px; --gap: 8px; --pgap: 8px;
+    background: #F1D7A2 repeating-linear-gradient(0deg, rgba(150,100,40,.09) 0 3px, transparent 3px 72px);
+    display: flex; flex-direction: column; padding-top: var(--top); font-family: var(--font-abc); font-weight: 700;
+  }
+  .abc-nav { flex: 0 0 auto; height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .abc-sm { min-width: 52px; height: 44px; border: 0; border-radius: 22px; background: #fff; font-size: 20px; line-height: 1; box-shadow: 0 3px 0 var(--shadow); font-family: inherit; }
+  .abc-sm:active { transform: translateY(2px); }
+  .abc-range { min-width: 64px; text-align: center; font-size: 22px; color: #7A5527; }
+  .abc-allbtn { position: absolute; top: 12px; right: 76px; z-index: 6; min-width: 84px; height: 56px; padding: 0 14px; border: 0; border-radius: 28px; background: rgba(255,255,255,.95); font-size: 20px; font-family: inherit; box-shadow: 0 3px 0 var(--shadow); }
+  .abc-allbtn[aria-pressed="true"] { background: #FFD21F; }
+  .abc-board {
+    position: relative; z-index: 1; align-self: center; flex: 0 0 auto; padding: 14px; border-radius: 28px;
+    background:
+      repeating-linear-gradient(92deg, rgba(139,94,40,.10) 0 3px, transparent 3px 11px, rgba(255,255,255,.14) 11px 13px, transparent 13px 29px),
+      linear-gradient(#F2DFBF, #E8D0A6);
+    background-color: #EED9B7;
+    box-shadow: 0 10px 0 #C79A5A, 0 16px 22px rgba(90,55,10,.28), inset 0 0 0 4px rgba(255,255,255,.35);
+    display: flex; flex-direction: column; gap: var(--gap);
+  }
+  .abc-row { display: flex; justify-content: center; gap: var(--gap); }
+  .abc-hole { position: relative; flex: 0 0 auto; width: var(--cs); height: var(--cs); padding: 0; border: 0; background: none; font: inherit; font-size: var(--fs); line-height: 1; display: grid; place-items: center; }
+  .abc-hl { display: block; line-height: 1; color: #C9AE85; transform-origin: 50% 90%; text-shadow: 0 -2px 1px rgba(80,50,15,.6), 0 2px 1px rgba(255,248,230,.9); }
+  .abc-hole.filled .abc-hl { visibility: hidden; }
+  .abc-box {
+    position: relative; z-index: 2; flex: 1 1 0; min-height: 0; margin: 14px 8px 8px; padding: 6px; border-radius: 26px;
+    background: rgba(160,110,50,.14); box-shadow: inset 0 5px 0 rgba(120,80,30,.16);
+    display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: var(--pgap);
+  }
+  .abc-pc {
+    position: relative; flex: 0 0 auto; width: var(--ps); height: var(--ps); padding: 0; border: 0; background: none; font: inherit; font-size: var(--pfs); line-height: 1;
+    display: grid; place-items: center; touch-action: none; z-index: 2; transition: transform .22s cubic-bezier(.3,1.5,.5,1);
+  }
+  .abc-pc.drag { transition: none; }
+  .abc-pc.lift, .abc-pc.drag, .abc-pc.fly { z-index: 30; }
+  .abc-g {
+    display: block; line-height: 1; color: var(--pc); transform: rotate(var(--rot, 0deg));
+    text-shadow: 0 1px 0 var(--pd), 0 2px 0 var(--pd), 0 3px 0 var(--pd), 0 4px 0 var(--pd), 0 5px 0 var(--pd), 0 6px 0 var(--pd), 0 9px 7px rgba(60,35,10,.35);
+  }
+  .abc-pc.lift .abc-g, .abc-pc.drag .abc-g {
+    text-shadow: 0 1px 0 var(--pd), 0 2px 0 var(--pd), 0 3px 0 var(--pd), 0 4px 0 var(--pd), 0 5px 0 var(--pd), 0 6px 0 var(--pd), 0 18px 12px rgba(60,35,10,.38);
+  }
+  .abc-hole .abc-pc.placed { position: absolute; inset: 0; width: 100%; height: 100%; font-size: var(--fs); transition: none; z-index: 1; pointer-events: none; }
+  .abc-pc.placed .abc-g { transform: none; text-shadow: 0 1px 0 var(--pd), 0 2px 0 var(--pd), 0 3px 0 var(--pd), 0 5px 4px rgba(60,35,10,.3); }
+  .abc-hole.glow .abc-pc .abc-g { filter: brightness(1.35) drop-shadow(0 0 10px #fff); }
+  .abc-no { position: absolute; left: 50%; top: 42%; z-index: 7; width: clamp(190px, 62vw, 340px); aspect-ratio: 1; pointer-events: none; display: grid; place-items: center; font-family: var(--font-abc); }
+  .abc-no i { position: absolute; clip-path: var(--burst); }
+  .abc-no .b1 { inset: 0; background: #E8262B; }
+  .abc-no .b2 { inset: 4%; background: #fff; }
+  .abc-no .b3 { inset: 9%; background: #FFD21F; }
+  .abc-no b { position: relative; font-size: clamp(66px, 22vw, 150px); font-weight: 700; line-height: 1; color: #E8262B; -webkit-text-stroke: 12px #fff; paint-order: stroke fill; text-shadow: 0 6px 0 rgba(150,0,0,.3); }
+  .abc-ico { --s: clamp(44px, min(13vw, 8.5vh), 88px); display: grid; grid-auto-flow: column; place-content: center; width: var(--s); height: var(--s); border-radius: 22%;
+    background: repeating-linear-gradient(92deg, rgba(139,94,40,.12) 0 2px, transparent 2px 7px), #EED9B7;
+    box-shadow: 0 4px 0 #C79A5A, inset 0 0 0 2px rgba(255,255,255,.45); font-family: var(--font-abc); font-size: calc(var(--s) * .33); font-weight: 700; line-height: 1; letter-spacing: -.02em; text-shadow: 0 2px 0 rgba(60,35,10,.25); }
+
   @media (prefers-reduced-motion: reduce) {
     .slot .cur, .slot.open .an { transition-duration: .01s; transition-delay: 0s; }
   }
@@ -682,8 +742,13 @@
     </div>
     <div class="setpanel" id="setpanel" hidden>
       <h3>おとなの設定</h3>
-      <label>感度（しきい値: <span id="thr-val">40</span>）小さいほど敏感
-        <input type="range" id="thr" min="15" max="90" step="1" value="40"></label>
+      <label>かんど（1〜5、5が いちばん びんかん）: <span id="thr-val">3</span>
+        <input type="range" id="thr" min="1" max="5" step="1" value="3"></label>
+      <div class="diag" id="diag">
+        <canvas id="diag-cv" width="160" height="120" aria-label="カメラの しんだん"></canvas>
+        <div class="dbar"><i class="dfill" id="dfill"></i><i class="dthr" id="dthr"></i></div>
+        <div class="dstate" id="dstate" aria-live="off">カメラなし</div>
+      </div>
       <button class="sbtn close" id="setclose" type="button">とじる</button>
     </div>
     <div class="fx" id="fx-shop"></div>
@@ -752,6 +817,19 @@
       <div class="ai-btns" id="ai-btns"></div>
     </div>
     <div class="fx" id="fx-aiueo"></div>
+  </section>
+
+  <section class="stage" id="stage-abc" aria-label="ABCパズル" hidden>
+    <div class="abc-nav">
+      <button class="abc-sm" id="abc-prev" type="button" aria-label="まえの ラウンド">◀</button>
+      <span class="abc-range" id="abc-range"></span>
+      <button class="abc-sm" id="abc-next" type="button" aria-label="つぎの ラウンド">▶</button>
+    </div>
+    <button class="abc-allbtn" id="abc-all" type="button" aria-pressed="false">ぜんぶ</button>
+    <div class="abc-board" id="abc-board"></div>
+    <div class="abc-box" id="abc-box"></div>
+    <div class="abc-no" id="abc-no" hidden><i class="b1"></i><i class="b2"></i><i class="b3"></i><b>NO!</b></div>
+    <div class="fx" id="fx-abc"></div>
   </section>
 
   <div id="bigword" aria-live="polite" hidden></div>
@@ -1738,32 +1816,174 @@
     later(function () { lcd.tot.classList.remove('blink'); showCoins(); }, 2000);
   });
 
-  /* おとな用: タイトル長押し 2 秒で設定 */
-  var thr = 40;
+  /* おとな用: タイトル長押し 2 秒で設定（かんど 1〜5 と 診断表示） */
+  var camSens = 3;
   var shopTitle = $('#shop-title'), thrIn = $('#thr');
+  var diagCv = $('#diag-cv'), diagCx = diagCv.getContext('2d'), dFill = $('#dfill'), dThr = $('#dthr'), dState = $('#dstate');
+  var DSTATE = { learn: 'じゅんび', ready: 'まってる', cool: 'ピッ済み' };
+  function diagIdle() { dState.textContent = 'カメラなし'; dFill.style.width = '0%'; }
+  function openSettings() { setPanel.hidden = false; if (!cam.on) diagIdle(); }
   shopTitle.addEventListener('pointerdown', function (e) {
     e.preventDefault(); audio(); cancel(lpId);
-    lpId = later(function () { lpId = 0; setPanel.hidden = false; }, 2000);
+    lpId = later(function () { lpId = 0; openSettings(); }, 2000);
   });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
     shopTitle.addEventListener(ev, function () { cancel(lpId); lpId = 0; });
   });
-  thrIn.addEventListener('input', function () { thr = parseInt(thrIn.value, 10) || 40; $('#thr-val').textContent = String(thr); });
+  thrIn.addEventListener('input', function () {
+    camSens = parseInt(thrIn.value, 10) || 3; $('#thr-val').textContent = String(camSens);
+    if (det) det.setSens(camSens);
+  });
   $('#setclose').addEventListener('click', function () { setPanel.hidden = true; });
+  /* 診断表示: 設定パネルを開いている間だけ（中央領域の枠つき映像・変化量バー・しきい値線・状態） */
+  function camDiag(r, v) {
+    if (setPanel.hidden) return;
+    try {
+      diagCx.drawImage(v, 0, 0, diagCv.width, diagCv.height);
+      diagCx.lineWidth = 3; diagCx.strokeStyle = '#3CCFB4'; diagCx.setLineDash([6, 4]);
+      var w = diagCv.width, h = diagCv.height;
+      diagCx.strokeRect(Math.round(w * 0.2), Math.round(h * 0.15), Math.round(w * 0.6), Math.round(h * 0.7));
+      diagCx.setLineDash([]);
+    } catch (e) {}
+    dFill.style.width = Math.round(r.level * 100) + '%';
+    dFill.classList.toggle('hot', r.level >= r.thrLevel);
+    dThr.style.left = (r.thrLevel * 100) + '%';
+    dState.textContent = (DSTATE[r.state] || r.state) + '（へんか ' + Math.round(r.frac * 100) + '%）';
+  }
+
+  /* camdet:begin */
+  /* カメラ検出器（DOM に依存しない純粋関数）。feed(rgba, w, h, nowMs) → { scan, level, state, ... } */
+  function createCamDetector(opts) {
+    opts = opts || {};
+    /* かんど 1〜5 → [しきい値 thr, 変化した画素の割合] */
+    var SENS = { 1: [48, 0.35], 2: [40, 0.275], 3: [32, 0.20], 4: [27, 0.14], 5: [22, 0.10] };
+    var LEARN_MS = 800, PRESENT_MS = 150, COOL_MS = 900, FORCE_MS = 2500;
+    var SPIKE_FRAC = 0.30, SPIKE_WIN = 300, SPIKE_BG = 0.12, REARM_FRAC = 0.08;
+    var A_FAST = 0.08, A_SLOW = 0.01, LEVEL_FULL = 0.5;
+    var sens = 3, thr = 32, fracThr = 0.20;
+    var W = 0, H = 0, N = 0, x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    var bg = null, cur = null, prev = null, sum = null, fullIdx = null, idx = null;
+    var state = 'learn', learnT0 = -1, learnN = 0, hasPrev = false;
+    var lastScan = -1e9, presentSince = -1, spikeAt = -1e9;
+    var det = { idx: null, count: 0 };
+
+    function setSens(n) {
+      n = Math.round(Number(n));
+      if (!(n >= 1)) n = 3;
+      if (n > 5) n = 5;
+      sens = n; thr = SENS[n][0]; fracThr = SENS[n][1];
+    }
+    setSens(opts.sens || 3);
+
+    function init(w, h) {
+      W = w; H = h;
+      x0 = Math.round(w * 0.2); x1 = Math.round(w * 0.8);
+      y0 = Math.round(h * 0.15); y1 = Math.round(h * 0.85);
+      N = (x1 - x0) * (y1 - y0);
+      bg = new Float32Array(N * 3); cur = new Float32Array(N * 3); prev = new Float32Array(N * 3); sum = new Float32Array(N * 3);
+      fullIdx = new Int32Array(N); idx = new Int32Array(N);
+      var k = 0, x, y;
+      for (y = y0; y < y1; y++) for (x = x0; x < x1; x++) fullIdx[k++] = y * w + x;
+      det.idx = idx; det.count = 0;
+      state = 'learn'; learnT0 = -1; learnN = 0; hasPrev = false; presentSince = -1; spikeAt = -1e9; lastScan = -1e9;
+    }
+
+    /* 明るさの補正: 背景とほぼ同じ画素だけで比を取り、0.6〜1.6 に制限する（大きな物が入っても引きずられない） */
+    function exposure() {
+      var i, k, sc, sb = 0, sc0 = 0;
+      for (i = 0, k = 0; i < N; i++, k += 3) { sc0 += cur[k] + cur[k + 1] + cur[k + 2]; sb += bg[k] + bg[k + 1] + bg[k + 2]; }
+      var s0 = sc0 > 1 ? sb / sc0 : 1;
+      s0 = Math.max(0.6, Math.min(1.6, s0));
+      var ac = 0, ab = 0, cnt = 0, dr, dg, db;
+      for (i = 0, k = 0; i < N; i++, k += 3) {
+        dr = cur[k] * s0 - bg[k]; dg = cur[k + 1] * s0 - bg[k + 1]; db = cur[k + 2] * s0 - bg[k + 2];
+        if (Math.sqrt((dr * dr + dg * dg + db * db) / 3) < thr) { ac += cur[k] + cur[k + 1] + cur[k + 2]; ab += bg[k] + bg[k + 1] + bg[k + 2]; cnt++; }
+      }
+      if (cnt < N * 0.25 || ac < 1) return s0;
+      sc = ab / ac;
+      return Math.max(0.6, Math.min(1.6, sc));
+    }
+
+    function result(scan, level, extra) {
+      return { scan: scan, level: level, state: state, thrLevel: Math.min(1, fracThr / LEVEL_FULL), frac: extra ? extra.frac : 0, motion: extra ? extra.motion : 0, sens: sens, thr: thr };
+    }
+
+    function feed(rgba, w, h, now) {
+      if (w !== W || h !== H || !bg) init(w, h);
+      var i, k, j, x, y;
+      for (y = y0, k = 0; y < y1; y++) for (x = x0; x < x1; x++, k += 3) {
+        j = (y * w + x) * 4; cur[k] = rgba[j]; cur[k + 1] = rgba[j + 1]; cur[k + 2] = rgba[j + 2];
+      }
+      /* 学習期間: 最初の 0.8 秒は平均をとる */
+      if (state === 'learn') {
+        if (learnT0 < 0) learnT0 = now;
+        for (k = 0; k < N * 3; k++) sum[k] += cur[k];
+        learnN++;
+        if (now - learnT0 >= LEARN_MS) {
+          for (k = 0; k < N * 3; k++) bg[k] = sum[k] / learnN;
+          state = 'ready'; hasPrev = false;
+        }
+        det.count = 0;
+        return result(false, 0, null);
+      }
+      var sc = exposure();
+      if (sc !== 1) for (k = 0; k < N * 3; k++) cur[k] = Math.min(255, cur[k] * sc);
+      var ch = 0, mv = 0, dr, dg, db, dist, a;
+      for (i = 0, k = 0; i < N; i++, k += 3) {
+        dr = cur[k] - bg[k]; dg = cur[k + 1] - bg[k + 1]; db = cur[k + 2] - bg[k + 2];
+        dist = Math.sqrt((dr * dr + dg * dg + db * db) / 3);
+        if (dist > thr) { idx[ch++] = fullIdx[i]; a = A_SLOW; } else a = A_FAST;
+        bg[k] += a * dr; bg[k + 1] += a * dg; bg[k + 2] += a * db;
+        if (hasPrev) {
+          dr = cur[k] - prev[k]; dg = cur[k + 1] - prev[k + 1]; db = cur[k + 2] - prev[k + 2];
+          if (Math.sqrt((dr * dr + dg * dg + db * db) / 3) > thr) mv++;
+        }
+        prev[k] = cur[k]; prev[k + 1] = cur[k + 1]; prev[k + 2] = cur[k + 2];
+      }
+      hasPrev = true;
+      det.count = ch;
+      var frac = ch / N, motion = mv / N, bigMove = motion >= SPIKE_FRAC;
+      if (bigMove) spikeAt = now;
+      var spike = (now - spikeAt) <= SPIKE_WIN;
+      var scan = false, skip = false;
+      if (state === 'cool') {
+        var since = now - lastScan;
+        if (since >= COOL_MS) {
+          if (frac < REARM_FRAC || bigMove) { state = 'ready'; presentSince = -1; }
+          else if (since >= FORCE_MS) {
+            /* 何があっても 2.5 秒以上は止まらない: いまのフレームを背景にして受付に戻る */
+            for (k = 0; k < N * 3; k++) bg[k] = cur[k];
+            state = 'ready'; presentSince = -1; skip = true; frac = 0; det.count = 0;
+          }
+        }
+      }
+      if (state === 'ready' && !skip) {
+        if (frac >= fracThr) {
+          if (presentSince < 0) presentSince = now;
+          if (now - presentSince >= PRESENT_MS) scan = true;
+        } else presentSince = -1;
+        if (!scan && spike && frac >= SPIKE_BG) scan = true;
+      }
+      if (scan) { state = 'cool'; lastScan = now; presentSince = -1; spikeAt = -1e9; }
+      return result(scan, Math.min(1, frac / LEVEL_FULL), { frac: frac, motion: motion });
+    }
+
+    return { feed: feed, setSens: setSens, changed: det };
+  }
+  /* camdet:end */
 
   /* カメラ（使えれば）。失敗しても何も見せず、タッチモードのまま */
   var camVideo = $('#cam-video'), campv = $('#campv'), camRetry = $('#camretry');
   var cam = { stream: null, timer: 0, gen: 0, on: false };
-  var CN = 64 * 48;
   var camWork = document.createElement('canvas'); camWork.width = 64; camWork.height = 48;
   var camCtx = camWork.getContext('2d', { willReadFrequently: true });
-  var cs = null;
+  var det = null;
   function camStop() {
     cam.gen++;
     if (cam.timer) { clearInterval(cam.timer); cam.timer = 0; }
     if (cam.stream) { try { cam.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} cam.stream = null; }
     try { camVideo.pause(); camVideo.srcObject = null; } catch (e) {}
-    cam.on = false; campv.hidden = true; cs = null;
+    cam.on = false; campv.hidden = true; det = null;
   }
   function camFail() { cam.on = false; campv.hidden = true; camRetry.hidden = !shopOpen; }
   function camStart() {
@@ -1780,11 +2000,8 @@
       cam.stream = stream; camVideo.muted = true; camVideo.srcObject = stream;
       try { var pp = camVideo.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
       cam.on = true; campv.hidden = false; camRetry.hidden = true;
-      cs = {
-        prev: new Uint8Array(CN * 3), hasPrev: false, bg: null, bgSum: new Float32Array(CN * 3), bgN: 0, t0: performance.now(), lastT: performance.now(),
-        stillMs: 0, stillSum: new Float32Array(CN * 3), stillN: 0, presentMs: 0, releaseMs: 0, state: 'idle', lastScan: 0, idx: new Int16Array(CN)
-      };
-      cam.timer = setInterval(camTick, 125);
+      det = createCamDetector({ sens: camSens });
+      cam.timer = setInterval(camTick, 80);
     }, function () { if (gen === cam.gen) camFail(); });
   }
   holdButton(camRetry, 1500, function () { audio(); camStart(); });
@@ -1823,61 +2040,15 @@
     return v;
   }
   function camItem(d, idx, ch) { return { e: '🏷️', n: '', p: camPrice(), cam: true, col: camColor(d, idx, ch) }; }
+  /* 薄い camTick: フレームを取って feed に渡し、scan なら shopScan */
   function camTick() {
     var v = camVideo;
-    if (!shopOpen || !cam.on || !cs || v.readyState < 2) return;
-    var now = performance.now(), dt = Math.min(400, now - cs.lastT); cs.lastT = now;
-    var d, i, j, k;
+    if (!shopOpen || !cam.on || !det || v.readyState < 2) return;
+    var d;
     try { camCtx.drawImage(v, 0, 0, 64, 48); d = camCtx.getImageData(0, 0, 64, 48).data; } catch (e) { return; }
-    var fd = 0, pv = cs.prev;
-    if (cs.hasPrev) {
-      for (i = 0, j = 0, k = 0; i < CN; i++, j += 4, k += 3) fd += (Math.abs(d[j] - pv[k]) + Math.abs(d[j + 1] - pv[k + 1]) + Math.abs(d[j + 2] - pv[k + 2])) / 3;
-      fd /= CN;
-    } else fd = 99;
-    for (i = 0, j = 0, k = 0; i < CN; i++, j += 4, k += 3) { pv[k] = d[j]; pv[k + 1] = d[j + 1]; pv[k + 2] = d[j + 2]; }
-    cs.hasPrev = true;
-    if (!cs.bg) {
-      for (i = 0, j = 0, k = 0; i < CN; i++, j += 4, k += 3) { cs.bgSum[k] += d[j]; cs.bgSum[k + 1] += d[j + 1]; cs.bgSum[k + 2] += d[j + 2]; }
-      cs.bgN++;
-      if (now - cs.t0 >= 1500) {
-        cs.bg = new Float32Array(CN * 3);
-        for (k = 0; k < CN * 3; k++) cs.bg[k] = cs.bgSum[k] / cs.bgN;
-        cs.lastScan = now;
-      }
-      return;
-    }
-    /* しずかな間（2秒）の平均フレームを新しい背景にする */
-    if (fd < 6) {
-      cs.stillMs += dt;
-      for (i = 0, j = 0, k = 0; i < CN; i++, j += 4, k += 3) { cs.stillSum[k] += d[j]; cs.stillSum[k + 1] += d[j + 1]; cs.stillSum[k + 2] += d[j + 2]; }
-      cs.stillN++;
-      if (cs.stillMs >= 2000) {
-        for (k = 0; k < CN * 3; k++) { cs.bg[k] = cs.stillSum[k] / cs.stillN; cs.stillSum[k] = 0; }
-        cs.stillMs = 0; cs.stillN = 0;
-      }
-    } else if (cs.stillN) {
-      cs.stillMs = 0; cs.stillN = 0; for (k = 0; k < CN * 3; k++) cs.stillSum[k] = 0;
-    }
-    var sum = 0, ch = 0, bg = cs.bg, idx = cs.idx;
-    for (i = 0, j = 0, k = 0; i < CN; i++, j += 4, k += 3) {
-      var dr = d[j] - bg[k], dg = d[j + 1] - bg[k + 1], db = d[j + 2] - bg[k + 2];
-      var dist = Math.sqrt((dr * dr + dg * dg + db * db) / 3);
-      sum += dist;
-      if (dist > thr) idx[ch++] = i;
-    }
-    var frac = ch / CN, meanAll = sum / CN;
-    if (cs.state === 'idle') {
-      if (frac >= 0.35) {
-        cs.presentMs += dt;
-        if (cs.presentMs >= 250 && now - cs.lastScan >= 1200) {
-          cs.state = 'wait'; cs.releaseMs = 0; cs.lastScan = now; cs.presentMs = 0;
-          shopScan(camItem(d, idx, ch));
-        }
-      } else cs.presentMs = 0;
-    } else {
-      if (meanAll < thr / 2) cs.releaseMs += dt; else cs.releaseMs = 0;
-      if (cs.releaseMs >= 600 && now - cs.lastScan >= 1200) { cs.state = 'idle'; cs.presentMs = 0; }
-    }
+    var r = det.feed(d, 64, 48, performance.now());
+    camDiag(r, v);
+    if (r.scan) shopScan(camItem(d, det.changed.idx, det.changed.count));
   }
   games.shop = {
     el: shopStage,
@@ -2552,6 +2723,362 @@
     resize: function () { if (aiTraceOn) aiSizeTrace(); }
   };
 
+  /* ====== 15. ABCパズル ====== */
+  var abcStage = $('#stage-abc'), abcBoard = $('#abc-board'), abcBox = $('#abc-box'), fxAbc = $('#fx-abc'), abcNo = $('#abc-no');
+  var abcRangeEl = $('#abc-range'), abcAllBtn = $('#abc-all'), abcPrev = $('#abc-prev'), abcNext = $('#abc-next');
+  var ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  var ABC_SAY = ['ay', 'bee', 'see', 'dee', 'ee', 'eff', 'gee', 'aitch', 'eye', 'jay', 'kay', 'el', 'em', 'en', 'oh', 'pee', 'cue', 'ar', 'ess', 'tee', 'you', 'vee', 'double you', 'ex', 'why', 'zee'];
+  var ABC_WORD = [['apple', '🍎'], ['ball', '⚽'], ['cat', '🐱'], ['dog', '🐶'], ['egg', '🥚'], ['fish', '🐟'], ['grapes', '🍇'], ['hat', '🎩'], ['ice cream', '🍦'], ['juice', '🧃'],
+    ['kite', '🪁'], ['lion', '🦁'], ['moon', '🌙'], ['nose', '👃'], ['orange', '🍊'], ['pig', '🐷'], ['queen', '👸'], ['rabbit', '🐰'], ['sun', '☀️'], ['tiger', '🐯'],
+    ['umbrella', '☂️'], ['violin', '🎻'], ['whale', '🐳'], ['xylophone', '🎶'], ['yo-yo', '🪀'], ['zebra', '🦓']];
+  var ABC_COL = ['#EF3B33', '#FF8A1F', '#FFC81F', '#2FB34F', '#33BDEB', '#2F6FEF', '#FF6FB1', '#D93AA6', '#8B4FD8', '#14B8A6', '#8DC63F', '#FF6B4A'];
+  var abcAll = false, abcRound = 0, abcHoles = [], abcPieces = [], abcSel = null, abcBusy = false, abcGen = 0, abcNoAnim = null;
+  var abcLand = window.matchMedia ? window.matchMedia('(min-aspect-ratio: 4/3)') : { matches: false };
+  abcNo.style.setProperty('--burst', (function () {
+    var pts = [], n = 22, i, a, r;
+    for (i = 0; i < n * 2; i++) {
+      a = (Math.PI * 2 * i) / (n * 2) - Math.PI / 2; r = i % 2 ? 37 : 50;
+      pts.push((50 + r * Math.cos(a)).toFixed(1) + '% ' + (50 + r * Math.sin(a)).toFixed(1) + '%');
+    }
+    return 'polygon(' + pts.join(',') + ')';
+  })());
+  function abcDark(h) {
+    var n = parseInt(h.slice(1), 16);
+    return 'rgb(' + Math.round((n >> 16 & 255) * 0.55) + ',' + Math.round((n >> 8 & 255) * 0.55) + ',' + Math.round((n & 255) * 0.55) + ')';
+  }
+  /* 英語の声: en で始まる声があれば選ぶ。なければ指定せずに読ませる */
+  function sayEn(text, pitch, rate) {
+    if (muted || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text), vs = window.speechSynthesis.getVoices() || [], v = null, i;
+      for (i = 0; i < vs.length; i++) if (/^en[-_]US/i.test(vs[i].lang)) { v = vs[i]; break; }
+      if (!v) for (i = 0; i < vs.length; i++) if (/^en/i.test(vs[i].lang)) { v = vs[i]; break; }
+      if (v) { u.voice = v; u.lang = 'en-US'; }
+      u.rate = rate || 0.9; u.pitch = pitch || 1.3; u.volume = 0.95;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  function woodClack() {
+    tone(250, 0.05, 'square', 0.2, 170);
+    var c = audio(); if (!c || muted) return;
+    var len = Math.floor(c.sampleRate * 0.04), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0), i;
+    for (i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1100;
+    var g = c.createGain(); g.gain.value = 0.5;
+    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start();
+  }
+  function boing() {
+    var c = audio(); if (!c || muted) return;
+    var t0 = c.currentTime, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(400, t0); o.frequency.exponentialRampToValueAtTime(150, t0 + 0.5);
+    lfo.frequency.value = 22; lg.gain.value = 26; lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); lfo.start(t0); o.stop(t0 + 0.6); lfo.stop(t0 + 0.6);
+  }
+  function abcLetters() {
+    var a = [], from = abcAll ? 0 : abcRound * 4, to = abcAll ? 26 : Math.min(26, from + 4), i;
+    for (i = from; i < to; i++) a.push(i);
+    return a;
+  }
+  function abcRows(n) {
+    if (abcAll) return [6, 7, 7, 6];
+    var cols = abcLand.matches ? n : Math.min(2, n), rows = [], left = n;
+    while (left > 0) { rows.push(Math.min(cols, left)); left -= cols; }
+    return rows;
+  }
+  function abcLayout() {
+    var sw = abcStage.clientWidth, sh = abcStage.clientHeight;
+    if (!sw || !sh) return;
+    var gap = abcAll ? 4 : 10, ah = sh - 76 - 48 - 16;
+    var rows = abcRows(abcLetters().length), mc = Math.max.apply(null, rows), nr = rows.length;
+    var bw = sw - 28 - 28, bh = ah * (abcAll ? 0.55 : 0.48) - 28;
+    var cs = Math.floor(Math.min((bw - (mc - 1) * gap) / mc, (bh - (nr - 1) * gap) / nr));
+    cs = Math.max(30, Math.min(abcAll ? 150 : 190, cs));
+    var boardH = nr * cs + (nr - 1) * gap + 28;
+    var bxh = ah - boardH - 14 - 8 - 12, bxw = sw - 16 - 12, n = Math.max(1, abcPieces.length), pg = abcAll ? 4 : 10, best = 30, c, r, size;
+    for (c = 1; c <= n; c++) {
+      r = Math.ceil(n / c);
+      size = Math.min((bxw - (c - 1) * pg) / c, (bxh - (r - 1) * pg) / r);
+      if (size > best) best = size;
+    }
+    var ps = Math.floor(Math.min(best, abcAll ? 150 : 170));
+    abcStage.style.setProperty('--cs', cs + 'px'); abcStage.style.setProperty('--fs', Math.round(cs * 0.78) + 'px');
+    abcStage.style.setProperty('--ps', ps + 'px'); abcStage.style.setProperty('--pfs', Math.round(ps * 0.78) + 'px');
+    abcStage.style.setProperty('--gap', gap + 'px'); abcStage.style.setProperty('--pgap', pg + 'px');
+  }
+  function abcMakeGlyph(li) { return '<span class="abc-g">' + ABC[li] + '</span>'; }
+  function abcStyleCol(el, li) { el.style.setProperty('--pc', ABC_COL[li % 12]); el.style.setProperty('--pd', abcDark(ABC_COL[li % 12])); }
+  function abcFitEl(li) {
+    var f = document.createElement('span'); f.className = 'abc-pc placed'; f.innerHTML = abcMakeGlyph(li); abcStyleCol(f, li); return f;
+  }
+  function abcBuild(prefilled) {
+    abcGen++;
+    abcBoard.innerHTML = ''; abcBox.innerHTML = ''; fxAbc.innerHTML = '';
+    abcHoles = []; abcPieces = []; abcSel = null; abcBusy = !!prefilled;
+    var lets = abcLetters(), rows = abcRows(lets.length), k = 0;
+    rows.forEach(function (cnt) {
+      var row = document.createElement('div'); row.className = 'abc-row';
+      for (var j = 0; j < cnt; j++) {
+        var li = lets[k++], h = document.createElement('button');
+        h.type = 'button'; h.className = 'abc-hole'; h.setAttribute('aria-label', ABC[li]); h.setAttribute('data-l', ABC[li]);
+        h.innerHTML = '<span class="abc-hl">' + ABC[li] + '</span>';
+        var ho = { el: h, li: li, filled: false };
+        if (prefilled) { h.appendChild(abcFitEl(li)); h.classList.add('filled'); ho.filled = true; }
+        (function (ho) { onTap(h, function () { abcHoleTap(ho); }); })(ho);
+        row.appendChild(h); abcHoles.push(ho);
+      }
+      abcBoard.appendChild(row);
+    });
+    if (!prefilled) shuffle(lets).forEach(function (li) {
+      var el = document.createElement('button');
+      el.type = 'button'; el.className = 'abc-pc'; el.setAttribute('aria-label', ABC[li]); el.setAttribute('data-l', ABC[li]);
+      el.innerHTML = abcMakeGlyph(li); abcStyleCol(el, li);
+      var rot = rand(-12, 12).toFixed(1);
+      el.firstChild.style.setProperty('--rot', rot + 'deg');
+      var p = { el: el, li: li, rot: rot, tx: 0, ty: 0, lift: 0, placed: false, busy: false, drag: null };
+      abcBind(p);
+      abcBox.appendChild(el); abcPieces.push(p);
+    });
+    abcRangeEl.textContent = abcAll ? 'A–Z' : ABC[lets[0]] + '–' + ABC[lets[lets.length - 1]];
+    abcPrev.hidden = abcAll; abcNext.hidden = abcAll;
+    abcAllBtn.setAttribute('aria-pressed', String(abcAll));
+    abcLayout();
+  }
+  function abcRender(p) {
+    p.el.classList.toggle('lift', !!p.lift);
+    p.el.style.transform = (p.tx || p.ty || p.lift) ? 'translate(' + p.tx + 'px,' + (p.ty + (p.lift ? -14 : 0)) + 'px) scale(' + (p.lift ? 1.2 : 1) + ')' : '';
+  }
+  function abcSelect(p) {
+    if (abcSel && abcSel !== p) { abcSel.lift = 0; abcRender(abcSel); }
+    abcSel = p; p.lift = 1; abcRender(p);
+  }
+  function abcBack(p) {
+    p.tx = 0; p.ty = 0; p.lift = 0; p.el.classList.remove('drag'); if (abcSel === p) abcSel = null; abcRender(p);
+  }
+  function abcTap(p) {
+    sayEn(ABC_SAY[p.li], 1.5, 0.85); bigWord(ABC[p.li], ABC_COL[p.li % 12]); tone(600 + p.li * 12, 0.1, 'triangle', 0.1);
+    if (abcSel === p) abcBack(p); else abcSelect(p);
+  }
+  function abcBind(p) {
+    p.el.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); audio();
+      if (p.placed || p.busy || abcBusy) return;
+      try { p.el.setPointerCapture(e.pointerId); } catch (err) {}
+      p.drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false };
+    });
+    p.el.addEventListener('pointermove', function (e) {
+      var d = p.drag; if (!d || d.id !== e.pointerId) return;
+      var dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+      if (!d.moved && Math.sqrt(dx * dx + dy * dy) > 10) {
+        d.moved = true; p.el.classList.add('drag', 'lift');
+        if (abcSel && abcSel !== p) { abcSel.lift = 0; abcRender(abcSel); }
+        abcSel = p; p.lift = 0;
+        sayEn(ABC_SAY[p.li], 1.5, 0.85);
+      }
+      if (d.moved) { p.tx = dx; p.ty = dy; p.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.2)'; }
+    });
+    function up(e) {
+      var d = p.drag; if (!d || d.id !== e.pointerId) return;
+      p.drag = null; p.el.classList.remove('drag');
+      if (e.type === 'pointercancel') { abcBack(p); return; }
+      if (!d.moved) { abcTap(p); return; }
+      var h = abcHoleAt(e.clientX, e.clientY);
+      if (h) abcAttempt(p, h); else abcBack(p);
+    }
+    p.el.addEventListener('pointerup', up);
+    p.el.addEventListener('pointercancel', up);
+    p.el.addEventListener('click', function (e) { if (e.detail === 0 && !p.placed && !p.busy && !abcBusy) abcTap(p); });
+  }
+  function abcHoleAt(x, y) {
+    var best = null, bd = 1e9;
+    abcHoles.forEach(function (h) {
+      var r = h.el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var dd = Math.sqrt((cx - x) * (cx - x) + (cy - y) * (cy - y));
+      if (dd < r.width * 0.65 && dd < bd) { bd = dd; best = h; }
+    });
+    return best;
+  }
+  function abcHoleTap(h) {
+    if (abcBusy) return;
+    if (h.filled) { wiggle(h.el, 5); return; }
+    if (abcSel) { abcAttempt(abcSel, h); return; }
+    sayEn(ABC_SAY[h.li], 1.4, 0.85); tone(440, 0.12, 'triangle', 0.1); bounce(h.el, 6);
+  }
+  function abcStageDown(e) {
+    if (!abcSel || abcBusy) return;
+    var t = e.target;
+    if (t && t.closest && t.closest('button')) return;
+    abcBack(abcSel);
+  }
+  function abcAttempt(p, h) {
+    if (p.placed || h.filled || p.busy) { abcBack(p); return; }
+    if (p.li === h.li) abcFit(p, h); else abcWrong(p, h);
+  }
+  /* 位置合わせ: 箱の中の元の位置（変形なし）の中心 */
+  function abcNatural(p, lift) {
+    var r = p.el.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - p.tx, y: r.top + r.height / 2 - p.ty - (lift ? -14 : 0) };
+  }
+  function abcFit(p, h) {
+    var gen = abcGen, hr = h.el.getBoundingClientRect(), nat = abcNatural(p, p.lift);
+    var sx = p.tx, sy = p.ty + (p.lift ? -14 : 0);
+    var tx = hr.left + hr.width / 2 - nat.x, ty = hr.top + hr.height / 2 - nat.y;
+    var k = hr.width / (p.el.offsetWidth || hr.width);
+    p.placed = true; p.busy = true; h.filled = true;
+    if (abcSel === p) abcSel = null;
+    p.lift = 0; p.tx = 0; p.ty = 0; p.el.classList.remove('drag', 'lift'); p.el.classList.add('fly'); p.el.style.transition = 'none'; p.el.style.transform = '';
+    var tr = function (x, y, s) { return 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')'; };
+    var an = p.el.animate(reduce ? [{ transform: tr(tx, ty, k), opacity: 0.2 }, { transform: tr(tx, ty, k), opacity: 1 }] : [
+      { transform: tr(sx, sy, 1.2) },
+      { transform: tr(tx, ty, 1.15 * k), offset: 0.6 },
+      { transform: tr(tx, ty, 0.95 * k), offset: 0.82 },
+      { transform: tr(tx, ty, k) }
+    ], { duration: reduce ? 150 : 380, easing: 'ease-in-out', fill: 'forwards' });
+    if (!reduce) p.el.firstChild.animate([{ transform: 'rotate(' + p.rot + 'deg)' }, { transform: 'rotate(0deg)' }], { duration: 380, fill: 'forwards' });
+    var li = h.li, w = ABC_WORD[li];
+    sayEn(ABC_SAY[li] + '! ' + w[0] + '!', 1.4, 0.9);
+    bigWord(ABC[li] + '\n' + w[0], ABC_COL[li % 12]);
+    an.onfinish = function () {
+      if (gen !== abcGen) return;
+      try { an.cancel(); } catch (e) {}
+      p.el.remove();
+      h.el.appendChild(abcFitEl(li)); h.el.classList.add('filled');
+      woodClack(); bounce(h.el, 4);
+      var c = centerIn(h.el, fxAbc);
+      burst(fxAbc, c.x, c.y, { n: 8, emoji: ['✨', '⭐'] });
+      abcPop(h, w[1]);
+      if (abcPieces.every(function (x) { return x.placed; })) {
+        abcBusy = true;
+        later(abcRoundDone, 650);
+      }
+    };
+  }
+  function abcPop(h, emoji) {
+    var c = centerIn(h.el, fxAbc), fs = Math.max(44, Math.round(h.el.offsetWidth * 0.8));
+    var x = c.x + h.el.offsetWidth * 0.8;
+    if (x > fxAbc.clientWidth - fs / 2) x = c.x - h.el.offsetWidth * 0.8;
+    x = Math.max(fs / 2, Math.min(fxAbc.clientWidth - fs / 2, x));
+    var el = document.createElement('span');
+    el.textContent = emoji; el.style.fontSize = fs + 'px'; el.style.margin = (-fs / 2) + 'px 0 0 ' + (-fs / 2) + 'px';
+    fxAbc.appendChild(el);
+    var a = el.animate([
+      { transform: 'translate(' + x + 'px,' + (c.y + 10) + 'px) scale(.2)', opacity: 0 },
+      { transform: 'translate(' + x + 'px,' + (c.y - 14) + 'px) scale(1.25)', opacity: 1, offset: 0.25 },
+      { transform: 'translate(' + x + 'px,' + (c.y - 20) + 'px) scale(1)', opacity: 1, offset: 0.8 },
+      { transform: 'translate(' + x + 'px,' + (c.y - 40) + 'px) scale(1)', opacity: 0 }
+    ], { duration: 1000, easing: 'ease-out' });
+    a.onfinish = function () { el.remove(); };
+  }
+  /* まちがい: ガツンとはじかれて、ぴょーんと箱に戻る。ギャグ演出（罰ではない） */
+  function abcWrong(p, h) {
+    var gen = abcGen, hr = h.el.getBoundingClientRect(), nat = abcNatural(p, p.lift);
+    var sx = p.tx, sy = p.ty + (p.lift ? -14 : 0);
+    var vx = hr.left + hr.width / 2 - nat.x, vy = hr.top + hr.height / 2 - nat.y, len = Math.sqrt(vx * vx + vy * vy) || 1;
+    var L = Math.max(len - hr.width * 0.62, len * 0.3), tx = vx / len * L, ty = vy / len * L;
+    p.busy = true; if (abcSel === p) abcSel = null;
+    p.lift = 0; p.tx = 0; p.ty = 0; p.el.classList.remove('drag', 'lift'); p.el.classList.add('fly'); p.el.style.transition = 'none'; p.el.style.transform = '';
+    var tr = function (x, y, s, r) { return 'translate(' + x + 'px,' + y + 'px) rotate(' + (r || 0) + 'deg) scale(' + s + ')'; };
+    var A = 220, S = 340, J = 720, T = A + S + J, kf, i, t, dir = Math.random() < 0.5 ? -1 : 1, hop = Math.max(90, Math.min(170, hr.width * 1.1));
+    if (reduce) {
+      kf = [{ transform: tr(sx, sy, 1.2), opacity: 1 }, { transform: tr(tx, ty, 1.1), opacity: 0.2, offset: 0.4 }, { transform: tr(0, 0, 1), opacity: 0.2, offset: 0.6 }, { transform: tr(0, 0, 1), opacity: 1 }];
+      T = 500;
+    } else {
+      kf = [{ transform: tr(sx, sy, 1.2), offset: 0 }, { transform: tr(tx, ty, 1.1), offset: A / T }];
+      for (i = 1; i <= 6; i++) kf.push({ transform: tr(tx + (i % 2 ? 7 : -7), ty, 1.1, (i % 2 ? 3 : -3)), offset: (A + S * i / 6) / T });
+      for (i = 1; i <= 14; i++) {
+        t = i / 14;
+        kf.push({ transform: tr(tx * (1 - t), ty * (1 - t) - 4 * hop * t * (1 - t), 1.1 - 0.1 * t + 0.12 * Math.sin(Math.PI * t), t * dir * 720), offset: (A + S + J * t) / T });
+      }
+    }
+    var an = p.el.animate(kf, { duration: T, easing: 'linear' });
+    later(function () { abcGag(h); }, reduce ? 100 : A);
+    an.onfinish = function () {
+      if (gen !== abcGen) return;
+      p.el.classList.remove('fly'); p.el.style.transition = ''; p.busy = false;
+    };
+  }
+  function abcGag(h) {
+    var word = pick(['No!', 'Nope!', 'No no no!', 'Noooo!']);
+    sayEn(word, rand(0.6, 1.8), word === 'Noooo!' ? 0.65 : 1.0);
+    boing(); hideWord();
+    if (abcNoAnim) { try { abcNoAnim.cancel(); } catch (e) {} abcNoAnim = null; }
+    abcNo.hidden = false;
+    var rot = rand(-10, 10), base = 'translate(-50%,-50%) rotate(', a;
+    a = abcNo.animate(reduce ? [
+      { opacity: 0, transform: base + '0deg) scale(1)' }, { opacity: 1, transform: base + '0deg) scale(1)', offset: 0.2 },
+      { opacity: 1, transform: base + '0deg) scale(1)', offset: 0.8 }, { opacity: 0, transform: base + '0deg) scale(1)' }
+    ] : [
+      { opacity: 0, transform: base + (rot - 14) + 'deg) scale(0)' },
+      { opacity: 1, transform: base + (rot + 4) + 'deg) scale(1.35)', offset: 0.22 },
+      { opacity: 1, transform: base + (rot - 3) + 'deg) scale(.88)', offset: 0.38 },
+      { opacity: 1, transform: base + rot + 'deg) scale(1.05)', offset: 0.52 },
+      { opacity: 1, transform: base + rot + 'deg) scale(1)', offset: 0.8 },
+      { opacity: 0, transform: base + rot + 'deg) scale(1.1)' }
+    ], { duration: reduce ? 600 : 900, easing: 'ease-out', fill: 'forwards' });
+    abcNoAnim = a;
+    a.onfinish = function () { if (abcNoAnim === a) { abcNo.hidden = true; abcNoAnim = null; } };
+    var hl = h.el.firstChild, d = reduce ? 3 : 10;
+    if (h.anim) { try { h.anim.cancel(); } catch (e) {} }
+    h.anim = hl.animate([0, -d, d, -d, d, -d, d, 0].map(function (v) { return { transform: 'rotate(' + v + 'deg)' }; }), { duration: reduce ? 200 : 560, easing: 'ease-in-out' });
+    abcBoard.animate(reduce ? [{ transform: 'translateX(0)' }, { transform: 'translateX(-2px)' }, { transform: 'translateX(0)' }] :
+      [{ transform: 'translateX(0) rotate(0)' }, { transform: 'translateX(-7px) rotate(-.6deg)' }, { transform: 'translateX(7px) rotate(.6deg)' }, { transform: 'translateX(-5px) rotate(-.4deg)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0) rotate(0)' }], { duration: 380, easing: 'ease-out' });
+  }
+  function abcFireworks(n) {
+    var w = fxAbc.clientWidth, hh = fxAbc.clientHeight, i;
+    for (i = 0; i < n; i++) (function (i) {
+      later(function () { burst(fxAbc, rand(w * 0.15, w * 0.85), rand(hh * 0.15, hh * 0.55), { n: 14, emoji: ['🎆', '✨', '🎉', '⭐', '💮'], far: 1.8 }); }, i * 220);
+    })(i);
+  }
+  function abcRoundDone() {
+    var lets = abcLetters(), n = lets.length, STEP = 380, wasAll = abcAll;
+    if (wasAll) { abcCelebrateAll(true); return; }
+    sayEn(lets.map(function (i) { return ABC_SAY[i]; }).join(', ') + '! Yay!', 1.4, 0.95);
+    abcHoles.forEach(function (h, i) {
+      later(function () { bounce(h.el, 26); tone(SCALE[i % 10], 0.2, 'triangle', 0.16); h.el.classList.add('glow'); later(function () { h.el.classList.remove('glow'); }, 320); }, i * STEP);
+    });
+    later(function () {
+      bigWord('Yay!', '#FF6F61'); arpeggio(); later(arpeggio, 350); abcFireworks(4);
+    }, n * STEP + 150);
+    later(function () {
+      if (abcRound >= 6) abcCelebrateAll(false);
+      else { abcRound++; abcBuild(); }
+    }, n * STEP + 150 + 1800);
+  }
+  /* Z まで行った / ぜんぶ を完成: 26 文字が順に光る「ABC!」の大お祝い。そのあと A に戻る */
+  function abcCelebrateAll(fromAllMode) {
+    abcAll = true; abcBuild(true);
+    sayEn('ay, bee, see! Yay!', 1.4, 0.95);
+    abcHoles.forEach(function (h, i) {
+      later(function () { h.el.classList.add('glow'); tone(SCALE[i % 10], 0.14, 'triangle', 0.14); bounce(h.el, 10); later(function () { h.el.classList.remove('glow'); }, 260); }, i * 130);
+    });
+    later(function () { bigWord('ABC!', '#FF6F61'); arpeggio(); later(arpeggio, 350); abcFireworks(6); }, 26 * 130 + 100);
+    later(function () {
+      abcAll = !!fromAllMode; abcRound = 0; abcBuild();
+    }, 26 * 130 + 100 + 2600);
+  }
+  abcPrev.addEventListener('click', function () { if (abcAll) return; audio(); abcRound = (abcRound + 6) % 7; abcBuild(); tone(520, 0.1, 'triangle', 0.1); });
+  abcNext.addEventListener('click', function () { if (abcAll) return; audio(); abcRound = (abcRound + 1) % 7; abcBuild(); tone(660, 0.1, 'triangle', 0.1); });
+  abcAllBtn.addEventListener('click', function () { audio(); abcAll = !abcAll; abcBuild(); tone(560, 0.1, 'triangle', 0.1); });
+  games.abc = {
+    el: abcStage,
+    enter: function () {
+      abcAll = false; abcRound = 0; abcStage.addEventListener('pointerdown', abcStageDown); abcBuild();
+    },
+    leave: function () {
+      abcStage.removeEventListener('pointerdown', abcStageDown);
+      abcGen++; abcBusy = false; abcSel = null;
+      abcBoard.innerHTML = ''; abcBox.innerHTML = ''; fxAbc.innerHTML = ''; abcHoles = []; abcPieces = [];
+      if (abcNoAnim) { try { abcNoAnim.cancel(); } catch (e) {} abcNoAnim = null; }
+      abcNo.hidden = true;
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: abcLayout
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var TILES = [
@@ -2568,13 +3095,14 @@
     { id: 'shape', ico: '🔷', lab: 'かたちはめ',     c: '#BDD7FF', say: 'かたちはめ！' },
     { id: 'train', ico: '🚂', lab: 'でんしゃ',       c: '#FFC9C9', say: 'でんしゃ！' },
     { id: 'nurie', ico: '🖍️', lab: 'ぬりえ',         c: '#FFD9A8', say: 'ぬりえ！' },
-    { id: 'aiueo', ico: 'あ',  lab: 'あいうえお',     c: '#FFE0F0', say: 'あいうえお！' }
+    { id: 'aiueo', ico: 'あ',  lab: 'あいうえお',     c: '#FFE0F0', say: 'あいうえお！' },
+    { id: 'abc',   html: '<span class="abc-ico"><b style="color:#E8362E">A</b><b style="color:#2F6FEF">B</b><b style="color:#2FB34F">C</b></span>', lab: 'ABC', c: '#F6E3BD', say: 'えーびーしー！' }
   ];
   TILES.forEach(function (t) {
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'tile'; b.style.setProperty('--c', t.c);
     b.setAttribute('aria-label', t.lab);
-    b.innerHTML = '<span class="ico">' + t.ico + '</span><span class="lab">' + t.lab + '</span>';
+    b.innerHTML = '<span class="ico">' + (t.html || t.ico) + '</span><span class="lab">' + t.lab + '</span>';
     b.addEventListener('click', function () {
       audio(); go(t.id); say(t.say); tone(660, 0.12, 'triangle', 0.1);
     });
