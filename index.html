@@ -84,6 +84,7 @@
     transition: transform 250ms ease, opacity 250ms ease;
   }
   .hm-page > .tile:nth-child(7):last-child { grid-column: 2; }
+  .hm-page > .tile:first-child:last-child { grid-column: 2; grid-row: 1; }
   .tile {
     container-type: size;
     min-width: 0; min-height: 0; padding: 0; overflow: hidden;
@@ -834,6 +835,27 @@
     .stk-tabs { position: absolute; top: 6px; left: 84px; right: 84px; justify-content: center; }
   }
 
+  /* ころころボール */
+  #stage-koro { background: #A9733C; }
+  #ko-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .homebtn.ko-pos { left: calc(50% - 54px); }   /* ころころだけ: 🏠 を うえの まんなかへ（すみの あなと かさならない） */
+  #ko-start {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5;
+    min-width: min(78%, 360px); min-height: 104px; padding: 0 28px; border: 0; border-radius: 52px;
+    font: inherit; font-size: clamp(34px, 9vw, 48px); line-height: 1; white-space: nowrap; color: #fff; background: #FF6F61;
+    box-shadow: 0 8px 0 #D9483B, 0 14px 22px rgba(43,58,103,.3);
+  }
+  #ko-start:active { transform: translate(-50%, calc(-50% + 5px)); box-shadow: 0 3px 0 #D9483B; }
+  #ko-lvl {
+    position: absolute; top: 18px; left: calc(50% + 10px); z-index: 5; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+    background: rgba(255,255,255,.85); font-size: 22px; line-height: 1; box-shadow: 0 3px 0 var(--shadow);
+  }
+  #ko-lvl:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shadow); }
+  #ko-hint {
+    position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 5; pointer-events: none;
+    padding: 6px 14px; border-radius: 16px; background: rgba(255,255,255,.82); color: var(--ink); font-size: 14px; line-height: 1.3; white-space: nowrap;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .slot .cur, .slot.open .an { transition-duration: .01s; transition-delay: 0s; }
     .ck-stars i, .ck-orb, .ck-sky { animation: none; transition-duration: .01s; }
@@ -848,12 +870,14 @@
     <div class="hm-area" id="hm-area">
       <div class="hm-page" id="hm-p0"></div>
       <div class="hm-page" id="hm-p1" hidden></div>
+      <div class="hm-page" id="hm-p2" hidden></div>
     </div>
     <div class="hm-bar">
       <button class="hm-nav" id="hm-prev" type="button" aria-label="まえのページ" hidden>◀</button>
       <div class="hm-dots">
         <button class="hm-dot" type="button" aria-label="あそぶ" aria-current="true"></button>
         <button class="hm-dot" type="button" aria-label="まなぶ"></button>
+        <button class="hm-dot" type="button" aria-label="うごかす"></button>
       </div>
       <button class="hm-nav" id="hm-next" type="button" aria-label="つぎのページ">▶</button>
     </div>
@@ -1040,6 +1064,14 @@
     <div class="fx" id="fx-yubi"></div>
   </section>
 
+  <section class="stage" id="stage-koro" aria-label="ころころボール" hidden>
+    <canvas id="ko-cv" aria-label="ころころボール"></canvas>
+    <button id="ko-lvl" type="button" aria-label="まっすぐ（きじゅんを やりなおす）">⚖️</button>
+    <button id="ko-start" type="button" hidden>▶ はじめる</button>
+    <div id="ko-hint" hidden>👆 ゆびで さわっても ころがるよ</div>
+    <div class="fx" id="fx-koro"></div>
+  </section>
+
   <section class="stage" id="stage-sticker" aria-label="シールちょう" hidden>
     <div class="stk-tabs" id="stk-tabs"></div>
     <div class="stk-board" id="stk-board">
@@ -1102,6 +1134,13 @@
         <div class="seg" data-k="abcAll"><button type="button" data-v="0">4もじずつ</button><button type="button" data-v="1">ぜんぶ</button></div>
         <p class="sub">はじめる もじ</p>
         <div class="seg" data-k="abcStart"><button type="button" data-v="0">A–D</button><button type="button" data-v="1">E–H</button><button type="button" data-v="2">I–L</button><button type="button" data-v="3">M–P</button><button type="button" data-v="4">Q–T</button><button type="button" data-v="5">U–X</button><button type="button" data-v="6">Y–Z</button></div></div>
+      <div class="setgrp"><h3>ころころボール</h3>
+        <p class="sub">ころころ かんど</p>
+        <div class="seg" data-k="koroSens"><button type="button" data-v="0">ゆっくり</button><button type="button" data-v="1">ふつう</button><button type="button" data-v="2">はやい</button></div>
+        <p class="note">たんまつを そっと かたむけて あそびます。おとさないよう いっしょに もってね</p>
+        <p class="note">ボールが ぎゃくに ころがるときは『はんたい』に してください</p>
+        <p class="sub">かたむきの むき</p>
+        <div class="seg" data-k="koroFlip"><button type="button" data-v="0">ふつう</button><button type="button" data-v="1">はんたい</button></div></div>
       <div class="setgrp"><h3>とけい</h3>
         <p class="sub">いまの じかんで はじめる</p>
         <div class="seg" data-k="clockNow"><button type="button" data-v="0">オフ</button><button type="button" data-v="1">オン</button></div></div>
@@ -1147,7 +1186,7 @@
 
   /* ---------- せってい（おとなよう）。localStorage: ponpon.settings.v1。「おと なし」「こえ なし」は ほぞんしない ---------- */
   var SET_KEY = 'ponpon.settings.v1';
-  var S = { sound: true, voice: true, camOn: true, sens: 3, camPos: 'top', abcAll: false, abcStart: 0, clockNow: false };
+  var S = { sound: true, voice: true, camOn: true, sens: 3, camPos: 'top', abcAll: false, abcStart: 0, clockNow: false, koroSens: 1, koroFlip: false };
   (function () {
     try {
       var o = JSON.parse(window.localStorage.getItem(SET_KEY) || 'null');
@@ -1158,12 +1197,14 @@
         if (typeof o.abcAll === 'boolean') S.abcAll = o.abcAll;
         if (o.abcStart >= 0 && o.abcStart <= 6) S.abcStart = Math.round(o.abcStart);
         if (typeof o.clockNow === 'boolean') S.clockNow = o.clockNow;
+        if (o.koroSens === 0 || o.koroSens === 1 || o.koroSens === 2) S.koroSens = o.koroSens;
+        if (typeof o.koroFlip === 'boolean') S.koroFlip = o.koroFlip;
       }
     } catch (e) {}
   })();
   function saveSettings() {
     try {
-      window.localStorage.setItem(SET_KEY, JSON.stringify({ camOn: S.camOn, sens: S.sens, camPos: S.camPos, abcAll: S.abcAll, abcStart: S.abcStart, clockNow: S.clockNow }));
+      window.localStorage.setItem(SET_KEY, JSON.stringify({ camOn: S.camOn, sens: S.sens, camPos: S.camPos, abcAll: S.abcAll, abcStart: S.abcStart, clockNow: S.clockNow, koroSens: S.koroSens, koroFlip: S.koroFlip }));
     } catch (e) {}
   }
 
@@ -3268,8 +3309,8 @@
     ], { duration: reduce ? 150 : 380, easing: 'ease-in-out', fill: 'forwards' });
     if (!reduce) p.el.firstChild.animate([{ transform: 'rotate(' + p.rot + 'deg)' }, { transform: 'rotate(0deg)' }], { duration: 380, fill: 'forwards' });
     var li = h.li, w = ABC_WORD[li];
-    sayEn(ABC_SAY[li] + ' ' + w[0].charAt(0).toUpperCase() + w[0].slice(1) + '!', ABC_KANA[li] + '！ ' + ABC_WORD_KANA[li] + '！', 1.4, 0.9);
-    bigWord(ABC[li] + '\n' + w[0], ABC_COL[li % 12]);
+    sayEn(w[0].charAt(0).toUpperCase() + w[0].slice(1) + '!', ABC_WORD_KANA[li] + '！', 1.4, 0.9);
+    bigWord(w[0], ABC_COL[li % 12]);
     an.onfinish = function () {
       if (gen !== abcGen) return;
       try { an.cancel(); } catch (e) {}
@@ -4249,6 +4290,392 @@
     resize: function () { skCancelDrag(); skPaint(); skRender(); }
   };
 
+  /* ====== 19. ころころボール（たんまつを かたむけて ボールを ころがす） ====== */
+  var koStage = $('#stage-koro'), koCv = $('#ko-cv'), koCtx = koCv.getContext('2d'), koStartBtn = $('#ko-start'), koLvl = $('#ko-lvl'), koHint = $('#ko-hint'), fxKo = $('#fx-koro');
+  var KO_SENS = [0.6, 1.0, 1.5];
+  var KO_ACC = 4.0, KO_ATT = 3.0, KO_VMAX = 1.8, KO_FRIC = 0.985, KO_REST = 0.45, KO_FUN = 2.5;   /* u = みじかい へんの ながさ。ACC は 1G あたり u/s^2 */
+  var KO_FLIP = /iP(hone|ad|od)/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);   /* iOS は かそくどの ふごうが ぎゃく */
+  var koGranted = false;      /* iOS: いちど きょかされたら このページを ひらいている あいだは ボタンを ださない */
+  var ko = { W: 0, H: 0, dpr: 1, u: 0, F: 0, R: 0, r: 0, holes: [], balls: [], sprites: [], bg: null, raf: 0, last: 0, round: 1, busy: false, mode: 'wait', src: '', got: false, denied: false,
+    tx: 0, ty: 0, base: null, bs: null, angle: 0, pt: null, noEvT: 0, lastKnock: 0, on: false, total: 1 };
+  var koNoise = null;
+  function koMix(hex, t) {   /* t>0: しろへ / t<0: くろへ */
+    var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255, k = t > 0 ? 255 : 0, a = Math.abs(t);
+    return 'rgb(' + Math.round(r + (k - r) * a) + ',' + Math.round(g + (k - g) * a) + ',' + Math.round(b + (k - b) * a) + ')';
+  }
+  function koRRect(c, x, y, w, h, r) {
+    c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+  function koMakeNoise() {
+    var c = document.createElement('canvas'); c.width = c.height = 96;
+    var x = c.getContext('2d'), id = x.createImageData(96, 96), d = id.data, i;
+    for (i = 0; i < d.length; i += 4) {
+      if (Math.random() < 0.5) { d[i] = 70; d[i + 1] = 120; d[i + 2] = 70; d[i + 3] = Math.floor(Math.random() * 34); }
+      else { d[i] = 255; d[i + 1] = 255; d[i + 2] = 235; d[i + 3] = Math.floor(Math.random() * 40); }
+    }
+    x.putImageData(id, 0, 0);
+    return c;
+  }
+  function koPaintBg() {
+    var W = ko.W, H = ko.H, u = ko.u, F = ko.F, R = ko.R, dpr = ko.dpr, c, i, h, g;
+    var cv = document.createElement('canvas'); cv.width = koCv.width; cv.height = koCv.height;
+    c = cv.getContext('2d'); c.scale(dpr, dpr);
+    /* き の わく */
+    g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#D49A57'); g.addColorStop(0.5, '#B8803F'); g.addColorStop(1, '#C58F4C');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.save(); c.beginPath(); c.rect(0, 0, W, H); koRRect(c, F, F, W - 2 * F, H - 2 * F, u * 0.05); c.clip('evenodd');
+    c.lineWidth = 1;
+    for (i = 0; i < 70; i++) {
+      var p = Math.random() * Math.max(W, H);
+      c.strokeStyle = Math.random() < 0.5 ? 'rgba(90,50,15,.16)' : 'rgba(255,230,180,.16)';
+      c.beginPath();
+      if (Math.random() < 0.5) { c.moveTo(0, p % H); c.lineTo(W, (p % H) + Math.random() * 6 - 3); }
+      else { c.moveTo(p % W, 0); c.lineTo((p % W) + Math.random() * 6 - 3, H); }
+      c.stroke();
+    }
+    c.restore();
+    /* フェルト */
+    c.save(); c.beginPath(); koRRect(c, F, F, W - 2 * F, H - 2 * F, u * 0.05); c.clip();
+    c.fillStyle = '#B9E3AE'; c.fillRect(0, 0, W, H);
+    if (!koNoise) koNoise = koMakeNoise();
+    c.fillStyle = c.createPattern(koNoise, 'repeat'); c.fillRect(0, 0, W, H);
+    g = c.createRadialGradient(W / 2, H / 2, u * 0.3, W / 2, H / 2, Math.max(W, H) * 0.72);
+    g.addColorStop(0, 'rgba(255,255,255,.14)'); g.addColorStop(1, 'rgba(40,90,50,.20)');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    /* わくの かげ（ふちが へこんで みえる） */
+    c.shadowColor = 'rgba(40,25,5,.55)'; c.shadowBlur = u * 0.03; c.shadowOffsetY = u * 0.008;
+    c.lineWidth = u * 0.06; c.strokeStyle = '#B8803F'; c.beginPath(); koRRect(c, F - u * 0.03, F - u * 0.03, W - 2 * F + u * 0.06, H - 2 * F + u * 0.06, u * 0.07); c.stroke();
+    c.restore();
+    c.strokeStyle = 'rgba(255,235,190,.55)'; c.lineWidth = 2; c.beginPath(); koRRect(c, 1, 1, W - 2, H - 2, u * 0.03); c.stroke();
+    /* あな */
+    for (i = 0; i < ko.holes.length; i++) {
+      h = ko.holes[i];
+      c.save();
+      c.shadowColor = 'rgba(30,60,30,.35)'; c.shadowBlur = R * 0.18; c.shadowOffsetY = R * 0.08;
+      c.fillStyle = h.col.c; c.beginPath(); c.arc(h.x, h.y, R, 0, 7); c.fill();
+      c.restore();
+      c.fillStyle = '#10171A'; c.beginPath(); c.arc(h.x, h.y, R * 0.78, 0, 7); c.fill();
+      c.save(); c.beginPath(); c.arc(h.x, h.y, R * 0.78, 0, 7); c.clip();
+      c.shadowColor = 'rgba(0,0,0,.9)'; c.shadowBlur = R * 0.32; c.shadowOffsetY = R * 0.16;
+      c.strokeStyle = '#1C2A28'; c.lineWidth = R * 0.5; c.beginPath(); c.arc(h.x, h.y, R * 0.78 + R * 0.25, 0, 7); c.stroke();
+      c.restore();
+      c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = R * 0.05; c.beginPath(); c.arc(h.x, h.y, R * 0.93, Math.PI * 1.1, Math.PI * 1.65); c.stroke();
+      c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = R * 0.04; c.beginPath(); c.arc(h.x, h.y, R * 0.99, 0, 7); c.stroke();
+    }
+    ko.bg = cv;
+  }
+  function koMakeSprites() {
+    var r = ko.r, d = ko.dpr, sz = Math.ceil(2 * r * d) + 2, i;
+    ko.sprites = [];
+    for (i = 0; i < 4; i++) {
+      var cv = document.createElement('canvas'); cv.width = cv.height = sz;
+      var c = cv.getContext('2d'), col = COL[i].c, g;
+      c.translate(sz / 2, sz / 2); c.scale(d, d);
+      g = c.createRadialGradient(-r * 0.32, -r * 0.38, r * 0.08, 0, 0, r);
+      g.addColorStop(0, koMix(col, 0.55)); g.addColorStop(0.4, col); g.addColorStop(1, koMix(col, -0.4));
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 1; c.stroke();
+      c.save(); c.rotate(-0.6); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.ellipse(-r * 0.12, -r * 0.55, r * 0.32, r * 0.17, 0, 0, 7); c.fill(); c.restore();
+      c.fillStyle = 'rgba(255,255,255,.28)'; c.beginPath(); c.ellipse(r * 0.28, r * 0.5, r * 0.3, r * 0.1, -0.5, 0, 7); c.fill();
+      ko.sprites.push(cv);
+    }
+  }
+  function koGeo() {
+    var W = koStage.clientWidth, H = koStage.clientHeight;
+    if (!W || !H) return false;
+    var ow = ko.W, oh = ko.H;
+    ko.W = W; ko.H = H; ko.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    koCv.width = Math.round(W * ko.dpr); koCv.height = Math.round(H * ko.dpr);
+    var u = Math.min(W, H); ko.u = u; ko.F = Math.round(u * 0.04); ko.R = u * 0.11; ko.r = u * 0.06;
+    /* 4 つの あなは ほんとうの すみに、どの かべからも おなじ いんせつ。すみに おしつけた ボールの きゅうしょ（かべから r）が
+       あなの 0.6R いないに はいる いんせつ: sqrt2 * (inset - r) < 0.6R → inset = 0.105u（R = 0.11u, r = 0.06u） */
+    var inset = u * 0.105, x0 = ko.F + inset, y0 = x0;
+    ko.holes = [
+      { x: x0, y: y0, col: COL[0], sx: -1, sy: -1 }, { x: W - x0, y: y0, col: COL[1], sx: 1, sy: -1 },
+      { x: x0, y: H - y0, col: COL[2], sx: -1, sy: 1 }, { x: W - x0, y: H - y0, col: COL[3], sx: 1, sy: 1 }
+    ];
+    ko.holes.forEach(function (h, i) { h.i = i; h.pulse = -1; });
+    if (ow && oh) ko.balls.forEach(function (b) { b.x *= W / ow; b.y *= H / oh; b.vx *= W / ow; b.vy *= H / oh; });
+    koPaintBg(); koMakeSprites();
+    return true;
+  }
+  function koSpawn(n) {
+    var r = ko.r, R = ko.R, i, tries, x, y, ok, j, balls = [], now = performance.now();
+    var lo = ko.F + r + 2, hiX = ko.W - ko.F - r - 2, hiY = ko.H - ko.F - r - 2;
+    for (i = 0; i < n; i++) {
+      for (tries = 0; tries < 300; tries++) {
+        x = rand(lo, hiX); y = rand(lo, hiY); ok = true;
+        for (j = 0; j < ko.holes.length; j++) if (Math.hypot(x - ko.holes[j].x, y - ko.holes[j].y) < R * 2.1) { ok = false; break; }
+        if (ok) for (j = 0; j < balls.length; j++) if (Math.hypot(x - balls[j].x, y - balls[j].y) < r * 3) { ok = false; break; }
+        if (ok) break;
+      }
+      balls.push({ x: x, y: y, vx: 0, vy: 0, col: Math.floor(Math.random() * 4), born: now + i * 120, sink: null });
+    }
+    return balls;
+  }
+  function koNewRound() {
+    ko.busy = false;
+    var n = Math.min(4, ko.round);
+    ko.total = n; ko.balls = koSpawn(n);
+  }
+  /* ---- おと ---- */
+  function koKnock(v) {
+    var now = performance.now();
+    if (now - ko.lastKnock < 80) return;
+    ko.lastKnock = now;
+    v = Math.max(0.05, Math.min(1, v));
+    tone(210 + rand(-20, 20), 0.06, 'square', 0.03 + 0.2 * v, 120);
+    var c = audio(); if (!c || quiet()) return;
+    var len = Math.floor(c.sampleRate * 0.035), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0), i;
+    for (i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900;
+    var g = c.createGain(); g.gain.value = 0.5 * v;
+    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start();
+  }
+  function koPoton() {
+    tone(600, 0.15, 'sine', 0.2, 200);
+    var c = audio(); if (!c || quiet()) return;
+    var len = Math.floor(c.sampleRate * 0.06), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0), i;
+    for (i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+    var g = c.createGain(); g.gain.value = 0.3;
+    src.connect(lp); lp.connect(g); g.connect(c.destination); src.start();
+  }
+  function koVibe() { try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {} }
+  /* ---- あなに はいった ---- */
+  function koSink(b, h) {
+    b.sink = { t: 0, x0: b.x, y0: b.y, h: h }; b.vx = b.vy = 0;
+    koPoton(); koVibe(); h.pulse = 0;
+    var same = b.col === h.i, col = h.col;
+    say(col.v + 'の あなに はいった！' + (same ? ' おなじ いろ！' : ''));
+    bigWord(col.v + '！', col.c);
+    if (same) burst(fxKo, h.x, h.y, { n: 12, emoji: ['✨', '⭐', '💫'], far: 1.1 });
+  }
+  function koConfetti() {
+    var n = reduce ? 14 : 44, i, cols = [COL[0].c, COL[1].c, COL[2].c, COL[3].c, '#FF7EB6', '#FF9124'];
+    for (i = 0; i < n; i++) {
+      var el = document.createElement('span');
+      el.style.width = rand(8, 14) + 'px'; el.style.height = rand(12, 20) + 'px'; el.style.background = cols[i % cols.length]; el.style.borderRadius = '2px';
+      fxKo.appendChild(el);
+      var x = rand(0, ko.W), y0 = -30, y1 = ko.H + 40, sway = rand(-60, 60), rot = rand(-720, 720);
+      var a = el.animate([
+        { transform: 'translate(' + x + 'px,' + y0 + 'px) rotate(0deg)', opacity: 1 },
+        { transform: 'translate(' + (x + sway) + 'px,' + y1 + 'px) rotate(' + rot + 'deg)', opacity: 1 }
+      ], { duration: reduce ? 500 : rand(1300, 2300), delay: rand(0, 500), easing: 'ease-in', fill: 'backwards' });
+      a.onfinish = (function (e) { return function () { e.remove(); }; })(el);
+    }
+  }
+  function koCelebrate() {
+    var n = ko.total, words = [], i;
+    for (i = 1; i <= n; i++) words.push(NUMV[i]);
+    say(words.join('、') + '！ ぜんぶ はいった！');
+    bigWord(String(n), '#FF6F61');
+    for (i = 0; i < n; i++) (function (i) { later(function () { countTone(i + 1); }, i * 380); })(i);
+    arpeggio(); koConfetti();
+    later(function () { ko.round++; koNewRound(); }, 1500);
+  }
+  /* ---- センサー ---- */
+  function koAngle() {
+    var a = 0;
+    try {
+      if (screen.orientation && typeof screen.orientation.angle === 'number') a = screen.orientation.angle;
+      else if (typeof window.orientation === 'number') a = window.orientation;
+    } catch (e) {}
+    return ((Math.round(a) % 360) + 360) % 360;
+  }
+  function koRelevel() { ko.base = null; ko.bs = { t0: 0, sx: 0, sy: 0, n: 0 }; ko.tx = ko.ty = 0; }
+  /* gx, gy: たんまつ（しぜんな たてむき）の ざひょうで、がめんの みぎ・した へ かたむく ほうが +（G たんい） */
+  function koSample(gx, gy) {
+    var ang = koAngle(), cx, cy;
+    if (S.koroFlip) { gx = -gx; gy = -gy; }   /* おとなが えらぶ『はんたい』: プラットフォームの ふごうの あとで ぎゃくに する */
+    if (ang === 90) { cx = gy; cy = -gx; } else if (ang === 180) { cx = -gx; cy = -gy; } else if (ang === 270) { cx = -gy; cy = gx; } else { cx = gx; cy = gy; }
+    if (ang !== ko.angle) { ko.angle = ang; koRelevel(); }
+    if (!ko.got) {
+      ko.got = true;
+      if (ko.mode === 'touch' && !ko.denied) { ko.mode = 'sensor'; koHint.hidden = true; }
+    }
+    if (ko.mode !== 'sensor') return;
+    var now = performance.now();
+    if (ko.bs) {
+      if (!ko.bs.t0) ko.bs.t0 = now;
+      ko.bs.sx += cx; ko.bs.sy += cy; ko.bs.n++;
+      if (now - ko.bs.t0 >= 500) { ko.base = { x: ko.bs.sx / ko.bs.n, y: ko.bs.sy / ko.bs.n }; ko.bs = null; }
+      ko.tx = ko.ty = 0;
+      return;
+    }
+    if (!ko.base) ko.base = { x: cx, y: cy };
+    var dx = cx - ko.base.x, dy = cy - ko.base.y, m = Math.hypot(dx, dy);
+    if (m > 1) { dx /= m; dy /= m; m = 1; }
+    if (m < 0.03) { dx = dy = 0; }
+    ko.tx = dx; ko.ty = dy;
+  }
+  function koMotion(e) {
+    var a = e && e.accelerationIncludingGravity;
+    if (!a || a.x == null || a.y == null || !isFinite(a.x) || !isFinite(a.y)) return;
+    ko.src = 'motion';
+    var s = KO_FLIP ? -1 : 1;
+    koSample(-a.x * s / 9.81, a.y * s / 9.81);
+  }
+  function koOrient(e) {
+    if (ko.src === 'motion' || !e || e.beta == null || e.gamma == null || !isFinite(e.beta) || !isFinite(e.gamma)) return;
+    ko.src = 'orient';
+    koSample(Math.sin(e.gamma * Math.PI / 180), Math.sin(e.beta * Math.PI / 180));
+  }
+  function koTouchMode() {
+    ko.mode = 'touch'; ko.tx = ko.ty = 0; koHint.hidden = false;
+  }
+  function koSensing() {
+    if (typeof DeviceMotionEvent === 'undefined' && typeof DeviceOrientationEvent === 'undefined') { koTouchMode(); return; }
+    ko.mode = 'sensor'; ko.got = false; ko.src = ''; ko.angle = koAngle(); koRelevel(); koHint.hidden = true;
+    window.addEventListener('devicemotion', koMotion);
+    window.addEventListener('deviceorientation', koOrient);
+    if (ko.noEvT) clearTimeout(ko.noEvT);
+    ko.noEvT = setTimeout(function () { ko.noEvT = 0; if (!ko.got) koTouchMode(); }, 1000);
+  }
+  function koStopSensing() {
+    window.removeEventListener('devicemotion', koMotion);
+    window.removeEventListener('deviceorientation', koOrient);
+    if (ko.noEvT) { clearTimeout(ko.noEvT); ko.noEvT = 0; }
+  }
+  koStartBtn.addEventListener('click', function () {
+    audio();
+    var pr;
+    try { pr = DeviceMotionEvent.requestPermission(); } catch (e) { pr = null; }
+    koStartBtn.hidden = true;
+    function denied() { ko.denied = true; koGranted = false; koTouchMode(); }
+    if (!pr || !pr.then) { denied(); return; }
+    pr.then(function (r) {
+      if (!ko.on) return;
+      if (r === 'granted') { koGranted = true; koSensing(); } else denied();
+    }, function () { if (ko.on) denied(); });
+  });
+  koLvl.addEventListener('click', function () { audio(); if (ko.mode === 'sensor') koRelevel(); tone(520, 0.1, 'triangle', 0.1); wiggle(koLvl, 12); });
+  /* ---- ゆびモード ---- */
+  function koPtPos(e) { var r = koCv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function koPtDown(e) { if (ko.mode !== 'touch') return; ko.pt = koPtPos(e); try { koCv.setPointerCapture(e.pointerId); } catch (err) {} }
+  function koPtMove(e) { if (ko.pt) ko.pt = koPtPos(e); }
+  function koPtUp() { ko.pt = null; }
+  /* ---- ぶつりと ひょうじ ---- */
+  function koStep(dt) {
+    var u = ko.u, r = ko.r, R = ko.R, balls = ko.balls, i, j, b, h, k, d, dx, dy, mult = KO_SENS[S.koroSens] || 1;
+    var lo = ko.F + r, hiX = ko.W - ko.F - r, hiY = ko.H - ko.F - r, fr = Math.pow(KO_FRIC, dt * 60), vmax = KO_VMAX * u;
+    for (i = 0; i < ko.holes.length; i++) if (ko.holes[i].pulse >= 0) { ko.holes[i].pulse += dt; if (ko.holes[i].pulse > 0.6) ko.holes[i].pulse = -1; }
+    for (i = balls.length - 1; i >= 0; i--) {
+      b = balls[i];
+      if (b.sink) {
+        b.sink.t += dt;
+        if (b.sink.t >= 0.35) { balls.splice(i, 1); if (!balls.length && !ko.busy) { ko.busy = true; later(koCelebrate, 800); } }
+        continue;
+      }
+      var ax = 0, ay = 0;
+      if (ko.mode === 'sensor') { ax = ko.tx * KO_ACC * mult * u; ay = ko.ty * KO_ACC * mult * u; }
+      else if (ko.mode === 'touch' && ko.pt) {
+        dx = ko.pt.x - b.x; dy = ko.pt.y - b.y; d = Math.hypot(dx, dy);
+        if (d > 1) { k = Math.min(1, d / (r * 3)); ax = dx / d * 0.5 * KO_ACC * mult * u * k; ay = dy / d * 0.5 * KO_ACC * mult * u * k; }
+      }
+      for (j = 0; j < ko.holes.length; j++) {
+        h = ko.holes[j]; dx = h.x - b.x; dy = h.y - b.y; d = Math.hypot(dx, dy);
+        if (d < R * 1.6 && d > 0.5) { k = 1 - d / (R * 1.6); ax += dx / d * k * KO_ATT * u; ay += dy / d * k * KO_ATT * u; }
+        /* すみの じょうご: あなと 2 まいの かべの あいだの しかくに いる ボールを あなの ちゅうしんへ そっと ひく */
+        if (d > 0.5 && -dx * h.sx >= 0 && -dy * h.sy >= 0) { ax += dx / d * KO_FUN * u; ay += dy / d * KO_FUN * u; }
+      }
+      b.vx += ax * dt; b.vy += ay * dt;
+      var f = fr; if (ko.mode === 'touch' && !ko.pt) f *= Math.pow(0.97, dt * 60);
+      b.vx *= f; b.vy *= f;
+      var sp = Math.hypot(b.vx, b.vy); if (sp > vmax) { b.vx *= vmax / sp; b.vy *= vmax / sp; }
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      var imp = 0;
+      if (b.x < lo) { b.x = lo; if (b.vx < 0) { imp = Math.max(imp, -b.vx); b.vx = -b.vx * KO_REST; } }
+      else if (b.x > hiX) { b.x = hiX; if (b.vx > 0) { imp = Math.max(imp, b.vx); b.vx = -b.vx * KO_REST; } }
+      if (b.y < lo) { b.y = lo; if (b.vy < 0) { imp = Math.max(imp, -b.vy); b.vy = -b.vy * KO_REST; } }
+      else if (b.y > hiY) { b.y = hiY; if (b.vy > 0) { imp = Math.max(imp, b.vy); b.vy = -b.vy * KO_REST; } }
+      if (imp > 0.06 * u) koKnock(imp / (1.2 * u));
+      for (j = 0; j < ko.holes.length; j++) {
+        h = ko.holes[j];
+        if (Math.hypot(h.x - b.x, h.y - b.y) < R * 0.6) { koSink(b, h); break; }
+      }
+    }
+    /* ボールどうし */
+    for (i = 0; i < balls.length; i++) for (j = i + 1; j < balls.length; j++) {
+      var p = balls[i], q = balls[j];
+      if (p.sink || q.sink) continue;
+      dx = q.x - p.x; dy = q.y - p.y; d = Math.hypot(dx, dy);
+      if (d < 2 * r && d > 0.01) {
+        var nx = dx / d, ny = dy / d, ov = 2 * r - d;
+        p.x -= nx * ov / 2; p.y -= ny * ov / 2; q.x += nx * ov / 2; q.y += ny * ov / 2;
+        var rv = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny;
+        if (rv < 0) {
+          var jm = -(1 + 0.7) * rv / 2; p.vx -= jm * nx; p.vy -= jm * ny; q.vx += jm * nx; q.vy += jm * ny;
+          if (-rv > 0.1 * u) tone(700 + rand(-60, 60), 0.05, 'triangle', 0.04 + 0.08 * Math.min(1, -rv / (1.2 * u)), 500);
+        }
+      }
+    }
+  }
+  function koDraw(now) {
+    var c = koCtx, r = ko.r, i, b, h, s, x, y, sp;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    if (ko.bg) c.drawImage(ko.bg, 0, 0);
+    c.scale(ko.dpr, ko.dpr);
+    for (i = 0; i < ko.holes.length; i++) {
+      h = ko.holes[i];
+      if (h.pulse >= 0) {
+        var t = h.pulse / 0.6;
+        c.strokeStyle = h.col.c; c.globalAlpha = 1 - t; c.lineWidth = ko.R * 0.12; c.beginPath(); c.arc(h.x, h.y, ko.R * (1 + 0.5 * t), 0, 7); c.stroke(); c.globalAlpha = 1;
+      }
+    }
+    for (i = 0; i < ko.balls.length; i++) {
+      b = ko.balls[i]; x = b.x; y = b.y;
+      if (b.born > now) continue;
+      var born = Math.max(0, Math.min(1, (now - b.born) / 300));
+      s = reduce ? 1 : 0.4 + 0.6 * (1 - Math.pow(1 - born, 3));
+      if (b.sink) {
+        var k = Math.min(1, b.sink.t / 0.35);
+        x = b.sink.x0 + (b.sink.h.x - b.sink.x0) * k; y = b.sink.y0 + (b.sink.h.y - b.sink.y0) * k; s = 1 - k;
+        if (s <= 0.01) continue;
+      } else {
+        c.fillStyle = 'rgba(30,60,30,.28)'; c.beginPath(); c.ellipse(x + r * 0.18, y + r * 0.3, r * 0.95 * s, r * 0.8 * s, 0, 0, 7); c.fill();
+      }
+      sp = ko.sprites[b.col];
+      c.drawImage(sp, x - sp.width / ko.dpr / 2 * s, y - sp.height / ko.dpr / 2 * s, sp.width / ko.dpr * s, sp.height / ko.dpr * s);
+    }
+  }
+  function koFrame(ts) {
+    ko.raf = requestAnimationFrame(koFrame);
+    var now = performance.now(), dt = Math.min(0.05, Math.max(0.001, (now - (ko.last || now)) / 1000));
+    ko.last = now;
+    if (ko.mode !== 'wait') koStep(dt);
+    koDraw(now);
+  }
+  games.koro = {
+    el: koStage,
+    enter: function () {
+      ko.on = true; ko.round = 1; ko.busy = false; ko.denied = false; ko.pt = null; ko.last = 0; ko.W = ko.H = 0; ko.balls = [];
+      ko.tx = ko.ty = 0; ko.base = null; ko.bs = null; ko.src = ''; ko.got = false;
+      koHint.hidden = true; koStartBtn.hidden = true; fxKo.innerHTML = '';
+      koGeo(); koNewRound();
+      koCv.addEventListener('pointerdown', koPtDown); koCv.addEventListener('pointermove', koPtMove);
+      koCv.addEventListener('pointerup', koPtUp); koCv.addEventListener('pointercancel', koPtUp);
+      var needPerm = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+      if (needPerm && !koGranted) { ko.mode = 'wait'; koStartBtn.hidden = false; }
+      else koSensing();
+      if (ko.raf) cancelAnimationFrame(ko.raf);
+      ko.raf = requestAnimationFrame(koFrame);
+    },
+    leave: function () {
+      ko.on = false;
+      if (ko.raf) { cancelAnimationFrame(ko.raf); ko.raf = 0; }
+      koStopSensing();
+      koCv.removeEventListener('pointerdown', koPtDown); koCv.removeEventListener('pointermove', koPtMove);
+      koCv.removeEventListener('pointerup', koPtUp); koCv.removeEventListener('pointercancel', koPtUp);
+      clearTimers(); ko.pt = null; ko.balls = []; ko.mode = 'wait';
+      koStartBtn.hidden = true; koHint.hidden = true; fxKo.innerHTML = '';
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: function () { if (ko.on) koGeo(); }
+  };
+
   /* ---------- せってい（おとなよう）シート ---------- */
   var setSheet = $('#setsheet'), setBtn = $('#setbtn'), thrIn = $('#thr'), segs = [].slice.call(setSheet.querySelectorAll('.seg'));
   var ctBtn = $('#cam-test'), ctVideo = $('#set-video'), ctMsg = $('#cam-msg'), diagEl = $('#diag');
@@ -4359,14 +4786,16 @@
     abc:   { html: '<span class="abc-ico"><b style="color:#E8362E">A</b><b style="color:#2F6FEF">B</b><b style="color:#2FB34F">C</b></span>', lab: 'ABC', c: '#F6E3BD', say: 'えーびーしー！' },
     clock: { ico: '🕒', lab: 'とけい',         c: '#CFE8FF', say: 'とけい！' },
     sticker: { html: '<span class="stk-ico">⭐</span>', lab: 'シールちょう', br: 'シール', c: '#FFE58F', say: 'シールちょう！' },
-    yubi:  { ico: '✋', lab: 'ゆびのおうち', br: 'ゆびの', c: '#FFD9B8', say: 'ゆびのおうち！' }
+    yubi:  { ico: '✋', lab: 'ゆびのおうち', br: 'ゆびの', c: '#FFD9B8', say: 'ゆびのおうち！' },
+    koro:  { ico: '🔴', lab: 'ころころボール', br: 'ころころ', c: '#C8F0B0', say: 'ころころボール！' }
   };
   var HPAGES = [
     { title: 'あそぶ', ico: '🎈', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
-    { title: 'まなぶ', ico: '🔤', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] }
+    { title: 'まなぶ', ico: '🔤', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
+    { title: 'うごかす', ico: '🤸', ids: ['koro'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
-  var hmEls = [$('#hm-p0'), $('#hm-p1')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
+  var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
   var hmDots = [].slice.call(document.querySelectorAll('.hm-dot'));
   HPAGES.forEach(function (pg, i) {
     pg.ids.forEach(function (id) {
@@ -4439,6 +4868,7 @@
     cur = name;
     homeEl.hidden = !!name;
     homeBtn.hidden = !name;
+    homeBtn.classList.toggle('ko-pos', name === 'koro');
     setBtn.hidden = !!name;
     if (!name) $('#clear').hidden = true;
     statEnter(name);
