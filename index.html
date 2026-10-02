@@ -518,6 +518,53 @@
   .setgrp input[type=range] { width: 100%; height: 40px; }
   .setgrp .sbtn { width: 100%; min-height: 56px; margin-top: 8px; border: 0; border-radius: 16px; background: #E4F0FF; font-size: 18px; padding: 0 12px; }
   .setmsg { margin: 8px 0 0; padding: 8px 12px; border-radius: 12px; background: #FFE9E6; color: #A52A1E; font-size: 15px; line-height: 1.4; }
+  /* あそびの きろく（おとなよう）。ライトこてい。バーは 1しょく（あおの だんかい） */
+  .stats { --st-bar: #5598E7; --st-strong: #256ABF; --st-grid: #E3E8F1; --st-mut: #66708A; --st-track: #EEF2FA; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .stats h4 { margin: 18px 0 6px; font-size: 15px; }
+  .pseg { display: flex; gap: 6px; }
+  .pseg button { flex: 1 1 0; min-width: 0; min-height: 44px; border: 0; border-radius: 12px; background: #E8EEFA; font-size: 15px; padding: 0 6px; color: var(--ink); }
+  .pseg button[aria-pressed="true"] { background: #FFD21F; box-shadow: inset 0 0 0 2px var(--ink); font-weight: 800; }
+  .pseg.mini { flex: 0 0 auto; }
+  .pseg.mini button { flex: 0 0 auto; min-height: 34px; padding: 0 12px; font-size: 13px; border-radius: 10px; }
+  .st-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+  .st-card { min-width: 0; padding: 10px 8px; border-radius: 14px; background: #F3F6FC; }
+  .st-card .k { font-size: 12px; color: var(--st-mut); line-height: 1.3; }
+  .st-card .v { margin-top: 4px; font-size: 18px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+  .st-card .u { display: inline-block; white-space: nowrap; }
+  .st-card .v.fav { font-size: 15px; }
+  .st-card .s { margin-top: 3px; font-size: 12px; color: var(--st-mut); line-height: 1.3; }
+  .st-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 18px; }
+  .st-head h4 { margin: 0; }
+  .st-row { padding: 6px 0; }
+  .st-r1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .st-nm { min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+  .st-val { flex: 0 0 auto; font-size: 14px; }
+  .st-val b { font-weight: 800; }
+  .st-r2 { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+  .st-track { flex: 1; min-width: 0; height: 10px; border-radius: 0 5px 5px 0; background: var(--st-track); }
+  .st-fill { display: block; height: 100%; min-width: 4px; border-radius: 0 4px 4px 0; background: var(--st-bar); }
+  .st-fill.top { background: var(--st-strong); }
+  .st-avg { flex: 0 0 auto; min-width: 8.6em; font-size: 12px; color: var(--st-mut); text-align: right; white-space: nowrap; }
+  .st-row.zero { opacity: .45; padding: 3px 0; }
+  .st-row.zero .st-r1 { font-size: 14px; }
+  .st-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .st-inner { position: relative; }
+  .st-inner svg { display: block; touch-action: pan-x pan-y; }
+  .st-inner text { font-family: inherit; font-size: 11px; fill: var(--st-mut); }
+  .st-inner .grid { stroke: var(--st-grid); stroke-width: 1; }
+  .st-inner .bar { fill: var(--st-bar); }
+  .st-inner .bar.sel { fill: var(--st-strong); }
+  .st-inner .hit { fill: transparent; cursor: pointer; outline: none; }
+  .st-inner .hit:focus-visible { stroke: var(--st-strong); stroke-width: 2; }
+  .st-tip { position: absolute; z-index: 3; pointer-events: none; padding: 6px 9px; border-radius: 10px; background: var(--ink); color: #fff; font-size: 12px; line-height: 1.45; white-space: nowrap; box-shadow: 0 3px 10px rgba(43,58,103,.3); }
+  .st-tip b { font-weight: 800; }
+  #st-since { margin-top: 12px; }
+  .st-cap { margin: 2px 0 0; font-size: 12px; color: var(--st-mut); }
+  .st-empty { margin: 8px 0 0; padding: 18px 14px; border-radius: 14px; background: #F3F6FC; font-size: 15px; line-height: 1.6; text-align: center; color: var(--st-mut); }
+  .st-sure { margin-top: 8px; padding: 12px; border-radius: 14px; background: #FFE9E6; }
+  .st-sure p { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #A52A1E; }
+  .st-sure .pseg button { min-height: 48px; font-size: 16px; }
+  .st-sure .pseg button.danger { background: #E5483B; color: #fff; }
   .diag { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 10px; }
   .diag canvas { width: 160px; height: 120px; border-radius: 12px; background: #222; transform: scaleX(-1); display: block; }
   .dbar { position: relative; width: 100%; max-width: 360px; height: 18px; border-radius: 9px; background: #E4F0FF; overflow: visible; }
@@ -1015,6 +1062,22 @@
   <div class="setsheet" id="setsheet" role="dialog" aria-label="せってい" hidden>
     <div class="sethead"><h2>せってい（おとなよう）</h2><button class="setx" id="setx" type="button" aria-label="とじる">✖</button></div>
     <div class="setbody">
+      <div class="setgrp stats" id="statsgrp"><h3>あそびの きろく</h3>
+        <div class="st-empty" id="st-empty" hidden>まだ きろくが ありません。ゲームで あそぶと ここに でます</div>
+        <div id="st-main">
+          <div class="pseg" id="st-period" role="group" aria-label="きかん"><button type="button" data-v="today">きょう</button><button type="button" data-v="7">7にち</button><button type="button" data-v="30">30にち</button><button type="button" data-v="all">ぜんぶ</button></div>
+          <div class="st-sum" id="st-sum"></div>
+          <div class="st-head"><h4>ゲームべつ</h4><div class="pseg mini" id="st-sort" role="group" aria-label="ならびじゅん"><button type="button" data-v="s">じかん</button><button type="button" data-v="n">かいすう</button></div></div>
+          <div id="st-games"></div>
+          <div id="st-daysec"><h4 id="st-dayttl">ひにちべつ</h4><div id="st-daychart"></div></div>
+          <h4 id="st-hrttl">じかんたいべつ</h4><div id="st-hourchart"></div>
+          <p class="note" id="st-since"></p>
+          <p class="note">この たんまつの なかだけに ほぞんされます</p>
+          <button class="sbtn" id="st-reset" type="button">きろくを けす</button>
+          <div class="st-sure" id="st-sure" hidden><p>ほんとうに ぜんぶの きろくを けしますか？ もとには もどせません。</p>
+            <div class="pseg"><button type="button" id="st-no">やめる</button><button type="button" class="danger" id="st-yes">けす</button></div></div>
+        </div>
+      </div>
       <div class="setgrp"><h3>おと</h3>
         <div class="seg" data-k="sound"><button type="button" data-v="1">あり</button><button type="button" data-v="0">なし</button></div></div>
       <div class="setgrp"><h3>こえ（よみあげ）</h3>
@@ -4267,7 +4330,7 @@
     if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     ctMsg.hidden = true; diagEl.hidden = true;
     famSync(); famMsgShow(''); famDisarm();
-    segRefresh(); setSheet.hidden = false;
+    segRefresh(); setSheet.hidden = false; statsRender();
     var body = setSheet.querySelector('.setbody'); if (body) body.scrollTop = 0;
   }
   function closeSettings() {
@@ -4370,7 +4433,7 @@
   hmSettle(); hmRender();
 
   function go(name) {
-    if (cur) { games[cur].leave(); games[cur].el.hidden = true; }
+    if (cur) { statLeave(); games[cur].leave(); games[cur].el.hidden = true; }
     clearTimers();
     hideWord();
     cur = name;
@@ -4378,6 +4441,7 @@
     homeBtn.hidden = !name;
     setBtn.hidden = !!name;
     if (!name) $('#clear').hidden = true;
+    statEnter(name);
     if (name) { games[name].el.hidden = false; games[name].enter(); }
   }
   homeBtn.addEventListener('click', function () { audio(); go(null); tone(520, 0.12, 'triangle', 0.1); });
@@ -4385,6 +4449,283 @@
   window.addEventListener('resize', function () {
     if (cur && games[cur].resize) games[cur].resize();
   });
+
+  /* ---------- あそびの きろく（おとなよう）。localStorage: ponpon.stats.v1 ---------- */
+  var ST_KEY = 'ponpon.stats.v1', ST_KEEP = 120, ST_IDLE = 60000, ST_MINPLAY = 3000, ST_SESS = 30 * 60000;
+  var stats = stLoad();
+  var stLastIn = Date.now(), stTickN = 0, stDirty = false, stEnterAt = 0, stCounted = false, stPend = [], stSessLast = 0;
+  var STAT = { period: '7', sort: 's' };
+  var STICO = { abc: '🔤', sticker: '⭐' };
+  var WD = ['日', '月', '火', '水', '木', '金', '土'];
+  function stPad(n) { return (n < 10 ? '0' : '') + n; }
+  function stKey(d) { return d.getFullYear() + '-' + stPad(d.getMonth() + 1) + '-' + stPad(d.getDate()); }
+  function stNewDay() { var h = []; for (var i = 0; i < 24; i++) h.push(0); return { g: {}, h: h, ss: 0, hm: 0 }; }
+  function stNum(v) { v = +v; return isFinite(v) && v > 0 ? v : 0; }
+  function stLoad() {
+    var s = { v: 1, days: {}, since: '', old: {} }, o = null;
+    try { var raw = localStorage.getItem(ST_KEY); if (raw) o = JSON.parse(raw); } catch (e) { o = null; }
+    if (o && typeof o === 'object' && o.days && typeof o.days === 'object') {
+      Object.keys(o.days).forEach(function (k) {
+        var d = o.days[k];
+        if (!/^\d{4}-\d\d-\d\d$/.test(k) || !d || typeof d !== 'object') return;
+        var nd = stNewDay(); nd.ss = stNum(d.ss); nd.hm = stNum(d.hm);
+        if (d.g && typeof d.g === 'object') Object.keys(d.g).forEach(function (id) { var e = d.g[id]; if (e && typeof e === 'object') nd.g[id] = { n: stNum(e.n), s: stNum(e.s) }; });
+        if (d.h && d.h.length) for (var i = 0; i < 24; i++) nd.h[i] = stNum(d.h[i]);
+        s.days[k] = nd;
+      });
+      if (o.old && typeof o.old === 'object') Object.keys(o.old).forEach(function (id) { var e = o.old[id]; if (e && typeof e === 'object') s.old[id] = { n: stNum(e.n), s: stNum(e.s) }; });
+      if (typeof o.since === 'string' && /^\d{4}-\d\d-\d\d$/.test(o.since)) s.since = o.since;
+    }
+    return s;
+  }
+  function stPrune() {   /* 120にち より ふるい ひは ゲームごとに ごうけいして old へ */
+    var c = new Date(); c.setDate(c.getDate() - ST_KEEP); var ck = stKey(c);
+    Object.keys(stats.days).forEach(function (k) {
+      if (k > ck) return;
+      var d = stats.days[k];
+      Object.keys(d.g).forEach(function (id) { var t = stats.old[id] || (stats.old[id] = { n: 0, s: 0 }); t.n += d.g[id].n; t.s += d.g[id].s; });
+      delete stats.days[k]; stDirty = true;
+    });
+  }
+  function stSave(force) {
+    if (!stDirty && !force) return;
+    stPrune();
+    try { localStorage.setItem(ST_KEY, JSON.stringify(stats)); } catch (e) {}
+    stDirty = false;
+  }
+  function stDay() { var k = stKey(new Date()), d = stats.days[k]; if (!d) d = stats.days[k] = stNewDay(); if (!stats.since) stats.since = k; return d; }
+  function stGame(d, id) { return d.g[id] || (d.g[id] = { n: 0, s: 0 }); }
+  function stCountPlay() {
+    var d = stDay(), g = stGame(d, cur);
+    g.n++; stCounted = true; stDirty = true;
+    stPend.forEach(function (hr) { g.s++; d.h[hr]++; });
+    stPend = [];
+  }
+  function stTick() {   /* アプリぜんたいで ひとつだけの 1びょうタイマー */
+    stTickN++;
+    var now = Date.now();
+    if (cur && stEnterAt && !stCounted && now - stEnterAt >= ST_MINPLAY) stCountPlay();
+    if (document.visibilityState === 'visible' && !setOpen && now - stLastIn <= ST_IDLE) {
+      var d = stDay(), hr = new Date().getHours();
+      if (!stSessLast || now - stSessLast > ST_SESS) d.ss++;
+      stSessLast = now;
+      if (!cur) d.hm++;
+      else if (!stCounted) stPend.push(hr);          /* 3びょうに なるまでは ほりゅう */
+      else { stGame(d, cur).s++; d.h[hr]++; }
+      stDirty = true;
+    }
+    if (stTickN % 10 === 0) stSave();
+  }
+  function statEnter(name) { stEnterAt = name ? Date.now() : 0; stCounted = false; stPend = []; }
+  function statLeave() {
+    if (cur && !stCounted && stEnterAt && Date.now() - stEnterAt >= ST_MINPLAY) stCountPlay();
+    stPend = []; stEnterAt = 0; stSave();
+  }
+  ['pointerdown', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { stLastIn = Date.now(); }, true); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') stSave(); });
+  window.addEventListener('pagehide', function () { stSave(); });
+  setInterval(stTick, 1000);
+
+  /* --- ひょうじ --- */
+  function stFmt(sec) {
+    sec = Math.round(sec);
+    if (sec >= 3600) { var m = Math.floor(sec % 3600 / 60); return Math.floor(sec / 3600) + 'じかん' + (m ? ' ' + m + 'ふん' : ''); }
+    if (sec >= 60) return Math.floor(sec / 60) + 'ふん';
+    return sec + 'びょう';
+  }
+  function stEl(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function stSvg(tag, at) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (var k in at) e.setAttribute(k, at[k]); return e; }
+  function stIco(id) { return STICO[id] || TD[id].ico; }
+  function stDays(n) { var t = new Date(), o = []; for (var i = n - 1; i >= 0; i--) { var d = new Date(t.getFullYear(), t.getMonth(), t.getDate() - i); o.push({ k: stKey(d), d: d }); } return o; }
+  function stMD(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function stHasData() {
+    var any = Object.keys(stats.old).length > 0;
+    Object.keys(stats.days).forEach(function (k) { var g = stats.days[k].g; Object.keys(g).forEach(function (id) { if (g[id].n || g[id].s) any = true; }); });
+    return any;
+  }
+  function stSum(keys) {
+    var r = { sec: 0, plays: 0, g: {}, h: [] };
+    for (var i = 0; i < 24; i++) r.h.push(0);
+    keys.forEach(function (k) {
+      var d = stats.days[k]; if (!d) return;
+      Object.keys(d.g).forEach(function (id) { var t = r.g[id] || (r.g[id] = { n: 0, s: 0 }); t.n += d.g[id].n; t.s += d.g[id].s; });
+      for (var j = 0; j < 24; j++) r.h[j] += d.h[j];
+    });
+    return r;
+  }
+  function stTot(r) { r.sec = 0; r.plays = 0; Object.keys(r.g).forEach(function (id) { r.sec += r.g[id].s; r.plays += r.g[id].n; }); return r; }
+  function stAgg(P) {
+    var keys = P === 'all' ? Object.keys(stats.days) : stDays(P === 'today' ? 1 : +P).map(function (x) { return x.k; });
+    var r = stSum(keys);
+    if (P === 'all') Object.keys(stats.old).forEach(function (id) { var t = r.g[id] || (r.g[id] = { n: 0, s: 0 }); t.n += stats.old[id].n; t.s += stats.old[id].s; });
+    return stTot(r);
+  }
+  function stSinceDays() {
+    if (!stats.since) return 1;
+    var p = stats.since.split('-'), a = new Date(+p[0], +p[1] - 1, +p[2]), t = new Date();
+    return Math.max(1, Math.round((new Date(t.getFullYear(), t.getMonth(), t.getDate()) - a) / 86400000) + 1);
+  }
+  function stUnits(el, txt) { txt.split(' ').forEach(function (u, i) { if (i) el.appendChild(document.createTextNode(' ')); el.appendChild(stEl('span', 'u', u)); }); }
+  function stK(t) { var e = stEl('div', 'k'); stUnits(e, t); return e; }
+  function stTicks(max) {
+    var steps = [10, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200], step = steps[steps.length - 1];
+    for (var i = 0; i < steps.length; i++) if (max / steps[i] <= 4) { step = steps[i]; break; }
+    var top = Math.max(step, Math.ceil(max / step) * step), t = [];
+    for (var v = 0; v <= top; v += step) t.push(v);
+    return t;
+  }
+  function stTickLab(v) { return v === 0 ? '0' : (v >= 3600 && v % 3600 === 0) ? (v / 3600) + 'じかん' : v >= 60 ? Math.round(v / 60) + 'ふん' : v + 'びょう'; }
+  function stHideTips() {
+    [].forEach.call(setSheet.querySelectorAll('.st-tip'), function (t) { t.hidden = true; });
+    [].forEach.call(setSheet.querySelectorAll('.st-inner .bar.sel'), function (b) { b.classList.remove('sel'); });
+  }
+  /* cols: [{ v: びょう, lab: x じくラベル(または ''), tip: [html-ふうの [text,bold] の ぎょう] }] */
+  function stColumns(host, cols, aria) {
+    host.textContent = '';
+    var W = host.clientWidth || 320, axisW = 46, padT = 10, padB = 20, H = 150, plotH = H - padT - padB;
+    var n = cols.length, plotW = Math.max(W - axisW - 4, n * 9), svgW = axisW + plotW + 4;
+    var max = 0; cols.forEach(function (c) { if (c.v > max) max = c.v; });
+    var ticks = stTicks(max), top = ticks[ticks.length - 1];
+    var scroll = stEl('div', 'st-scroll'), inner = stEl('div', 'st-inner'), tip = stEl('div', 'st-tip'); tip.hidden = true;
+    inner.style.width = svgW + 'px';
+    var svg = stSvg('svg', { width: svgW, height: H, viewBox: '0 0 ' + svgW + ' ' + H, role: 'group', 'aria-label': aria });
+    ticks.forEach(function (v) {
+      var y = padT + plotH * (1 - v / top);
+      svg.appendChild(stSvg('line', { x1: axisW, x2: svgW - 2, y1: y + .5, y2: y + .5, 'class': 'grid' }));
+      var tx = stSvg('text', { x: axisW - 6, y: y + 4, 'text-anchor': 'end' }); tx.textContent = stTickLab(v); svg.appendChild(tx);
+    });
+    var slot = plotW / n, bw = Math.min(24, Math.max(4, slot - 3)), bars = [];
+    cols.forEach(function (c, i) {
+      var cx = axisW + slot * (i + .5), bar = null;
+      if (c.v > 0) {
+        var h = Math.max(2, plotH * c.v / top), r = Math.min(4, h, bw / 2), x = cx - bw / 2, y = padT + plotH - h;
+        bar = stSvg('path', { 'class': 'bar', d: 'M' + x + ' ' + (y + plotH * 0 + h) + 'V' + (y + r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'H' + (x + bw - r) + 'Q' + (x + bw) + ' ' + y + ' ' + (x + bw) + ' ' + (y + r) + 'V' + (y + h) + 'Z' });
+        svg.appendChild(bar);
+      }
+      bars.push(bar);
+      if (c.lab) { var lt = stSvg('text', { x: cx, y: H - 5, 'text-anchor': 'middle' }); lt.textContent = c.lab; svg.appendChild(lt); }
+    });
+    cols.forEach(function (c, i) {
+      var hit = stSvg('rect', { 'class': 'hit', x: axisW + slot * i, y: 0, width: slot, height: padT + plotH, tabindex: 0, role: 'button', 'aria-label': c.tip.map(function (l) { return l[0]; }).join(' ') });
+      function show() {
+        var was = !tip.hidden && tip._i === i;
+        stHideTips();
+        if (was) return;
+        tip._i = i; tip.textContent = '';
+        c.tip.forEach(function (l, j) { var d = stEl('div'); if (l[1]) d.appendChild(stEl('b', '', l[0])); else d.textContent = l[0]; tip.appendChild(d); });
+        tip.hidden = false;
+        var cx = axisW + slot * (i + .5), tw = tip.offsetWidth, th = tip.offsetHeight;
+        var bh = c.v > 0 ? Math.max(2, plotH * c.v / top) : 0, by = padT + plotH - bh;
+        tip.style.left = Math.max(0, Math.min(svgW - tw, cx - tw / 2)) + 'px';
+        tip.style.top = Math.max(0, by - th - 6) + 'px';
+        if (bars[i]) bars[i].classList.add('sel');
+      }
+      hit.addEventListener('click', function (e) { e.stopPropagation(); show(); });
+      hit.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); } });
+      svg.appendChild(hit);
+    });
+    inner.appendChild(svg); inner.appendChild(tip); scroll.appendChild(inner); host.appendChild(scroll);
+  }
+  function stTop3(g) {
+    return Object.keys(g).filter(function (id) { return TD[id] && g[id].s > 0; }).sort(function (a, b) { return g[b].s - g[a].s; }).slice(0, 3);
+  }
+  function stDayCols(P) {
+    var cols = [];
+    function mk(keys, title, lab) {
+      var r = stTot(stSum(keys)), tip = [[title + '　' + stFmt(r.sec), true]];
+      if (!r.sec) tip = [[title + '　あそんでいません', false]];
+      else stTop3(r.g).forEach(function (id) { tip.push([stIco(id) + ' ' + TD[id].lab + '　' + stFmt(r.g[id].s), false]); });
+      cols.push({ v: r.sec, lab: lab, tip: tip });
+    }
+    if (P === 'all') {   /* ちょっきん 17しゅう（119にち）を しゅうごとに */
+      var ds = stDays(119);
+      for (var w = 0; w < 17; w++) {
+        var part = ds.slice(w * 7, w * 7 + 7);
+        mk(part.map(function (x) { return x.k; }), stMD(part[0].d) + '〜' + stMD(part[6].d), (16 - w) % 4 === 0 ? stMD(part[0].d) : '');
+      }
+    } else {
+      var n = P === '7' ? 7 : 30, days = stDays(n);
+      days.forEach(function (x, i) {
+        var every = n === 7 ? 1 : 7, lab = ((n - 1 - i) % every === 0) ? stMD(x.d) : '';
+        mk([x.k], stMD(x.d) + '（' + WD[x.d.getDay()] + '）', lab);
+      });
+    }
+    return cols;
+  }
+  function stHourCols(r) {
+    var cols = [];
+    for (var i = 0; i < 24; i++) cols.push({ v: r.h[i], lab: i % 3 === 0 ? String(i) : '', tip: [[i + 'じ〜' + (i + 1) + 'じ　' + (r.h[i] ? stFmt(r.h[i]) : 'あそんでいません'), r.h[i] > 0]] });
+    return cols;
+  }
+  function stResetUI(sure) { $('#st-sure').hidden = !sure; $('#st-reset').hidden = sure; }
+  function statsRender() {
+    stHideTips();
+    var any = stHasData();
+    $('#st-empty').hidden = any; $('#st-main').hidden = !any;
+    if (!any) { stResetUI(false); return; }
+    var P = STAT.period, ag = stAgg(P);
+    [].forEach.call($('#st-period').children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === P)); });
+    [].forEach.call($('#st-sort').children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === STAT.sort)); });
+    /* まとめ */
+    var sum = $('#st-sum'); sum.textContent = '';
+    var favId = null, ids = Object.keys(TD);
+    ids.forEach(function (id) { var g = ag.g[id]; if (g && g.s > 0 && (!favId || g.s > ag.g[favId].s)) favId = id; });
+    var c1 = stEl('div', 'st-card'); c1.appendChild(stK('あそんだ じかん'));
+    var v1 = stEl('div', 'v'); v1.id = 'st-total'; stUnits(v1, stFmt(ag.sec)); c1.appendChild(v1);
+    if (P === '7' || P === '30') { var av = stEl('div', 's'); stUnits(av, '1にち へいきん'); av.appendChild(document.createTextNode(' ')); stUnits(av, stFmt(ag.sec / Math.min(+P, stSinceDays()))); c1.appendChild(av); }
+    var c2 = stEl('div', 'st-card'); c2.appendChild(stK('あそんだ かいすう'));
+    var v2 = stEl('div', 'v', ag.plays + 'かい'); v2.id = 'st-plays'; c2.appendChild(v2);
+    var c3 = stEl('div', 'st-card'); c3.appendChild(stK('いちばん すき'));
+    var v3 = stEl('div', 'v fav', favId ? stIco(favId) + ' ' + TD[favId].lab : '－'); v3.id = 'st-fav'; c3.appendChild(v3);
+    sum.appendChild(c1); sum.appendChild(c2); sum.appendChild(c3);
+    /* ゲームべつ */
+    var host = $('#st-games'); host.textContent = '';
+    var key = STAT.sort, oth = key === 's' ? 'n' : 's';
+    var rows = ids.map(function (id, i) { var g = ag.g[id] || { n: 0, s: 0 }; return { id: id, n: g.n, s: g.s, i: i }; });
+    var act = rows.filter(function (r) { return r.n > 0 || r.s > 0; }).sort(function (a, b) { return b[key] - a[key] || b[oth] - a[oth] || a.i - b.i; });
+    var zero = rows.filter(function (r) { return !(r.n > 0 || r.s > 0); });
+    var mx = act.length ? act[0][key] : 0;
+    act.forEach(function (r, i) {
+      var row = stEl('div', 'st-row'); row.setAttribute('data-id', r.id);
+      var r1 = stEl('div', 'st-r1'), nm = stEl('span', 'st-nm', stIco(r.id) + ' ' + TD[r.id].lab), vl = stEl('span', 'st-val');
+      var a = stEl('span', '', stFmt(r.s)), b = stEl('span', '', r.n + 'かい');
+      if (key === 's') a.style.fontWeight = '800'; else b.style.fontWeight = '800';
+      vl.appendChild(a); vl.appendChild(document.createTextNode(' ・ ')); vl.appendChild(b);
+      r1.appendChild(nm); r1.appendChild(vl); row.appendChild(r1);
+      var r2 = stEl('div', 'st-r2'), tr = stEl('div', 'st-track'), f = stEl('i', 'st-fill' + (i === 0 ? ' top' : ''));
+      f.style.width = (mx ? Math.max(0, r[key] / mx * 100) : 0).toFixed(1) + '%';
+      tr.appendChild(f); r2.appendChild(tr);
+      r2.appendChild(stEl('span', 'st-avg', r.n ? 'へいきん ' + stFmt(r.s / r.n) : ''));
+      row.appendChild(r2); host.appendChild(row);
+    });
+    zero.forEach(function (r) {
+      var row = stEl('div', 'st-row zero'), r1 = stEl('div', 'st-r1');
+      row.setAttribute('data-id', r.id);
+      r1.appendChild(stEl('span', 'st-nm', stIco(r.id) + ' ' + TD[r.id].lab)); r1.appendChild(stEl('span', 'st-val', '0かい'));
+      row.appendChild(r1); host.appendChild(row);
+    });
+    /* グラフ */
+    $('#st-daysec').hidden = P === 'today';
+    if (P !== 'today') {
+      $('#st-dayttl').textContent = P === 'all' ? 'しゅうごとの あそんだ じかん（ちょっきん 17しゅう）' : 'ひにちべつ の あそんだ じかん';
+      stColumns($('#st-daychart'), stDayCols(P), 'ひにちべつ');
+    }
+    $('#st-hrttl').textContent = P === 'today' ? 'じかんたいべつ（きょう）' : 'じかんたいべつ（いつ あそんでいるか）';
+    stColumns($('#st-hourchart'), stHourCols(ag), 'じかんたいべつ');
+    var sp = stats.since ? stats.since.replace(/-/g, '/') : '';
+    $('#st-since').textContent = sp ? 'きろく かいし: ' + sp : '';
+    $('#st-since').hidden = !sp;
+    stResetUI(false);
+  }
+  $('#st-period').addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('button') : null; if (!b) return; STAT.period = b.getAttribute('data-v'); statsRender(); });
+  $('#st-sort').addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('button') : null; if (!b) return; STAT.sort = b.getAttribute('data-v'); statsRender(); });
+  $('#st-reset').addEventListener('click', function () { stResetUI(true); });
+  $('#st-no').addEventListener('click', function () { stResetUI(false); });
+  $('#st-yes').addEventListener('click', function () {
+    stats = { v: 1, days: {}, since: '', old: {} }; stPend = []; stSave(true); statsRender();
+  });
+  setSheet.addEventListener('click', function (e) { if (!(e.target.closest && e.target.closest('.st-inner'))) stHideTips(); });
+  window.addEventListener('resize', function () { if (setOpen) statsRender(); });
 
   go(null);
 })();
