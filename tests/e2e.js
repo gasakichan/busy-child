@@ -381,6 +381,30 @@ async function holdOpen(p, ms) {
     ok((await p.locator('#basket .hint').count()) === 0, 'shop denied: shelf tap still scans');
     await p.context().close();
   }
+  /* ---------- 4b. shop pay: お金の山が重ならない（.stk はシールと名前がぶつかっていた）・iPad で大きく ---------- */
+  for (const vp of [{ width: 360, height: 740 }, { width: 820, height: 1180 }, { width: 1180, height: 820 }, { width: 844, height: 390 }]) {
+    const tag = vp.width + 'x' + vp.height;
+    const p = await newPage(br, vp, { deny: true });
+    await tapTile(p, LAB[8]); await sleep(900);
+    for (const l of ['おさかな', 'もも', 'にんじん', 'きゅうり', 'なす']) { await p.click('.prod[aria-label^="' + l + '"]'); await sleep(550); }
+    await p.click('#paybtn'); await sleep(2600);
+    const L = await p.evaluate(() => {
+      const R = e => e.getBoundingClientRect(), st = R(document.querySelector('#stage-shop')), pp = R(document.querySelector('#paypanel')), cz = R(document.querySelector('#coins'));
+      const ss = [...document.querySelectorAll('#coins .mstk')].map(R);
+      let overlap = false;
+      for (let i = 0; i < ss.length; i++) for (let j = i + 1; j < ss.length; j++) { const a = ss[i], b = ss[j]; if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) overlap = true; }
+      return { n: ss.length, overlap, minW: Math.min(...ss.map(r => r.width)), inside: ss.every(r => r.left >= cz.left - 1 && r.right <= cz.right + 1 && r.top >= cz.top - 1 && r.bottom <= cz.bottom + 1),
+        land: innerWidth > innerHeight, panelW: pp.width / st.width, panelH: pp.height / st.height, hs: document.documentElement.scrollWidth > innerWidth };
+    });
+    const big = vp.width >= 700 && vp.height >= 660;
+    ok(L.n >= 4 && !L.overlap && L.inside && L.minW >= (big ? 115 : 80) && !L.hs, tag + ' shop pay: ' + L.n + ' money stacks apart, inside, w>=' + Math.round(L.minW));
+    if (L.land) ok(L.panelW > 0.4 && L.panelH > 0.9, tag + ' shop pay: landscape pay panel fills right half ' + L.panelW.toFixed(2) + 'x' + L.panelH.toFixed(2));
+    if (tag === '820x1180' || tag === '1180x820') await p.screenshot({ path: SP + '/shop-pay-' + tag + '.png' });
+    let n = 0; while (n < 30 && await p.locator('#coins .mstk:not(.gone)').count()) { await p.locator('#coins .mstk:not(.gone)').first().click(); await sleep(420); n++; }
+    await sleep(900);
+    ok(await p.locator('#receipt:not([hidden])').count() === 1 && p.errs.length === 0, tag + ' shop pay: ' + n + ' taps -> receipt, no errors ' + p.errs.join('|'));
+    await p.context().close();
+  }
 
   /* ---------- 5. nurie fish ---------- */
   for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }]) {

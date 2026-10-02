@@ -348,7 +348,7 @@
 
   /* おみせやさん */
   #stage-shop {
-    --rowh: clamp(80px, 11vh, 120px); --shelfh: calc(var(--rowh) * 4 + 28px);
+    --rowh: clamp(80px, 11vh, 120px); --shelfh: calc(var(--rowh) * 4 + 28px); --k: 1;
     background: #DDF6EC; display: flex; flex-direction: column;
   }
   @media (min-aspect-ratio: 1/1) { #stage-shop { flex-direction: row; } }
@@ -431,7 +431,6 @@
     flex: 0 0 auto; height: var(--shelfh); min-width: 0; padding: 0 10px 10px;
     display: grid; gap: 6px; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr);
   }
-  @media (min-aspect-ratio: 1/1) { .shelf, .paypanel { flex: 1 1 0; height: auto; padding-top: 12px; } }
   .prod {
     min-width: 0; min-height: 0; border: 0; border-radius: 18px; background: var(--c); padding: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
@@ -448,17 +447,19 @@
     clip-path: polygon(8px 0, 100% 0, 100% 100%, 8px 100%, 0 50%);
   }
   .paypanel { flex: 0 0 auto; height: var(--shelfh); min-width: 0; padding: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
+  /* .paypanel より後に置く（先にあると上書きされて、よこむきで せまく なる） */
+  @media (min-aspect-ratio: 1/1) { .shelf, .paypanel { flex: 1 1 0; height: auto; padding-top: 12px; } }
   .paystat { flex: 0 0 auto; text-align: center; font-size: clamp(16px, 4.6vw, 24px); font-weight: 800; color: var(--ink); min-height: 1.3em; }
   .coins { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; }
   /* おかねの山（おもちゃのお金。本物のデザインは写さない） */
-  .stk {
-    position: relative; flex: 0 0 auto; width: 84px; height: 92px; padding: 0; border: 0; border-radius: 16px; background: none;
+  .mstk {
+    position: relative; flex: 0 0 auto; width: calc(84px * var(--k)); height: calc(92px * var(--k)); padding: 0; border: 0; border-radius: 16px; background: none;
     transition: opacity .3s, visibility 0s .3s;
   }
-  .stk:active .lay { transform: translateY(3px); }
-  .stk.gone { opacity: 0; visibility: hidden; pointer-events: none; }
-  .stk .lay { position: absolute; inset: 0; pointer-events: none; }
-  .stk .bdg {
+  .mstk:active .lay { transform: translateY(3px) scale(var(--k)); }
+  .mstk.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+  .mstk .lay { position: absolute; inset: 0; pointer-events: none; transform: scale(var(--k)); }
+  .mstk .bdg {
     position: absolute; top: 0; right: 0; z-index: 3; min-width: 30px; height: 26px; padding: 0 6px; border-radius: 13px; background: #F2463C; color: #fff;
     font-size: 16px; line-height: 26px; text-align: center; box-shadow: 0 2px 0 var(--shadow), 0 0 0 2px #fff; pointer-events: none;
   }
@@ -503,6 +504,18 @@
   .paper .rl { display: flex; justify-content: space-between; gap: 6px; white-space: nowrap; }
   .paper .rt { display: flex; justify-content: space-between; border-top: 2px dashed #bbb; margin-top: 3px; padding-top: 3px; font-size: 16px; }
   .paper .rf { text-align: center; margin-top: 3px; }
+  /* iPad など 大きい画面: おかね・かご・トレーを 大きく */
+  @media (min-width: 700px) and (min-height: 660px) {
+    #stage-shop { --k: 1.45; }
+    .basket { font-size: 48px; }
+    .paystat { font-size: 30px; }
+    .mstk .bdg { min-width: 40px; height: 34px; border-radius: 17px; font-size: 22px; line-height: 34px; }
+    .tray { height: 84px; }
+    .tray .tc { zoom: 1.4; }
+    .tray .tw { font-size: 22px; }
+    .paper { font-size: 19px; }
+    .paper .rh, .paper .rt { font-size: 23px; }
+  }
   /* せってい（おとなよう）: ホームの ⚙️ を 1.5 びょう ながおしで ひらく ぜんがめんシート */
   .setsheet { position: fixed; inset: 0; z-index: 100; background: #fff; color: var(--ink); display: flex; flex-direction: column; touch-action: auto; }
   .sethead { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 3px solid #EEF1F8; }
@@ -2077,7 +2090,7 @@
     payStat.textContent = 'はらった: ' + fmt(0) + ' / ' + fmt(shopTotal);
     plan.forEach(function (p) {
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'stk'; b.setAttribute('aria-label', yen(p.v));
+      b.type = 'button'; b.className = 'mstk'; b.setAttribute('aria-label', yen(p.v));
       b.innerHTML = '<span class="lay"></span><b class="bdg"></b>';
       var st = { v: p.v, rem: p.n, el: b, lay: b.firstChild, bdg: b.lastChild };
       payStk.push(st); coinsEl.appendChild(b); renderStack(st);
@@ -2105,11 +2118,12 @@
     say(w); trayWord.textContent = yen(st.v);
     animPaid(from, paidSum);
     var a = centerIn(st.lay, fxShop), t = centerIn(trayEl, fxShop);
-    var f = mk(st.v); f.style.left = a.x + 'px'; f.style.top = a.y + 'px'; f.style.transform = 'translate(-50%, -50%)'; fxShop.appendChild(f);
+    var k = parseFloat(getComputedStyle(shopStage).getPropertyValue('--k')) || 1;
+    var f = mk(st.v); f.style.left = a.x + 'px'; f.style.top = a.y + 'px'; f.style.transform = 'translate(-50%, -50%) scale(' + k + ')'; fxShop.appendChild(f);
     renderStack(st);
     var an = f.animate([
-      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-      { transform: 'translate(calc(-50% + ' + (t.x - a.x) + 'px), calc(-50% + ' + (t.y - a.y) + 'px)) scale(.45)', opacity: 0.95 }
+      { transform: 'translate(-50%, -50%) scale(' + k + ')', opacity: 1 },
+      { transform: 'translate(calc(-50% + ' + (t.x - a.x) + 'px), calc(-50% + ' + (t.y - a.y) + 'px)) scale(' + (0.45 * k) + ')', opacity: 0.95 }
     ], { duration: reduce ? 120 : 350, easing: 'ease-in', fill: 'forwards' });
     an.onfinish = function () {
       f.remove();
