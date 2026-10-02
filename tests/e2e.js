@@ -1248,6 +1248,29 @@ async function holdOpen(p, ms) {
     }
   }
 
+  /* ---------- rotation: portrait -> landscape -> portrait keeps 🏠 tappable ---------- */
+  {
+    const hit = p => p.evaluate(() => { const b = document.querySelector(document.querySelector('#homebtn').hidden ? '#setbtn' : '#homebtn'), r = b.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!e && (e === b || b.contains(e)); });
+    const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
+    for (const lab of [null].concat(LAB)) {
+      if (lab) { await tapTile(p, lab); await sleep(400); }
+      await p.setViewportSize({ width: 844, height: 390 }); await sleep(900);
+      ok(await hit(p), 'rotate ' + (lab || 'home') + ': landscape 🏠 hit-tests to itself');
+      await p.setViewportSize({ width: 390, height: 844 }); await sleep(900);
+      await p.evaluate(() => { window.scrollTo(0, 300); document.body.scrollTop = 300; }); await sleep(50);
+      await p.evaluate(() => new Promise(r => requestAnimationFrame(() => r())));
+      ok(await p.evaluate(() => window.scrollY === 0 && document.body.scrollTop === 0), 'rotate ' + (lab || 'home') + ': scroll reset to 0');
+      ok(await hit(p), 'rotate ' + (lab || 'home') + ': portrait 🏠 hit-tests to itself');
+      if (lab === 'ころころボール' || lab === 'とけい') await p.screenshot({ path: SP + '/rot-' + (lab === 'とけい' ? 'clock' : 'koro') + '.png' });
+      if (lab) {
+        await p.click('#homebtn'); await sleep(250);
+        ok(await p.evaluate(() => !document.querySelector('#home').hidden), 'rotate ' + lab + ': 🏠 click returns home');
+      }
+    }
+    ok(p.errs.length === 0, 'rotate: no console errors ' + p.errs.join('|'));
+    await p.context().close();
+  }
+
   await br.close();
   console.log(fails ? ('\n' + fails + ' FAILED') : '\nALL OK');
   process.exit(fails ? 1 : 0);

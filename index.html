@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFF6E0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8E%88%3C/text%3E%3C/svg%3E">
@@ -39,11 +39,11 @@
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  html, body { height: 100%; }
+  html { height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body {
+    position: fixed; inset: 0; height: auto;
     margin: 0;
-    padding-inline: 16px;
-    padding-block: 12px;
+    padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -208,7 +208,7 @@
   .fx .word { font-size: 32px; color: var(--ink); margin: -16px 0 0 -40px; white-space: nowrap; text-shadow: 0 2px 0 #fff; }
 
   /* 上のボタン */
-  .tools { position: absolute; top: 12px; right: 12px; z-index: 6; display: flex; gap: 10px; }
+  .tools { position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); right: 12px; right: calc(12px + env(safe-area-inset-right)); z-index: 6; display: flex; gap: 10px; }
   .tool {
     width: 56px; height: 56px; border-radius: 50%;
     border: 0; background: rgba(255,255,255,.95); font-size: 28px; line-height: 1;
@@ -224,7 +224,7 @@
     mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
   }
   .tool.lp.hold::after { opacity: 1; }
-  .homebtn { position: absolute; top: 12px; left: 12px; z-index: 6; }
+  .homebtn { position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); left: 12px; left: calc(12px + env(safe-area-inset-left)); z-index: 6; }
 
   /* 大きなことば */
   #bigword {
@@ -236,7 +236,7 @@
     opacity: 0;
   }
   .sayline {
-    position: absolute; top: 12px; left: 80px; right: 80px; height: 56px; z-index: 5;
+    position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); left: 80px; left: calc(80px + env(safe-area-inset-left)); right: 80px; right: calc(80px + env(safe-area-inset-right)); height: 56px; z-index: 5;
     display: flex; align-items: center; justify-content: center;
     font-size: clamp(26px, 8vw, 44px); white-space: nowrap; pointer-events: none;
   }
@@ -660,6 +660,7 @@
     grid-template-areas: "card card card" "prev name next";
   }
   .nu-card { grid-area: card; position: relative; justify-self: center; width: 100%; max-width: calc(100vh - 360px); aspect-ratio: 1; min-width: 0; border-radius: 24px; background: #fff; box-shadow: 0 6px 0 var(--shadow), inset 0 0 0 4px #F2E6C8; }
+  .nu-card { grid-area: card; position: relative; justify-self: center; width: 100%; max-width: calc(100dvh - 360px); aspect-ratio: 1; min-width: 0; border-radius: 24px; background: #fff; box-shadow: 0 6px 0 var(--shadow), inset 0 0 0 4px #F2E6C8; }
   .nu-card svg { position: absolute; left: 2px; top: 2px; width: calc(100% - 4px); height: calc(100% - 4px); display: block; touch-action: none; }
   .rg { cursor: pointer; transform-box: fill-box; transform-origin: center; }
   .nu-name { grid-area: name; display: grid; place-items: center; font-size: clamp(22px, 6vw, 34px); white-space: nowrap; }
@@ -672,6 +673,7 @@
   @media (min-aspect-ratio: 4/3) {
     .nu-main { grid-template-columns: 80px 1fr 80px; grid-template-rows: minmax(0, 1fr); grid-template-areas: "prev card next"; align-items: center; padding: 0 10px; }
     .nu-card { max-width: calc(100vh - 230px); align-self: center; }
+    .nu-card { max-width: calc(100dvh - 230px); align-self: center; }
     .nu-name { display: none; }
   }
 
@@ -774,6 +776,7 @@
   .ck-stars i { position: absolute; font-style: normal; font-size: 18px; line-height: 1; animation: twinkle 2.4s ease-in-out infinite; }
   @keyframes twinkle { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.1); } }
   .ck-face { position: relative; z-index: 2; flex: 0 0 auto; width: min(80%, calc(100vh - 330px)); aspect-ratio: 1; touch-action: none; cursor: grab; filter: drop-shadow(0 8px 0 rgba(43,58,103,.2)); }
+  .ck-face { position: relative; z-index: 2; flex: 0 0 auto; width: min(80%, calc(100dvh - 330px)); aspect-ratio: 1; touch-action: none; cursor: grab; filter: drop-shadow(0 8px 0 rgba(43,58,103,.2)); }
   .ck-face svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .ck-face .num { font-family: var(--font-display); font-weight: 800; font-size: 22px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
   .ck-orb { position: absolute; left: 0; top: 0; z-index: 3; width: 48px; height: 48px; margin: -24px 0 0 -24px; font-size: 40px; line-height: 48px; text-align: center; pointer-events: none; transition: transform .25s ease-out; }
@@ -788,6 +791,7 @@
   @media (min-aspect-ratio: 4/3) {
     #stage-clock { flex-direction: row; justify-content: center; padding: 12px 12px 12px 80px; gap: 28px; }
     .ck-face { width: min(52%, calc(100vh - 48px)); }
+    .ck-face { width: min(52%, calc(100dvh - 48px)); }
     .ck-side { width: min(44%, 460px); }
   }
 
@@ -4890,9 +4894,26 @@
   }
   homeBtn.addEventListener('click', function () { audio(); go(null); tone(520, 0.12, 'triangle', 0.1); });
 
-  window.addEventListener('resize', function () {
-    if (cur && games[cur].resize) games[cur].resize();
-  });
+  /* 回転まわり: iOS は回転のあとにスクロール／ズームが残ったり、サイズが遅れて確定する。リセットしつつ何度かやり直す（全体で共有のタイマー） */
+  function vpReset() {
+    try { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch (e) {}
+  }
+  function vpRun() {
+    vpReset();
+    if (cur && games[cur] && games[cur].resize) games[cur].resize();
+  }
+  var vpTimers = [];
+  function vpSettle() {
+    vpRun();
+    vpTimers.forEach(clearTimeout);
+    vpTimers = [100, 350, 800].map(function (ms) { return setTimeout(vpRun, ms); });
+  }
+  window.addEventListener('resize', vpSettle);
+  window.addEventListener('orientationchange', vpSettle);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', vpSettle);
+  window.addEventListener('pageshow', vpReset);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) vpReset(); });
+  window.addEventListener('scroll', function () { if (window.scrollX || window.scrollY) vpReset(); });
 
   /* ---------- あそびの きろく（おとなよう）。localStorage: ponpon.stats.v1 ---------- */
   var ST_KEY = 'ponpon.stats.v1', ST_KEEP = 120, ST_IDLE = 60000, ST_MINPLAY = 3000, ST_SESS = 30 * 60000;
