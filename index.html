@@ -70,26 +70,60 @@
 
   /* ホーム */
   #home { background: #FFF1C9; }
-  .homegrid {
-    position: absolute; inset: 0;
-    display: grid; gap: 10px; padding: var(--top) 10px 10px;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(4, 1fr);
+  .hm-title {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2;
+    height: 56px; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    font-size: 32px; line-height: 1; color: var(--ink);
   }
+  .hm-area { position: absolute; top: var(--top); bottom: 84px; left: 10px; right: 10px; overflow: hidden; }
+  .hm-page {
+    position: absolute; inset: 0;
+    display: grid; gap: 10px; padding: 0 0 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    transition: transform 250ms ease, opacity 250ms ease;
+  }
+  .hm-page > .tile:nth-child(7):last-child { grid-column: 2; }
   .tile {
+    container-type: size;
     min-width: 0; min-height: 0; padding: 0; overflow: hidden;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
     border: 0; border-radius: 24px;
     background: var(--c); color: var(--fg, var(--ink));
     box-shadow: 0 5px 0 var(--shadow);
   }
-  @media (min-aspect-ratio: 4/3) {
-    .homegrid { grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(2, 1fr); }
-  }
   .tile:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
-  .tile .ico { font-size: clamp(36px, min(12vw, 8vh), 84px); line-height: 1; }
-  .tile .lab { font-size: clamp(11px, 2.9vw, 20px); line-height: 1.15; text-align: center; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; padding: 0 2px; }
-
+  .tile .ico { font-size: 45cqmin; line-height: 1; }
+  .tile .lab { font-size: clamp(18px, 3.2vmin, 26px); line-height: 1.15; text-align: center; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; padding: 0 4px; }
+  .tile .lab .pbr { display: none; }
+  .tile .lab { white-space: nowrap; }
+  @media (max-width: 699px) {
+    .tile .ico { font-size: min(60cqw, 40cqh); }
+    .tile .lab { font-size: min(clamp(14px, 4.4vw, 20px), 15.5cqw); padding: 0; }
+    .tile .lab .pbr { display: inline; }
+  }
+  .hm-bar { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 64px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; z-index: 2; }
+  .hm-nav {
+    width: 64px; height: 64px; border-radius: 50%; border: 0; padding: 0;
+    background: #fff; color: var(--ink); font-size: 28px; line-height: 1;
+    box-shadow: 0 5px 0 var(--shadow); display: flex; align-items: center; justify-content: center;
+  }
+  .hm-nav[hidden] { display: none; }
+  .hm-nav:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
+  #hm-prev { grid-column: 1; justify-self: start; }
+  #hm-next { grid-column: 3; justify-self: end; }
+  .hm-dots { grid-column: 2; display: flex; gap: 8px; }
+  .hm-dot { width: 52px; height: 52px; border: 0; padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
+  .hm-dot::before { content: ""; width: 26px; height: 26px; border-radius: 50%; background: rgba(43, 58, 103, .22); box-shadow: inset 0 0 0 3px rgba(43, 58, 103, .25); }
+  .hm-dot[aria-current="true"]::before { background: var(--grape, #7A5CFF); box-shadow: none; width: 32px; height: 32px; }
+  @media (min-width: 700px) {
+    .hm-area { left: 94px; right: 94px; }
+    .hm-bar { display: contents; }
+    .hm-nav { position: absolute; top: calc(var(--top) + (100% - var(--top) - 84px) / 2 - 32px); z-index: 2; }
+    #hm-prev { left: 10px; }
+    #hm-next { right: 10px; }
+    .hm-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); }
+  }
   /* ふうせん */
   #stage-sky {
     background:
@@ -705,7 +739,19 @@
 <body>
 <div class="stages" id="stages">
   <section class="stage" id="home" aria-label="ホーム">
-    <div class="homegrid" id="homegrid"></div>
+    <div class="hm-title" id="hm-title" role="heading" aria-level="1"></div>
+    <div class="hm-area" id="hm-area">
+      <div class="hm-page" id="hm-p0"></div>
+      <div class="hm-page" id="hm-p1" hidden></div>
+    </div>
+    <div class="hm-bar">
+      <button class="hm-nav" id="hm-prev" type="button" aria-label="まえのページ" hidden>◀</button>
+      <div class="hm-dots">
+        <button class="hm-dot" type="button" aria-label="あそぶ" aria-current="true"></button>
+        <button class="hm-dot" type="button" aria-label="まなぶ"></button>
+      </div>
+      <button class="hm-nav" id="hm-next" type="button" aria-label="つぎのページ">▶</button>
+    </div>
   </section>
 
   <section class="stage" id="stage-sky" aria-label="ふうせん" hidden>
@@ -3519,34 +3565,94 @@
 
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
-  var TILES = [
-    { id: 'sky',   ico: '🎈', lab: 'ふうせん',       c: '#9FDCFF', say: 'ふうせん！' },
-    { id: 'zoo',   ico: '🐶', lab: 'どうぶつ',       c: '#FFE48A', say: 'どうぶつ！' },
-    { id: 'paint', ico: '🌈', lab: 'おえかき',       c: '#FFC4DA', say: 'おえかき！' },
-    { id: 'touch', ico: '👆', lab: 'いろタッチ',     c: '#FFB3A8', say: 'いろタッチ！' },
-    { id: 'find',  ico: '🔍', lab: 'いろさがし',     c: '#B6F0E3', say: 'いろさがし！' },
-    { id: 'count', ico: '🍎', lab: 'かぞえよう',     c: '#FFD2B3', say: 'かぞえよう！' },
-    { id: 'num',   ico: '🔢', lab: 'すうじ',         c: '#C9F0A8', say: 'すうじ！' },
-    { id: 'baa',   ico: '🙈', lab: 'いないいないばあ', c: '#DCCFFF', say: 'いないいないばあ！' },
-    { id: 'shop',  ico: '🛒', lab: 'おみせやさん',   c: '#A8F0C6', say: 'おみせやさん！' },
-    { id: 'phone', ico: '☎️', lab: 'もしもし',       c: '#FFE0A3', say: 'もしもし！' },
-    { id: 'shape', ico: '🔷', lab: 'かたちはめ',     c: '#BDD7FF', say: 'かたちはめ！' },
-    { id: 'train', ico: '🚂', lab: 'でんしゃ',       c: '#FFC9C9', say: 'でんしゃ！' },
-    { id: 'nurie', ico: '🖍️', lab: 'ぬりえ',         c: '#FFD9A8', say: 'ぬりえ！' },
-    { id: 'aiueo', ico: 'あ',  lab: 'あいうえお',     c: '#FFE0F0', say: 'あいうえお！' },
-    { id: 'abc',   html: '<span class="abc-ico"><b style="color:#E8362E">A</b><b style="color:#2F6FEF">B</b><b style="color:#2FB34F">C</b></span>', lab: 'ABC', c: '#F6E3BD', say: 'えーびーしー！' },
-    { id: 'clock', ico: '🕒', lab: 'とけい',         c: '#CFE8FF', say: 'とけい！' }
+  var TD = {
+    sky:   { ico: '🎈', lab: 'ふうせん',       c: '#9FDCFF', say: 'ふうせん！' },
+    zoo:   { ico: '🐶', lab: 'どうぶつ',       c: '#FFE48A', say: 'どうぶつ！' },
+    paint: { ico: '🌈', lab: 'おえかき',       c: '#FFC4DA', say: 'おえかき！' },
+    touch: { ico: '👆', lab: 'いろタッチ',     c: '#FFB3A8', say: 'いろタッチ！' },
+    find:  { ico: '🔍', lab: 'いろさがし',     c: '#B6F0E3', say: 'いろさがし！' },
+    count: { ico: '🍎', lab: 'かぞえよう',     c: '#FFD2B3', say: 'かぞえよう！' },
+    num:   { ico: '🔢', lab: 'すうじ',         c: '#C9F0A8', say: 'すうじ！' },
+    baa:   { ico: '🙈', lab: 'いないいないばあ', br: 'いないいない', c: '#DCCFFF', say: 'いないいないばあ！' },
+    shop:  { ico: '🛒', lab: 'おみせやさん', br: 'おみせ', c: '#A8F0C6', say: 'おみせやさん！' },
+    phone: { ico: '☎️', lab: 'もしもし',       c: '#FFE0A3', say: 'もしもし！' },
+    shape: { ico: '🔷', lab: 'かたちはめ',     c: '#BDD7FF', say: 'かたちはめ！' },
+    train: { ico: '🚂', lab: 'でんしゃ',       c: '#FFC9C9', say: 'でんしゃ！' },
+    nurie: { ico: '🖍️', lab: 'ぬりえ',         c: '#FFD9A8', say: 'ぬりえ！' },
+    aiueo: { ico: 'あ',  lab: 'あいうえお',     c: '#FFE0F0', say: 'あいうえお！' },
+    abc:   { html: '<span class="abc-ico"><b style="color:#E8362E">A</b><b style="color:#2F6FEF">B</b><b style="color:#2FB34F">C</b></span>', lab: 'ABC', c: '#F6E3BD', say: 'えーびーしー！' },
+    clock: { ico: '🕒', lab: 'とけい',         c: '#CFE8FF', say: 'とけい！' }
+  };
+  var HPAGES = [
+    { title: 'あそぶ', ico: '🎈', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'shape'] },
+    { title: 'まなぶ', ico: '🔤', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock'] }
   ];
-  TILES.forEach(function (t) {
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'tile'; b.style.setProperty('--c', t.c);
-    b.setAttribute('aria-label', t.lab);
-    b.innerHTML = '<span class="ico">' + (t.html || t.ico) + '</span><span class="lab">' + t.lab + '</span>';
-    b.addEventListener('click', function () {
-      audio(); go(t.id); say(t.say); tone(660, 0.12, 'triangle', 0.1);
+  var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
+  var hmEls = [$('#hm-p0'), $('#hm-p1')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
+  var hmDots = [].slice.call(document.querySelectorAll('.hm-dot'));
+  HPAGES.forEach(function (pg, i) {
+    pg.ids.forEach(function (id) {
+      var t = TD[id], b = document.createElement('button');
+      b.type = 'button'; b.className = 'tile'; b.style.setProperty('--c', t.c);
+      b.setAttribute('aria-label', t.lab);
+      b.innerHTML = '<span class="ico">' + (t.html || t.ico) + '</span><span class="lab">' + (t.br ? t.lab.replace(t.br, t.br + '<br class="pbr">') : t.lab) + '</span>';
+      b.addEventListener('click', function () {
+        audio(); go(id); say(t.say); tone(660, 0.12, 'triangle', 0.1);
+      });
+      hmEls[i].appendChild(b);
     });
-    $('#homegrid').appendChild(b);
   });
+  function hmSettle() {
+    if (hmTimer) { clearTimeout(hmTimer); hmTimer = 0; }
+    hmEls.forEach(function (el, i) {
+      el.style.transform = ''; el.style.opacity = ''; el.hidden = i !== hmPage;
+    });
+  }
+  function hmShow(n, speak) {
+    n = Math.max(0, Math.min(HPAGES.length - 1, n));
+    if (n === hmPage) return;
+    hmSettle();
+    var from = hmEls[hmPage], to = hmEls[n], dir = n > hmPage ? 1 : -1;
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    hmPage = n;
+    to.hidden = false;
+    if (calm) { to.style.opacity = '0'; } else { to.style.transform = 'translateX(' + (dir * 100) + '%)'; }
+    to.style.transition = 'none'; void to.offsetWidth; to.style.transition = '';
+    if (calm) { to.style.opacity = '1'; from.style.opacity = '0'; }
+    else { to.style.transform = 'translateX(0)'; from.style.transform = 'translateX(' + (-dir * 100) + '%)'; }
+    hmTimer = setTimeout(function () { hmTimer = 0; hmSettle(); }, 260);
+    hmRender();
+    if (speak !== false) say(HPAGES[n].title);
+  }
+  function hmRender() {
+    var pg = HPAGES[hmPage];
+    hmTitle.textContent = '';
+    var i1 = document.createElement('span'); i1.textContent = pg.ico;
+    var t1 = document.createElement('span'); t1.textContent = pg.title;
+    hmTitle.appendChild(i1); hmTitle.appendChild(t1);
+    hmPrev.hidden = hmPage === 0; hmNext.hidden = hmPage === HPAGES.length - 1;
+    hmDots.forEach(function (d, i) { if (i === hmPage) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); });
+  }
+  hmPrev.addEventListener('click', function () { audio(); hmShow(hmPage - 1); });
+  hmNext.addEventListener('click', function () { audio(); hmShow(hmPage + 1); });
+  hmDots.forEach(function (d, i) { d.addEventListener('click', function () { audio(); hmShow(i); }); });
+  (function () {
+    var area = $('#hm-area'), sx = 0, sy = 0, down = false;
+    area.addEventListener('pointerdown', function (e) { down = true; sx = e.clientX; sy = e.clientY; });
+    area.addEventListener('pointercancel', function () { down = false; });
+    area.addEventListener('pointerup', function (e) {
+      if (!down) return; down = false;
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        hmSwipedAt = performance.now();
+        hmShow(hmPage + (dx < 0 ? 1 : -1));
+      }
+    });
+    area.addEventListener('click', function (e) {
+      if (performance.now() - hmSwipedAt < 400) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  })();
+  hmSettle(); hmRender();
 
   function go(name) {
     if (cur) { games[cur].leave(); games[cur].el.hidden = true; }
