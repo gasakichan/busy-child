@@ -87,7 +87,9 @@ async function holdOpen(p, ms) {
     const p = await newPage(br, vp, { deny: true });
     const scrollInfo = () => p.evaluate(() => ({ h: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth, v: document.documentElement.scrollHeight > innerHeight }));
     const tileInfo = () => p.evaluate(() => { const st = document.querySelector('#home').getBoundingClientRect(); return [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => { const r = t.getBoundingClientRect(); const ic = parseFloat(getComputedStyle(t.querySelector('.ico')).fontSize), lb = parseFloat(getComputedStyle(t.querySelector('.lab')).fontSize); return { ok: r.top >= st.top - 1 && r.bottom <= st.bottom + 1 && r.left >= st.left - 1 && r.right <= st.right + 1, w: Math.round(r.width), h: Math.round(r.height), cx: Math.round(r.left), cy: Math.round(r.top), ic, lb, clip: t.scrollWidth > t.clientWidth + 1 || t.scrollHeight > t.clientHeight + 1 }; }); });
+    const icoChk = () => p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')]; const n = document.querySelectorAll('.hm-page:not([hidden]) .tile').length; const ti = document.querySelector('#hm-title img'); return ims.length === n && ims.every(i => i.complete && i.naturalWidth > 0) && !!ti && ti.complete && ti.naturalWidth > 0; });
     const tiles = await tileInfo();
+    ok(await icoChk(), tag + ' page1 tile icons + title image loaded');
     ok(tiles.length === 9 && tiles.every(t => t.ok), tag + ' page1: 9 tiles inside, ' + tiles[0].w + 'x' + tiles[0].h);
     ok(tiles.every(t => !t.clip), tag + ' tile content not clipped');
     const portrait = vp.width < 700;
@@ -99,7 +101,7 @@ async function holdOpen(p, ms) {
     ok(cols === 3 && rows === 3, tag + ' grid ' + cols + 'x' + rows);
     ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ふうせん,どうぶつ,おえかき,いないいないばあ,もしもし,でんしゃ,おみせやさん,ぬりえ,シールちょう', tag + ' page1 order');
     let sc0 = await p.evaluate(() => ({ t: document.querySelector('#hm-title').textContent, prevHidden: document.querySelector('#hm-prev').hidden, nextHidden: document.querySelector('#hm-next').hidden }));
-    ok(sc0.t === '🎈あそぶ' && sc0.prevHidden && !sc0.nextHidden, tag + ' page1 title/edge buttons ' + JSON.stringify(sc0));
+    ok(sc0.t === 'あそぶ' && sc0.prevHidden && !sc0.nextHidden, tag + ' page1 title/edge buttons ' + JSON.stringify(sc0));
     const nb = await p.locator('#hm-next').boundingBox();
     ok(Math.round(nb.width) === 64 && Math.round(nb.height) === 64, tag + ' next button 64px');
     if (tag === '390x844') await p.screenshot({ path: SP + '/home-p1.png' });
@@ -108,10 +110,11 @@ async function holdOpen(p, ms) {
     await clearSays(p);
     await p.click('#hm-next'); await sleep(400);
     const t2 = await tileInfo();
+    ok(await icoChk(), tag + ' page2 tile icons + title image loaded');
     ok(t2.length === 9 && t2.every(t => t.ok && t.w === tiles[0].w && t.h === tiles[0].h && !t.clip), tag + ' page2: 9 tiles, same size as page1, not clipped');
     ok(new Set(t2.map(t => t.cx)).size === 3 && new Set(t2.map(t => t.cy)).size === 3, tag + ' page2 grid 3x3');
     ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'いろタッチ,いろさがし,かぞえよう,すうじ,あいうえお,ABC,とけい,かたちはめ,ゆびのおうち', tag + ' page2 order');
-    ok((await says(p)).some(x => x.t === 'まなぶ') && (await p.locator('#hm-title').textContent()) === '🔤まなぶ' && await p.locator('#hm-next').isVisible() && await p.locator('#hm-prev').isVisible(), tag + ' ▶ switches to page2, speaks title, both arrows');
+    ok((await says(p)).some(x => x.t === 'まなぶ') && (await p.locator('#hm-title').textContent()) === 'まなぶ' && await p.locator('#hm-next').isVisible() && await p.locator('#hm-prev').isVisible(), tag + ' ▶ switches to page2, speaks title, both arrows');
     if (tag === '390x844') { await p.screenshot({ path: SP + '/home-p2.png' }); await p.screenshot({ path: SP + '/home-v8-p2.png' }); }
     const sc2 = await p.evaluate(() => ({ h: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth, v: document.documentElement.scrollHeight > innerHeight }));
     ok(!sc2.h && !sc2.v, tag + ' page2 no scroll');
@@ -129,10 +132,11 @@ async function holdOpen(p, ms) {
     await p.click('.hm-dot:nth-child(2)'); await sleep(400);
     await p.click('#hm-next'); await sleep(400);
     const t3 = await tileInfo();
+    ok(await icoChk(), tag + ' page3 tile icons + title image loaded');
     const ar = await p.locator('#hm-area').boundingBox(), t1b = tiles[0];
     ok(t3.length === 1 && t3[0].ok && t3[0].w === t1b.w && t3[0].h === t1b.h && !t3[0].clip, tag + ' page3: 1 tile, same size as others ' + JSON.stringify(t3[0]));
     ok(Math.abs((t3[0].cx + t3[0].w / 2) - (ar.x + ar.width / 2)) <= 2 && t3[0].cy === tiles[0].cy, tag + ' page3: tile centred in first row');
-    ok((await p.locator('#hm-title').textContent()) === '🤸うごかす' && await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && (await says(p)).some(x => x.t === 'うごかす'), tag + ' page3 title, ▶ hidden, ◀ shown, speaks');
+    ok((await p.locator('#hm-title').textContent()) === 'うごかす' && await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && (await says(p)).some(x => x.t === 'うごかす'), tag + ' page3 title, ▶ hidden, ◀ shown, speaks');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
     if (tag === '390x844') await p.screenshot({ path: SP + '/home-p3.png' });
