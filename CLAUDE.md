@@ -20,6 +20,7 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/e2e.js   # E2E（約5分、
 - 共通ヘルパー: `say()`（日本語の読み上げ）、`sayEn()`（英語。カタカナにフォールバックする）、`bigWord()`（話した言葉を大きく表示）、`tone()`（効果音）、`holdButton()`（長押しボタン）。
 - 大人用の設定はホームの ⚙️（1.5 秒長押し）の `openSettings()` に集約。ゲーム画面には大人用ボタンを置かない。
 - localStorage: `ponpon.settings.v1` / `ponpon.family.v1` / `ponpon.stickers.v1` / `ponpon.stats.v1`。必ず try/catch で囲む。音なし・声なしは保存しない。
+- イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
 - カメラ検出（おみせやさん）は `/* camdet:begin */`〜`/* camdet:end */` の純粋関数。単体テストはこの範囲を抜き出して実行する。
 
 ## 守ること
@@ -27,12 +28,13 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/e2e.js   # E2E（約5分、
   - 失敗や罰の演出はしない。例外は ABC の ☝️ と「No!」。
   - 読み上げはひらがなで渡し、同じ言葉を画面にも大きく出す。
   - タップ領域は 80px 以上。
-- 外部スクリプト・画像は使わない（Google Fonts のみ可）。`alert`/`confirm`/`prompt` は使わない。表示切替は `el.hidden`。
+- 外部スクリプト・外部画像は使わない（Google Fonts のみ可）。リポジトリ内の `assets/` の画像は可（相対パスで参照）。`alert`/`confirm`/`prompt` は使わない。表示切替は `el.hidden`。
 - 360px 幅で横スクロールを出さない。ホームは縦スクロールなし。
 - 絵はオリジナルにする。既存キャラクターや本物の紙幣のデザインはまねしない。
 
 ## PWA（ホーム画面に追加・オフライン）
 - `manifest.webmanifest` / `sw.js` / `icons/`（相対パスのみ。GitHub Pages のサブパス配下）。SW は https か localhost でだけ登録される（file:// では何もしない）。
 - `index.html` は network-first、他は cache-first。`index.html` 以外のプリキャッシュ対象（manifest・アイコンなど）を変えたら `sw.js` の `CACHE` を上げる。
+- `assets/` に画像を足す・差し替えるときは `sw.js` の `PRECACHE` に足し、`CACHE` を上げる（cache-first なので同名差し替えは上げないと更新されない）。
 - アイコンは `icons/icon.svg` が元。`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tools/make-icons.js` で PNG を再生成。
 - テスト: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/pwa.js`（localhost で配信し、manifest・アイコン・SW・オフライン再読込を確認）。

@@ -6,7 +6,7 @@ function loadPw() {
 }
 const { chromium } = loadPw();
 const ROOT = path.join(__dirname, '..');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const ok = (c, m) => { if (!c) throw new Error('NG: ' + m); console.log('ok  ' + m); };
 (async () => {
   const srv = http.createServer((req, res) => {
@@ -53,8 +53,19 @@ const ok = (c, m) => { if (!c) throw new Error('NG: ' + m); console.log('ok  ' +
     await pg.reload();
     await pg.waitForSelector('#home', { state: 'attached' });
     ok(await pg.evaluate(() => { const h = document.querySelector('#home'); return !!h && !h.hidden && document.querySelectorAll('#home .tile').length > 0; }), 'offline reload shows home with tiles');
+    const pre = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8').match(/var PRECACHE = \[[\s\S]*?\]\)?;/)[0].match(/'\.\/[^']*'/g).map(s => s.slice(1, -1));
+    ok(pre.filter(s => s.startsWith('./assets/')).length === 34, 'PRECACHE lists 34 assets');
+    ok(pre.every(s => fs.existsSync(path.join(ROOT, s === './' ? 'index.html' : s))), 'every PRECACHE entry exists on disk');
+    const codes = await pg.evaluate(async list => Promise.all(list.map(u => caches.match(u).then(r => !!r))), pre);
+    ok(codes.every(Boolean), 'every PRECACHE entry is in the cache while offline');
+    for (const a of ['assets/ico/sky.webp', 'assets/ani/inu.webp']) {
+      const r = await pg.evaluate(u => fetch(u).then(r => [r.status, r.headers.get('content-type')]), a);
+      ok(r[0] === 200 && r[1] === 'image/webp', a + ' served offline');
+    }
     ok(errs.length === 0, 'no page errors ' + errs.join('|'));
     await ctx.setOffline(false);
+    const live = await pg.evaluate(list => Promise.all(list.map(u => fetch(u, { cache: 'reload' }).then(r => r.status))), pre);
+    ok(live.every(s => s === 200), 'every PRECACHE entry fetches 200 from server');
     console.log('PWA ALL OK');
   } finally { await b.close(); srv.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

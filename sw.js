@@ -1,7 +1,42 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v1';
+var CACHE = 'ponpon-v2';
 var FONTS = 'ponpon-fonts-v1';
-var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
+var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
+  './assets/ani/buta.webp',
+  './assets/ani/hiyoko.webp',
+  './assets/ani/inu.webp',
+  './assets/ani/kaeru.webp',
+  './assets/ani/kuma.webp',
+  './assets/ani/neko.webp',
+  './assets/ani/pengin.webp',
+  './assets/ani/raion.webp',
+  './assets/ani/saru.webp',
+  './assets/ani/usagi.webp',
+  './assets/ani/ushi.webp',
+  './assets/ani/zou.webp',
+  './assets/ico/abc.webp',
+  './assets/ico/aiueo.webp',
+  './assets/ico/baa.webp',
+  './assets/ico/clock.webp',
+  './assets/ico/count.webp',
+  './assets/ico/find.webp',
+  './assets/ico/koro.webp',
+  './assets/ico/num.webp',
+  './assets/ico/nurie.webp',
+  './assets/ico/paint.webp',
+  './assets/ico/pg-asobu.webp',
+  './assets/ico/pg-manabu.webp',
+  './assets/ico/pg-ugokasu.webp',
+  './assets/ico/phone.webp',
+  './assets/ico/shape.webp',
+  './assets/ico/shop.webp',
+  './assets/ico/sky.webp',
+  './assets/ico/sticker.webp',
+  './assets/ico/touch.webp',
+  './assets/ico/train.webp',
+  './assets/ico/yubi.webp',
+  './assets/ico/zoo.webp'
+]);
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(PRECACHE); }).catch(function () {}).then(function () { return self.skipWaiting(); }));

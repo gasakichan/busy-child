@@ -19,8 +19,9 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
+hooked = hooked.replace(/'assets\//g, "'../../assets/");
 fs.writeFileSync(SP + '/hooked7.html', hooked);
-const URL = 'file://' + SP + '/hooked7.html';
+const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
 const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro'];
 const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール'];
 const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
@@ -90,6 +91,7 @@ async function holdOpen(p, ms) {
     const icoChk = () => p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')]; const n = document.querySelectorAll('.hm-page:not([hidden]) .tile').length; const ti = document.querySelector('#hm-title img'); return ims.length === n && ims.every(i => i.complete && i.naturalWidth > 0) && !!ti && ti.complete && ti.naturalWidth > 0; });
     const tiles = await tileInfo();
     ok(await icoChk(), tag + ' page1 tile icons + title image loaded');
+    ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.tile .ico-img, #hm-title img')]; return ims.length > 0 && ims.every(i => /\.webp$/.test(i.getAttribute('src')) && !i.getAttribute('src').startsWith('data:')); }), tag + ' home icons are files, not data URIs');
     ok(tiles.length === 9 && tiles.every(t => t.ok), tag + ' page1: 9 tiles inside, ' + tiles[0].w + 'x' + tiles[0].h);
     ok(tiles.every(t => !t.clip), tag + ' tile content not clipped');
     const portrait = vp.width < 700;
@@ -1283,6 +1285,7 @@ async function holdOpen(p, ms) {
     await tapTile(p, 'どうぶつ'); await sleep(500);
     const zi = await p.evaluate(() => [...document.querySelectorAll('#zoo .card .emoji-img')].map(i => i.complete && i.naturalWidth > 0 && i.getBoundingClientRect().width >= 56));
     ok(zi.length === 6 && zi.every(Boolean), tag + ' どうぶつ: 6 cards have loaded images ' + JSON.stringify(zi));
+    ok(await p.evaluate(() => [...document.querySelectorAll('#zoo .card .emoji-img')].every(i => /assets\/ani\/.+\.webp$/.test(i.getAttribute('src')) && !i.getAttribute('src').startsWith('data:'))), tag + ' どうぶつ: card images are files, not data URIs');
     ok(await p.evaluate(() => [...document.querySelectorAll('#zoo .card')].every(c => { const r = c.getBoundingClientRect(), i = c.querySelector('.emoji-img').getBoundingClientRect(); return i.left >= r.left && i.right <= r.right && i.top >= r.top && i.bottom <= r.bottom; })), tag + ' どうぶつ: images inside cards');
     ok(await noHs(), tag + ' どうぶつ: no horizontal scroll');
     await p.screenshot({ path: SP + '/animals-zoo-' + vp.width + '.png' });
