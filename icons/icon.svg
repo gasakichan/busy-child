@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#FFF6E0"/>
+  <g transform="translate(-10 -61)">
+    <!-- small blue balloon -->
+    <path d="M338 330 C330 372 346 396 352 430" fill="none" stroke="#2B3A67" stroke-width="5" stroke-linecap="round"/>
+    <path d="M338 330 L326 318 L350 318 Z" fill="#3E86E0"/>
+    <ellipse cx="338" cy="262" rx="62" ry="70" fill="#3E86E0"/>
+    <ellipse cx="318" cy="238" rx="13" ry="21" fill="#fff" opacity=".55" transform="rotate(25 318 238)"/>
+    <!-- big coral balloon -->
+    <path d="M232 396 C214 430 244 448 226 480" fill="none" stroke="#2B3A67" stroke-width="6" stroke-linecap="round"/>
+    <path d="M232 396 L214 378 L250 378 Z" fill="#E8504A"/>
+    <ellipse cx="232" cy="270" rx="100" ry="116" fill="#FF6B5E"/>
+    <ellipse cx="196" cy="226" rx="20" ry="36" fill="#fff" opacity=".6" transform="rotate(22 196 226)"/>
+  </g>
+</svg>

@@ -30,3 +30,9 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/e2e.js   # E2E（約5分、
 - 外部スクリプト・画像は使わない（Google Fonts のみ可）。`alert`/`confirm`/`prompt` は使わない。表示切替は `el.hidden`。
 - 360px 幅で横スクロールを出さない。ホームは縦スクロールなし。
 - 絵はオリジナルにする。既存キャラクターや本物の紙幣のデザインはまねしない。
+
+## PWA（ホーム画面に追加・オフライン）
+- `manifest.webmanifest` / `sw.js` / `icons/`（相対パスのみ。GitHub Pages のサブパス配下）。SW は https か localhost でだけ登録される（file:// では何もしない）。
+- `index.html` は network-first、他は cache-first。`index.html` 以外のプリキャッシュ対象（manifest・アイコンなど）を変えたら `sw.js` の `CACHE` を上げる。
+- アイコンは `icons/icon.svg` が元。`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tools/make-icons.js` で PNG を再生成。
+- テスト: `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/pwa.js`（localhost で配信し、manifest・アイコン・SW・オフライン再読込を確認）。
