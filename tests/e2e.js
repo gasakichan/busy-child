@@ -1275,6 +1275,34 @@ async function holdOpen(p, ms) {
     await p.context().close();
   }
 
+  /* ---------- animal illustrations: どうぶつ + いないいないばあ ---------- */
+  for (const vp of [{ width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+    const tag = 'animals ' + vp.width + 'x' + vp.height;
+    const p = await newPage(br, vp, { deny: true });
+    const noHs = () => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth);
+    await tapTile(p, 'どうぶつ'); await sleep(500);
+    const zi = await p.evaluate(() => [...document.querySelectorAll('#zoo .card .emoji-img')].map(i => i.complete && i.naturalWidth > 0 && i.getBoundingClientRect().width >= 56));
+    ok(zi.length === 6 && zi.every(Boolean), tag + ' どうぶつ: 6 cards have loaded images ' + JSON.stringify(zi));
+    ok(await p.evaluate(() => [...document.querySelectorAll('#zoo .card')].every(c => { const r = c.getBoundingClientRect(), i = c.querySelector('.emoji-img').getBoundingClientRect(); return i.left >= r.left && i.right <= r.right && i.top >= r.top && i.bottom <= r.bottom; })), tag + ' どうぶつ: images inside cards');
+    ok(await noHs(), tag + ' どうぶつ: no horizontal scroll');
+    await p.screenshot({ path: SP + '/animals-zoo-' + vp.width + '.png' });
+    await p.click('#homebtn'); await sleep(300);
+    await tapTile(p, 'いないいないばあ'); await sleep(400);
+    const seen = new Set();
+    for (let round = 0; round < 6; round++) {
+      for (let i = 0; i < 4; i++) { await p.locator('#baa .slot').nth(i).click(); await sleep(60); }
+      await sleep(1100);
+      const r = await p.evaluate(() => [...document.querySelectorAll('#baa .slot.open')].map(sl => { const im = sl.querySelector('.an .an-img'), nm = sl.querySelector('.nm').textContent; const b = im && im.getBoundingClientRect(), sb = sl.getBoundingClientRect(); return { ok: !!im && im.complete && im.naturalWidth > 0 && b.width >= 56 && b.left >= sb.left && b.right <= sb.right && b.top >= sb.top && b.bottom <= sb.bottom, nm, src: im && im.src.length }; }));
+      ok(r.length === 4 && r.every(x => x.ok && /^[぀-ヿ]+$/.test(x.nm)), tag + ' baa round ' + (round + 1) + ': revealed animals are loaded images ' + JSON.stringify(r.map(x => x.nm + (x.ok ? '' : '!'))));
+      r.forEach(x => seen.add(x.nm));
+      if (round === 0) { await p.screenshot({ path: SP + '/animals-baa-' + vp.width + '.png' }); ok(await noHs(), tag + ' baa: no horizontal scroll'); }
+      await sleep(1200);
+    }
+    ok(await p.evaluate(() => (window.__says || []).some(s => /らいおん|ぺんぎん|うさぎ|ぶた|くま|さる|いぬ|ねこ|うし|ひよこ|かえる|ぞう/.test(s.t))), tag + ' baa: animal name spoken');
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join('|'));
+    await p.context().close();
+  }
+
   await br.close();
   console.log(fails ? ('\n' + fails + ' FAILED') : '\nALL OK');
   process.exit(fails ? 1 : 0);
