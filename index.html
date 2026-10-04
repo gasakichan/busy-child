@@ -905,6 +905,99 @@
     .ck-stars i, .ck-orb, .ck-sky { animation: none; transition-duration: .01s; }
     .stk-cell.held .stk { animation: none; transform: translateY(-4px) scale(1.22); }
   }
+  /* ドライブ */
+  #stage-drive { background: linear-gradient(#B9C7E6, #94A5CF); display: flex; flex-direction: column; gap: 6px; padding: 8px 8px 10px; }
+  .dr-frame { position: relative; flex: 0 0 42%; min-height: 0; padding: 8px; border-radius: 30px 30px 18px 18px; background: #55658E; box-shadow: inset 0 -4px 0 rgba(0,0,0,.18); }
+  .dr-frame::before, .dr-frame::after { content: ""; position: absolute; top: 8px; width: 15%; height: 34%; background: #55658E; z-index: 3; pointer-events: none; }
+  .dr-frame::before { left: 8px; clip-path: polygon(0 0, 100% 0, 0 100%); border-top-left-radius: 24px; }
+  .dr-frame::after { right: 8px; clip-path: polygon(0 0, 100% 0, 100% 100%); border-top-right-radius: 24px; }
+  .dr-mirror { position: absolute; left: 50%; top: 4px; width: 64px; height: 24px; margin-left: -32px; border-radius: 10px 10px 14px 14px; background: #3E4A6B; box-shadow: inset 0 -5px 0 #8CD3F2, 0 3px 0 rgba(0,0,0,.18); z-index: 4; pointer-events: none; }
+  .dr-view {
+    position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 24px 24px 10px 10px; isolation: isolate; touch-action: none;
+    --m1: #B7CCEE; --m2: #9DB8E4; --snow: #FFFFFF; --h1: #A9E39A; --wall: #FFF1D6; --wall2: #FFE0E6; --roof1: #FF8E85; --roof2: #6FB5F0; --win: #CFE8FF;
+    --tree: #6FCB78; --tree2: #86D88B; --trunk: #A9754B; --bush: #7BD487; --flower: #FF9EC4; --grass: #A4E08C; --road: #9AA3B8; --edge: #F4F1E6; --cloud: #FFFFFF;
+  }
+  .dr-view.night {
+    --m1: #4B5C9C; --m2: #3A4A86; --snow: #B9C4F0; --h1: #3E8C74; --wall: #8F97C4; --wall2: #A18CB8; --roof1: #8A4F73; --roof2: #3F5F9A; --win: #FFE680;
+    --tree: #2F7D5C; --tree2: #3A8B68; --trunk: #5C4A5A; --bush: #2F7A58; --flower: #C98BC0; --grass: #3F8A6C; --road: #4A5272; --edge: #A3A8C8; --cloud: #7F8CC4;
+  }
+  .dr-view > * { position: absolute; }
+  .dr-sky { inset: 0; background: linear-gradient(#8ED4FF, #E8F8FF 78%); }
+  .dr-sky.n { background: linear-gradient(#17255A, #3F58A8 80%); opacity: 0; transition: opacity 1.6s ease; }
+  .dr-view.night .dr-sky.n { opacity: 1; }
+  .dr-stars { inset: 0 0 45% 0; opacity: 0; transition: opacity 1.6s ease; }
+  .dr-view.night .dr-stars { opacity: 1; }
+  .dr-stars svg { width: 100%; height: 100%; display: block; }
+  .dr-stars circle { fill: #FFF6B8; animation: drtw 2.4s ease-in-out infinite; }
+  .dr-stars circle:nth-child(2n) { animation-delay: .7s; } .dr-stars circle:nth-child(3n) { animation-delay: 1.4s; }
+  @keyframes drtw { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+  .dr-sun, .dr-moon { width: 17%; max-width: 74px; aspect-ratio: 1; border-radius: 50%; transition: transform 1.6s ease, opacity 1.6s ease; }
+  .dr-sun { left: 26%; top: 12%; background: radial-gradient(circle at 40% 38%, #FFF6B0, #FFC83D 70%); box-shadow: 0 0 0 8px rgba(255,214,90,.35), 0 0 0 18px rgba(255,214,90,.18); }
+  .dr-view.night .dr-sun { transform: translateY(240%); }
+  .dr-moon { right: 14%; top: 12%; background: #FFF4C2; box-shadow: inset -12px -4px 0 0 #F2DC8C, 0 0 0 8px rgba(255,244,194,.22); transform: translateY(240%); opacity: 0; }
+  .dr-view.night .dr-moon { transform: translateY(0); opacity: 1; }
+  .dr-lay { left: 0; display: flex; width: max-content; will-change: transform; transform-origin: 0 100%; pointer-events: none; }
+  .dr-lay svg { flex: none; display: block; }
+  .dr-lay svg * { transition: fill 1.6s ease; }
+  .dr-lay.top { transform-origin: 0 0; }
+  .dr-lay .cl { fill: var(--cloud); opacity: .92; }
+  .f-m1 { fill: var(--m1); } .f-m2 { fill: var(--m2); } .f-snow { fill: var(--snow); } .f-h1 { fill: var(--h1); }
+  .f-wall { fill: var(--wall); } .f-wall2 { fill: var(--wall2); } .f-roof1 { fill: var(--roof1); } .f-roof2 { fill: var(--roof2); } .f-win { fill: var(--win); }
+  .f-tree { fill: var(--tree); } .f-tree2 { fill: var(--tree2); } .f-trunk { fill: var(--trunk); } .f-bush { fill: var(--bush); } .f-flower { fill: var(--flower); }
+  .dr-ground { left: 0; right: 0; bottom: 0; height: 42%; background-color: var(--grass); transition: background-color 1.6s ease; }
+  .dr-ground::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(255,255,255,.28), rgba(255,255,255,0) 60%); }
+  .dr-road { left: 0; bottom: 0; width: 100%; height: 42%; display: block; }
+  .dr-road .rd { fill: var(--road); transition: fill 1.6s ease; }
+  .dr-road .ed { fill: var(--edge); transition: fill 1.6s ease; }
+  .dr-road .dash { fill: #FFFFFF; }
+  .dr-beam { left: 0; bottom: 0; width: 100%; height: 42%; opacity: 0; transition: opacity .5s ease; pointer-events: none; clip-path: polygon(32% 100%, 68% 100%, 54% 0, 46% 0); background: linear-gradient(0deg, rgba(255,247,170,.85), rgba(255,247,170,0)); }
+  .dr-beam.on { opacity: 1; }
+  .dr-fxv { inset: 0; overflow: hidden; pointer-events: none; }
+  .dr-fxv > * { position: absolute; left: 0; top: 0; will-change: transform, opacity; line-height: 1; }
+  .dr-bird { width: 46px; height: 34px; }
+  .dr-bird svg { display: block; width: 100%; height: 100%; }
+  .dr-bird .wing { transform-origin: 22px 20px; animation: drflap .28s ease-in-out infinite alternate; }
+  @keyframes drflap { from { transform: rotate(-30deg); } to { transform: rotate(40deg); } }
+  .dr-car { width: 120px; height: 90px; transform-origin: 0 0; }
+  .dr-car svg { display: block; width: 100%; height: 100%; }
+  .dr-animal { transform-origin: 50% 100%; }
+  .dr-note { font-size: 30px; font-weight: 800; text-shadow: 0 2px 0 rgba(255,255,255,.7); }
+  .dr-shade { inset: 0; background: rgba(70,92,128,.32); opacity: 0; transition: opacity .8s ease; pointer-events: none; }
+  .dr-shade.on { opacity: 1; }
+  .dr-rain { inset: 0; opacity: 0; transition: opacity .6s ease; pointer-events: none;
+    background:
+      repeating-linear-gradient(102deg, transparent 0 18px, rgba(255,255,255,.7) 18px 20px) 0 0 / 100% 100%,
+      repeating-linear-gradient(102deg, transparent 0 31px, rgba(210,235,255,.65) 31px 33px) 0 0 / 100% 100%;
+    animation: drrain .5s linear infinite; }
+  .dr-rain.on { opacity: 1; }
+  @keyframes drrain { from { background-position: 0 0, 0 0; } to { background-position: -30px 110px, -22px 150px; } }
+  .dr-wiper { left: 0; bottom: 8px; height: 7px; border-radius: 4px; background: #3A4258; transform-origin: 0 50%; pointer-events: none; }
+  .dr-wiper.a { left: 14%; width: 36%; } .dr-wiper.b { left: 54%; width: 36%; }
+  .dr-wiper.go { animation: drwipe 1s ease-in-out 4; }
+  @keyframes drwipe { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-168deg); } }
+  .dr-zone { flex: 1 1 0; min-height: 0; position: relative; container-type: size; display: grid; place-items: center; }
+  .dr-wheel { position: relative; width: min(96cqh, 66cqw, 320px); aspect-ratio: 1; touch-action: none; cursor: grab; -webkit-tap-highlight-color: transparent; }
+  .dr-wsvg { display: block; width: 100%; height: 100%; will-change: transform; pointer-events: none; filter: drop-shadow(0 6px 0 rgba(43,58,103,.25)); }
+  .dr-horn { position: absolute; left: 50%; top: 50%; width: max(80px, 32%); height: max(80px, 32%); transform: translate(-50%, -50%); border: 0; padding: 0; border-radius: 50%; background: transparent; z-index: 2; }
+  .dr-horn:active { background: rgba(255,255,255,.25); }
+  .dr-pad { flex: 0 0 auto; display: grid; grid-template-columns: repeat(4, minmax(80px, 96px)); justify-content: center; gap: 2px; margin: 0 -8px; }
+  .dr-b {
+    aspect-ratio: 1; min-width: 80px; border: 0; border-radius: 50%; padding: 0; background: var(--c);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; color: var(--ink);
+    box-shadow: inset -5px -7px 0 rgba(0,0,0,.12), inset 4px 4px 0 rgba(255,255,255,.35), 0 4px 0 rgba(43,58,103,.3);
+  }
+  .dr-b:active { transform: translateY(3px); box-shadow: inset -5px -7px 0 rgba(0,0,0,.12), inset 4px 4px 0 rgba(255,255,255,.35), 0 1px 0 rgba(43,58,103,.3); }
+  .dr-b .e { font-size: 32px; line-height: 1.05; }
+  .dr-b .l { font-size: 14px; line-height: 1.1; }
+  .dr-b.on { box-shadow: inset 0 0 0 5px #fff, inset -5px -7px 0 5px rgba(0,0,0,.1), 0 4px 0 rgba(43,58,103,.3); }
+  @media (orientation: landscape) and (max-height: 520px) {
+    #stage-drive { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 40% minmax(0, 1fr); gap: 4px 8px; padding: 6px 8px 8px; }
+    .dr-frame { grid-column: 1 / 3; padding: 6px; }
+    .dr-zone { grid-column: 1; grid-row: 2; }
+    .dr-pad { grid-column: 2; grid-row: 2; align-self: center; grid-template-columns: repeat(4, 86px); margin: 0; }
+    .dr-b { min-width: 80px; }
+    .dr-b .e { font-size: 30px; }
+  }
 </style>
 </head>
 <body>
@@ -1114,6 +1207,46 @@
     <button id="ko-start" type="button" hidden>▶ はじめる</button>
     <div id="ko-hint" hidden>👆 ゆびで さわっても ころがるよ</div>
     <div class="fx" id="fx-koro"></div>
+  </section>
+
+  <section class="stage" id="stage-drive" aria-label="ドライブ" hidden>
+    <div class="dr-frame">
+      <div class="dr-view" id="dr-view">
+        <div class="dr-sky"></div><div class="dr-sky n"></div>
+        <div class="dr-stars" id="dr-stars"></div>
+        <div class="dr-sun"></div><div class="dr-moon"></div>
+        <div class="dr-lay top" id="dr-l-cl"></div>
+        <div class="dr-lay" id="dr-l-far"></div>
+        <div class="dr-lay" id="dr-l-mid"></div>
+        <div class="dr-ground"></div>
+        <div class="dr-lay" id="dr-l-near"></div>
+        <svg class="dr-road" id="dr-road" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div class="dr-beam" id="dr-beam"></div>
+        <div class="dr-fxv" id="dr-fxv"></div>
+        <div class="dr-shade" id="dr-shade"></div>
+        <div class="dr-rain" id="dr-rain"></div>
+        <div class="dr-wiper a" id="dr-wa"></div><div class="dr-wiper b" id="dr-wb"></div>
+      </div>
+      <div class="dr-mirror"></div>
+    </div>
+    <div class="dr-zone" id="dr-zone">
+      <div class="dr-wheel" id="dr-wheel">
+        <svg class="dr-wsvg" id="dr-wsvg" viewBox="-100 -100 200 200" aria-hidden="true">
+          <g stroke="#3E4A6B" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M-78 -2H78V12H22Q14 12 14 22V80H-14V22Q-14 12 -22 12H-78Z" fill="#7C8CC0"/>
+            <circle r="88" fill="none" stroke-width="28"/>
+            <circle r="88" fill="none" stroke="#FF7F8E" stroke-width="19"/>
+            <path d="M-12 -97H12L9 -80H-9Z" fill="#fff" stroke-width="3"/>
+            <circle r="31" fill="#FFD34D"/>
+          </g>
+          <g fill="#3E4A6B"><circle cx="-10" cy="-6" r="4.5"/><circle cx="10" cy="-6" r="4.5"/><path d="M-12 6Q0 20 12 6Q0 12 -12 6Z"/></g>
+          <g fill="#FFA6B8" opacity=".8"><circle cx="-19" cy="5" r="4"/><circle cx="19" cy="5" r="4"/></g>
+        </svg>
+        <button class="dr-horn" id="dr-horn" type="button" aria-label="クラクション"></button>
+      </div>
+    </div>
+    <div class="dr-pad" id="dr-pad"></div>
+    <div class="fx" id="fx-drive"></div>
   </section>
 
   <section class="stage" id="stage-sticker" aria-label="シールちょう" hidden>
@@ -4782,6 +4915,299 @@
     resize: function () { if (ko.on) koGeo(); }
   };
 
+  /* ====== 20. ドライブ（ハンドルで けしきが うごく。ボタンで いろいろ おこる） ====== */
+  var drStage = $('#stage-drive'), drView = $('#dr-view'), drWheel = $('#dr-wheel'), drWsvg = $('#dr-wsvg'), drHorn = $('#dr-horn'), drPad = $('#dr-pad');
+  var drRoad = $('#dr-road'), drBeam = $('#dr-beam'), drFxv = $('#dr-fxv'), drShade = $('#dr-shade'), drRain = $('#dr-rain'), fxDrive = $('#fx-drive');
+  var drWipers = [$('#dr-wa'), $('#dr-wb')];
+  var DR_T = 480, DR_DH = 260, DR_MAX = 120;   /* T = けしきの 1まいの はば。DH = ぶんかいの ねらいの たかさ。MAX = ハンドルの さいだい かくど */
+  var DR_LAY = [
+    { id: '#dr-l-cl', k: 0.05, a: 9, h: 70, top: true, svg: drCloudSvg },
+    { id: '#dr-l-far', k: 0.12, a: 0, h: 130, svg: drFarSvg },
+    { id: '#dr-l-mid', k: 0.35, a: 0, h: 112, svg: drMidSvg },
+    { id: '#dr-l-near', k: 0.85, a: 0, h: 84, svg: drNearSvg }
+  ];
+  var DR_BTN = [
+    { k: 'bird', e: '🐦', l: 'とり', c: '#FFE27A', s: 'とり！' },
+    { k: 'car', e: '🚙', l: 'くるま', c: '#FFA3AB', s: 'くるま！' },
+    { k: 'night', e: '🌙', l: 'よる', c: '#A9B4F5', s: 'よる！' },
+    { k: 'morn', e: '☀️', l: 'あさ', c: '#FFC978', s: 'あさ！' },
+    { k: 'light', e: '💡', l: 'ライト', c: '#FFF29A', s: 'ライト！' },
+    { k: 'rain', e: '🌧️', l: 'あめ', c: '#96D6F7', s: 'あめ！' },
+    { k: 'animal', e: '🐄', l: 'どうぶつ', c: '#BDEBA8', s: 'どうぶつ！' },
+    { k: 'music', e: '🎵', l: 'おんがく', c: '#F7BDEB', s: 'るんるん' }
+  ];
+  var DR_ANI = [
+    { e: '🐄', n: 'うし', f: 200, to: 150, ty: 'sawtooth' }, { e: '🐱', n: 'ねこ', f: 640, to: 480, ty: 'triangle' },
+    { e: '🐕', n: 'わんわん', f: 330, to: 260, ty: 'square' }, { e: '🐑', n: 'ひつじ', f: 420, to: 380, ty: 'sawtooth' },
+    { e: '🐇', n: 'うさぎ', f: 760, to: 900, ty: 'sine' }
+  ];
+  var DR_CARC = ['#FF8E85', '#FFD45E', '#7FD08A', '#7DB8F5', '#C79BF0'];
+  var DR_MELODY = [523.25, 659.25, 783.99, 659.25, 880, 783.99, 659.25, 523.25];
+  var dr = {
+    on: false, raf: 0, last: 0, ang: 0, drag: false, pid: null, pa: 0, tickA: 0, cam: 0, auto: 0, phase: 0, night: false, light: false,
+    W: 0, H: 0, u: 1, n: 0, lays: [], dashes: [], birds: [], cars: [], animals: [], notes: [], rainId: 0, musicIds: [], wipeId: 0
+  };
+  function drWin(x, y) { return '<rect class="f-win" x="' + x + '" y="' + y + '" width="10" height="10" rx="2"/>'; }
+  function drHouse(x, wall, roof) {
+    return '<g transform="translate(' + x + ',54)"><rect class="' + wall + '" y="22" width="46" height="32" rx="4"/><path class="' + roof + '" d="M-5 25L23 3L51 25Z" stroke-linejoin="round"/>' +
+      drWin(8, 31) + drWin(28, 31) + '<rect class="f-trunk" x="19" y="40" width="9" height="14" rx="2"/></g>';
+  }
+  function drTree(x, y, r, c1, c2) {
+    return '<g transform="translate(' + x + ',' + y + ')"><rect class="f-trunk" x="-3" y="' + (r * 0.5) + '" width="6" height="' + (r * 1.1) + '" rx="2"/><circle class="' + c1 + '" cy="0" r="' + r + '"/><circle class="' + c2 + '" cx="' + (-r * 0.35) + '" cy="' + (-r * 0.25) + '" r="' + (r * 0.55) + '"/></g>';
+  }
+  function drSvg(h, inner) { return '<svg width="' + DR_T + '" height="' + h + '" viewBox="0 0 ' + DR_T + ' ' + h + '" aria-hidden="true">' + inner + '</svg>'; }
+  function drCloudSvg() {
+    function cl(x, y, s) { return '<g class="cl" transform="translate(' + x + ',' + y + ') scale(' + s + ')"><ellipse cx="0" cy="0" rx="34" ry="13"/><circle cx="-12" cy="-10" r="14"/><circle cx="10" cy="-13" r="17"/></g>'; }
+    return drSvg(70, cl(70, 30, 1) + cl(250, 22, 0.8) + cl(390, 40, 1.1));
+  }
+  function drFarSvg() {
+    return drSvg(130, '<path class="f-m1" d="M0 130V58L50 30L95 66L150 16L215 74L270 40L330 78L390 28L440 62L480 58V130Z" stroke-linejoin="round"/>' +
+      '<path class="f-snow" d="M150 16L137 36L146 31L152 39L158 31L165 36Z"/><path class="f-snow" d="M390 28L379 44L386 40L391 47L396 40L402 44Z"/><path class="f-snow" d="M50 30L40 46L47 42L52 49L57 42L62 46Z"/>' +
+      '<path class="f-m2" d="M0 130V100L60 70L120 104L200 66L260 100L340 72L420 102L480 100V130Z" stroke-linejoin="round"/>');
+  }
+  function drMidSvg() {
+    return drSvg(112, '<path class="f-h1" d="M0 112V72Q60 50 120 68T240 64T360 66T480 72V112Z"/>' +
+      drHouse(28, 'f-wall', 'f-roof1') + drTree(112, 58, 16, 'f-tree', 'f-tree2') + drTree(140, 66, 12, 'f-tree2', 'f-tree') +
+      drHouse(188, 'f-wall2', 'f-roof2') + drTree(264, 60, 17, 'f-tree', 'f-tree2') + drHouse(318, 'f-wall', 'f-roof2') +
+      drTree(398, 62, 15, 'f-tree2', 'f-tree') + drTree(432, 68, 11, 'f-tree', 'f-tree2'));
+  }
+  function drNearSvg() {
+    function bush(x, y, r) { return '<ellipse class="f-bush" cx="' + x + '" cy="' + y + '" rx="' + r + '" ry="' + (r * 0.58) + '"/><circle class="f-flower" cx="' + (x - r * 0.3) + '" cy="' + (y - r * 0.2) + '" r="4"/><circle class="f-flower" cx="' + (x + r * 0.35) + '" cy="' + (y - r * 0.05) + '" r="4"/>'; }
+    return drSvg(84, bush(54, 70, 40) + drTree(200, 36, 24, 'f-tree', 'f-tree2') + bush(318, 72, 34) + drTree(424, 44, 16, 'f-tree2', 'f-tree'));
+  }
+  (function () {
+    var s = '<svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true">';
+    [[8, 10, 0.8], [20, 28, 0.6], [32, 8, 0.7], [44, 22, 0.9], [57, 12, 0.6], [68, 30, 0.8], [79, 9, 0.9], [90, 24, 0.7], [14, 40, 0.6], [62, 42, 0.6], [86, 44, 0.7]].forEach(function (p) {
+      s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + p[2] + '"/>';
+    });
+    $('#dr-stars').innerHTML = s + '</svg>';
+    var r = '<polygon class="ed" id="dr-ed"/><polygon class="rd" id="dr-rd"/>';
+    for (var i = 0; i < 8; i++) r += '<polygon class="dash"/>';
+    drRoad.innerHTML = r;
+    dr.dashes = [].slice.call(drRoad.querySelectorAll('.dash'));
+  })();
+  var drRd = $('#dr-rd'), drEd = $('#dr-ed');
+  function drPts(a) { return a.map(function (p) { return f1(p[0]) + ',' + f1(p[1]); }).join(' '); }
+  function drRoadDraw(top) {
+    /* s: 0（ちへいせん）〜 1（てまえ）。おおきく きると みちの さきが はんたいに ずれる */
+    function at(s, hw) { var cx = top + (50 - top) * s, w = 3 + 43 * s + hw; return [[cx - w, 100 * s], [cx + w, 100 * s]]; }
+    var a = at(0, 0), b = at(1, 0), ea = at(0, 1.6), eb = at(1, 1.6);
+    drEd.setAttribute('points', drPts([ea[0], ea[1], eb[1], eb[0]]));
+    drRd.setAttribute('points', drPts([a[0], a[1], b[1], b[0]]));
+    dr.dashes.forEach(function (d, i) {
+      var p = (dr.phase + i / 8) % 1, q = Math.min(1, p + 0.05), s0 = p * p, s1 = q * q;
+      var cx0 = top + (50 - top) * s0, cx1 = top + (50 - top) * s1, w0 = 0.3 + 1.7 * s0, w1 = 0.3 + 1.7 * s1;
+      d.setAttribute('points', drPts([[cx0 - w0, 100 * s0], [cx0 + w0, 100 * s0], [cx1 + w1, 100 * s1], [cx1 - w1, 100 * s1]]));
+    });
+  }
+  function drGeo() {
+    dr.W = drView.clientWidth; dr.H = drView.clientHeight;
+    var u = dr.H / DR_DH, n = Math.ceil(dr.W / (DR_T * u)) + 1;
+    if (!dr.W || !dr.H) return;
+    dr.u = u; dr.n = n;
+    dr.lays = DR_LAY.map(function (L) {
+      var el = $(L.id), one = L.svg(), html = '';
+      for (var i = 0; i < n; i++) html += one;
+      el.innerHTML = html;
+      if (L.top) { el.style.top = '4%'; el.style.bottom = ''; } else { el.style.bottom = (L.k > 0.5 ? 40 : 41) + '%'; el.style.top = ''; }
+      return { el: el, k: L.k, a: L.a };
+    });
+    drLayDraw();
+  }
+  function drLayDraw() {
+    var T = DR_T * dr.u;
+    dr.lays.forEach(function (L) {
+      var off = (dr.cam * L.k + dr.auto * L.a) % T; if (off < 0) off += T;
+      L.el.style.transform = 'translateX(' + f1(-off) + 'px) scale(' + f1(dr.u) + ')';
+    });
+  }
+  function drFrame(ts) {
+    dr.raf = 0;
+    if (!dr.on) return;
+    dr.raf = requestAnimationFrame(drFrame);
+    var dt = Math.min(0.05, (ts - (dr.last || ts)) / 1000); dr.last = ts;
+    if (!dr.drag && dr.ang !== 0) { dr.ang *= Math.exp(-dt * 2.4); if (Math.abs(dr.ang) < 0.4) dr.ang = 0; }
+    var st = dr.ang / DR_MAX;
+    dr.cam += st * 280 * dt; dr.auto += dt; dr.phase = (dr.phase + dt * 0.5) % 1;
+    drWsvg.style.transform = 'rotate(' + f1(dr.ang) + 'deg)';
+    drLayDraw(); drRoadDraw(50 - st * 16);
+  }
+  /* ハンドル: ゆびの かくどの へんかで まわす（ゆびを はなすと ゆっくり もどる） */
+  function drAng(e) { return Math.atan2(e.clientY - dr.cy, e.clientX - dr.cx); }
+  function drDown(e) {
+    if (!dr.on || dr.pid !== null) return;
+    e.preventDefault(); audio();
+    var r = drWheel.getBoundingClientRect();
+    dr.cx = r.left + r.width / 2; dr.cy = r.top + r.height / 2;
+    dr.pid = e.pointerId; dr.pa = drAng(e); dr.drag = true; dr.tickA = dr.ang;
+    try { drWheel.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  function drMove(e) {
+    if (e.pointerId !== dr.pid) return;
+    var a = drAng(e), d = a - dr.pa;
+    if (d > Math.PI) d -= Math.PI * 2; else if (d < -Math.PI) d += Math.PI * 2;
+    dr.pa = a;
+    dr.ang = Math.max(-DR_MAX, Math.min(DR_MAX, dr.ang + d * 180 / Math.PI));
+    if (Math.abs(dr.ang - dr.tickA) >= 18) { dr.tickA = dr.ang; tone(300 + Math.abs(dr.ang) * 2, 0.05, 'triangle', 0.07); }
+  }
+  function drUp(e) {
+    if (e.pointerId !== dr.pid) return;
+    dr.pid = null; dr.drag = false;
+    try { drWheel.releasePointerCapture(e.pointerId); } catch (err) {}
+  }
+  function drHornTap() {
+    if (!dr.on) return;
+    say('ぷっぷー'); bigWord('ぷっぷー', '#FF8A3D');
+    tone(392, 0.16, 'square', 0.12); tone(494, 0.34, 'square', 0.12, 0, 0.2);
+    var c = centerIn(drHorn, fxDrive), ring = document.createElement('span');
+    ring.style.cssText = 'width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:6px solid #FFD34D';
+    fxDrive.appendChild(ring);
+    var an = ring.animate([{ transform: 'translate(' + c.x + 'px,' + c.y + 'px) scale(.6)', opacity: 1 }, { transform: 'translate(' + c.x + 'px,' + c.y + 'px) scale(3.2)', opacity: 0 }], { duration: reduce ? 200 : 600, easing: 'ease-out' });
+    an.onfinish = function () { ring.remove(); };
+  }
+  /* えんしゅつ: ふえすぎないよう じょうげんを おく（ふるい ものから けす） */
+  function drAdd(list, el, max) {
+    while (list.length >= max) drDrop(list, list[0]);
+    list.push(el); drFxv.appendChild(el);
+  }
+  function drDrop(list, el) {
+    var i = list.indexOf(el);
+    if (i >= 0) list.splice(i, 1);
+    if (el.__an) { try { el.__an.cancel(); } catch (e) {} el.__an = null; }
+    el.remove();
+  }
+  function drFly(list, el, kf, ms, ease) {
+    var an = el.animate(kf, { duration: reduce ? Math.min(ms, 900) : ms, easing: ease || 'linear', fill: 'forwards' });
+    el.__an = an; an.onfinish = function () { drDrop(list, el); };
+  }
+  var DR_BIRD = '<svg viewBox="0 0 48 36"><ellipse cx="22" cy="21" rx="14" ry="10" fill="#FFD24D" stroke="#6B4A3A" stroke-width="2.5"/><circle cx="36" cy="14" r="8" fill="#FFD24D" stroke="#6B4A3A" stroke-width="2.5"/><circle cx="39" cy="12" r="2" fill="#6B4A3A"/><path d="M43 14L48 16L43 19Z" fill="#FF9B3D" stroke="#6B4A3A" stroke-width="1.5" stroke-linejoin="round"/><ellipse class="wing" cx="20" cy="14" rx="10" ry="5" fill="#FFB43D" stroke="#6B4A3A" stroke-width="2"/></svg>';
+  function drBird() {
+    if (!dr.on) return;
+    var el = document.createElement('div'), L2R = Math.random() < 0.5, W = dr.W, H = dr.H, y = rand(H * 0.06, H * 0.36), sz = rand(0.9, 1.4);
+    el.className = 'dr-bird'; el.innerHTML = DR_BIRD;
+    if (!L2R) el.firstChild.style.transform = 'scaleX(-1)';
+    var x0 = L2R ? -70 : W + 70, x1 = L2R ? W + 70 : -70, kf = [];
+    for (var i = 0; i <= 6; i++) kf.push({ transform: 'translate(' + f1(x0 + (x1 - x0) * i / 6) + 'px,' + f1(y + Math.sin(i * 1.3) * 14) + 'px) scale(' + f1(sz) + ')', offset: i / 6 });
+    drAdd(dr.birds, el, 8);
+    drFly(dr.birds, el, kf, rand(3200, 4600));
+  }
+  function drCar() {
+    if (!dr.on) return;
+    var el = document.createElement('div'), W = dr.W, H = dr.H, hz = H * 0.58, c = pick(DR_CARC);
+    el.className = 'dr-car';
+    el.innerHTML = '<svg viewBox="0 0 120 90"><rect x="14" y="76" width="22" height="13" rx="4" fill="#3A4258"/><rect x="84" y="76" width="22" height="13" rx="4" fill="#3A4258"/>' +
+      '<path d="M30 40Q34 14 60 14Q86 14 90 40Z" fill="' + c + '" stroke="#6B4A3A" stroke-width="3" stroke-linejoin="round"/><path d="M38 38Q41 21 60 21Q79 21 82 38Z" fill="#CFEBFF"/>' +
+      '<rect x="6" y="38" width="108" height="44" rx="16" fill="' + c + '" stroke="#6B4A3A" stroke-width="3"/><circle cx="26" cy="58" r="9" fill="#FFF6B8" stroke="#6B4A3A" stroke-width="2.5"/><circle cx="94" cy="58" r="9" fill="#FFF6B8" stroke="#6B4A3A" stroke-width="2.5"/>' +
+      '<rect x="44" y="52" width="32" height="14" rx="6" fill="#fff" opacity=".85" stroke="#6B4A3A" stroke-width="2"/><rect x="12" y="72" width="96" height="6" rx="3" fill="#6B4A3A" opacity=".35"/></svg>';
+    function tf(x, y, k) { return 'translate(' + f1(x) + 'px,' + f1(y) + 'px) scale(' + f1(k) + ') translate(-60px,-90px)'; }
+    drAdd(dr.cars, el, 3);
+    drFly(dr.cars, el, [{ transform: tf(W * 0.49, hz + 2, 0.07) }, { transform: tf(W * 0.36, H * 0.74, 0.9), offset: 0.6 }, { transform: tf(-W * 0.12, H * 1.12, 2.5) }], 3400, 'ease-in');
+  }
+  function drAnimal() {
+    if (!dr.on) return;
+    var a = pick(DR_ANI), el = document.createElement('div'), left = Math.random() < 0.5, x = dr.W * (left ? 0.15 : 0.85), y = dr.H * 0.58 + dr.H * 0.42 * 0.34, sz = Math.max(40, dr.H * 0.27);
+    el.className = 'dr-animal'; el.textContent = a.e; el.style.fontSize = sz + 'px';
+    function tf(dy, k, r) { return 'translate(' + f1(x) + 'px,' + f1(y + dy) + 'px) translate(-50%,-100%) rotate(' + r + 'deg) scale(' + k + ')'; }
+    drAdd(dr.animals, el, 2);
+    drFly(dr.animals, el, [
+      { transform: tf(0, 0.1, 0), opacity: 0 }, { transform: tf(0, 1.15, 0), opacity: 1, offset: 0.12 }, { transform: tf(0, 1, 0), offset: 0.2 },
+      { transform: tf(-sz * 0.4, 1, -10), offset: 0.32 }, { transform: tf(0, 1.05, 10), offset: 0.44 }, { transform: tf(-sz * 0.4, 1, -10), offset: 0.56 },
+      { transform: tf(0, 1.05, 8), offset: 0.68 }, { transform: tf(0, 1, 0), opacity: 1, offset: 0.86 }, { transform: tf(0, 0.8, 0), opacity: 0 }
+    ], 2800, 'ease-in-out');
+    say(a.n + '！'); bigWord(a.n, '#4FB05A');
+    tone(a.f, 0.4, a.ty, 0.1, a.to); tone(a.f * 1.1, 0.25, a.ty, 0.09, a.to, 0.45);
+    return a;
+  }
+  function drNote(x) {
+    var el = document.createElement('div'), cols = ['#FF6FA8', '#7A5CFF', '#35A7FF', '#FF9B3D', '#3CCFB4'];
+    el.className = 'dr-note'; el.textContent = pick(['♪', '♫', '♬']); el.style.color = pick(cols);
+    el.style.fontSize = rand(26, 44) + 'px';
+    var y0 = dr.H * rand(0.6, 0.9), dx = rand(-30, 30);
+    drAdd(dr.notes, el, 14);
+    drFly(dr.notes, el, [
+      { transform: 'translate(' + f1(x) + 'px,' + f1(y0) + 'px) rotate(-12deg)', opacity: 0 },
+      { transform: 'translate(' + f1(x + dx) + 'px,' + f1(y0 - dr.H * 0.2) + 'px) rotate(12deg)', opacity: 1, offset: 0.25 },
+      { transform: 'translate(' + f1(x - dx) + 'px,' + f1(y0 - dr.H * 0.5) + 'px) rotate(-12deg)', opacity: 1, offset: 0.65 },
+      { transform: 'translate(' + f1(x + dx) + 'px,' + f1(y0 - dr.H * 0.8) + 'px) rotate(10deg)', opacity: 0 }
+    ], rand(1800, 2600), 'ease-out');
+  }
+  function drNight(on) {
+    dr.night = on; drView.classList.toggle('night', on);
+    drBtns[2].classList.toggle('on', on);
+  }
+  function drRainStop() {
+    dr.rainId = 0; drRain.classList.remove('on'); drShade.classList.remove('on');
+    drWipers.forEach(function (w) { w.classList.remove('go'); });
+    drBtns[5].classList.remove('on');
+  }
+  function drPress(k) {
+    var b = DR_BTN[DR_BTN.findIndex(function (x) { return x.k === k; })], i;
+    if (k !== 'animal') { say(b.s); bigWord(b.s, '#2B3A67'); }
+    if (k === 'bird') {
+      for (i = 0; i < 3; i++) later(drBird, i * 320);
+      tone(1300, 0.08, 'sine', 0.1, 1900); tone(1500, 0.08, 'sine', 0.1, 2100, 0.14); tone(1400, 0.08, 'sine', 0.1, 2000, 0.28);
+    } else if (k === 'car') {
+      drCar(); tone(140, 0.9, 'sawtooth', 0.06, 260); tone(260, 0.5, 'sawtooth', 0.05, 110, 1.1);
+    } else if (k === 'night') {
+      drNight(true); tone(523, 0.3, 'sine', 0.12); tone(392, 0.3, 'sine', 0.12, 0, 0.22); tone(330, 0.5, 'sine', 0.12, 0, 0.44);
+    } else if (k === 'morn') {
+      drNight(false); tone(392, 0.25, 'triangle', 0.14); tone(523, 0.25, 'triangle', 0.14, 0, 0.18); tone(659, 0.45, 'triangle', 0.14, 0, 0.36);
+      bounce($('.dr-sun'), 0);
+    } else if (k === 'light') {
+      dr.light = !dr.light; drBeam.classList.toggle('on', dr.light); drBtns[4].classList.toggle('on', dr.light);
+      tone(dr.light ? 900 : 600, 0.06, 'square', 0.08); tone(dr.light ? 1200 : 450, 0.1, 'triangle', 0.1, 0, 0.07);
+    } else if (k === 'rain') {
+      drRain.classList.add('on'); drShade.classList.add('on'); drBtns[5].classList.add('on');
+      drWipers.forEach(function (w) { w.classList.remove('go'); void w.offsetWidth; w.classList.add('go'); });
+      if (dr.rainId) cancel(dr.rainId);
+      dr.rainId = later(drRainStop, 4400);
+      for (i = 0; i < 6; i++) tone(rand(1400, 2200), 0.04, 'triangle', 0.06, 0, i * 0.06);
+    } else if (k === 'animal') {
+      drAnimal();
+    } else if (k === 'music') {
+      dr.musicIds.forEach(cancel); dr.musicIds = [];
+      DR_MELODY.forEach(function (f, j) {
+        dr.musicIds.push(later(function () { tone(f, 0.22, 'triangle', 0.15); drNote(rand(dr.W * 0.12, dr.W * 0.88)); }, j * 230));
+      });
+    }
+  }
+  var drBtns = DR_BTN.map(function (b) {
+    var el = document.createElement('button');
+    el.type = 'button'; el.className = 'dr-b'; el.style.setProperty('--c', b.c); el.setAttribute('aria-label', b.l);
+    el.innerHTML = '<span class="e">' + b.e + '</span><span class="l">' + b.l + '</span>';
+    onTap(el, function () { if (!dr.on) return; bounce(el, 8); drPress(b.k); });
+    drPad.appendChild(el);
+    return el;
+  });
+  drHorn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  onTap(drHorn, drHornTap);
+  function drReset() {
+    dr.on = false;
+    if (dr.raf) { cancelAnimationFrame(dr.raf); dr.raf = 0; }
+    drWheel.removeEventListener('pointerdown', drDown); drWheel.removeEventListener('pointermove', drMove);
+    drWheel.removeEventListener('pointerup', drUp); drWheel.removeEventListener('pointercancel', drUp);
+    [dr.birds, dr.cars, dr.animals, dr.notes].forEach(function (list) { while (list.length) drDrop(list, list[0]); });
+    clearTimers(); dr.rainId = 0; dr.musicIds = []; dr.pid = null; dr.drag = false;
+    dr.ang = 0; dr.cam = 0; dr.auto = 0; dr.phase = 0; dr.last = 0; dr.light = false; dr.night = false;
+    drView.classList.remove('night'); drBeam.classList.remove('on'); drRain.classList.remove('on'); drShade.classList.remove('on');
+    drWipers.forEach(function (w) { w.classList.remove('go'); });
+    drBtns.forEach(function (b) { b.classList.remove('on'); });
+    drFxv.innerHTML = ''; fxDrive.innerHTML = ''; drWsvg.style.transform = '';
+    if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+  }
+  games.drive = {
+    el: drStage,
+    enter: function () {
+      drReset(); dr.on = true;
+      drGeo(); drLayDraw(); drRoadDraw(50);
+      drWheel.addEventListener('pointerdown', drDown); drWheel.addEventListener('pointermove', drMove);
+      drWheel.addEventListener('pointerup', drUp); drWheel.addEventListener('pointercancel', drUp);
+      dr.raf = requestAnimationFrame(drFrame);
+    },
+    leave: function () { drReset(); },
+    resize: function () { if (dr.on) drGeo(); }
+  };
+
   /* ---------- せってい（おとなよう）シート ---------- */
   var setSheet = $('#setsheet'), setBtn = $('#setbtn'), thrIn = $('#thr'), segs = [].slice.call(setSheet.querySelectorAll('.seg'));
   var ctBtn = $('#cam-test'), ctVideo = $('#set-video'), ctMsg = $('#cam-msg'), diagEl = $('#diag');
@@ -4917,12 +5343,13 @@
     clock: { ico: '🕒', lab: 'とけい',         c: '#CFE8FF', say: 'とけい！' },
     sticker: { html: '<span class="stk-ico">⭐</span>', lab: 'シールちょう', br: 'シール', c: '#FFE58F', say: 'シールちょう！' },
     yubi:  { ico: '✋', lab: 'ゆびのおうち', br: 'ゆびの', c: '#FFD9B8', say: 'ゆびのおうち！' },
-    koro:  { ico: '🔴', lab: 'ころころボール', br: 'ころころ', c: '#C8F0B0', say: 'ころころボール！' }
+    koro:  { ico: '🔴', lab: 'ころころボール', br: 'ころころ', c: '#C8F0B0', say: 'ころころボール！' },
+    drive: { ico: '🚗', lab: 'ドライブ',       c: '#BFE6FF', say: 'ドライブ！' }
   };
   var HPAGES = [
     { title: 'あそぶ', ico: '🎈', img: 'pg-asobu', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
     { title: 'まなぶ', ico: '🔤', img: 'pg-manabu', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
-    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro'] }
+    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
   var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');

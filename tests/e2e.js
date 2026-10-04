@@ -15,22 +15,24 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['function koKnock(v) {', 'function koKnock(v) { (window.__kn = window.__kn || []).push(v);'],
   ['var koNoise = null;', 'var koNoise = null; window.__ko = ko;'],
   ['ko.total = n; ko.balls = koSpawn(n);', 'ko.total = n; ko.balls = koSpawn(n); if (window.__koPin && ko.round === 1) ko.balls.forEach(function (b) { b.x = ko.W * 0.45; b.y = ko.H * 0.45; b.col = 0; });'],
-  ['ko.on = true; ko.round = 1;', 'ko.on = true; ko.round = window.__koRound || 1;']];
+  ['ko.on = true; ko.round = 1;', 'ko.on = true; ko.round = window.__koRound || 1;'],
+  ['function drFrame(ts) {', 'function drFrame(ts) { window.__drFrames = (window.__drFrames || 0) + 1;'],
+  ['var dr = {', 'var dr = window.__dr = {']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ'];
 const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
 async function gotoPage(p, n) {
   const cur = await p.evaluate(() => [0, 1, 2].find(i => !document.querySelector('#hm-p' + i).hidden));
   if (cur !== n) { await p.click('.hm-dot:nth-child(' + (n + 1) + ')'); await sleep(280); }
 }
 async function tapTile(p, lab) {
-  await gotoPage(p, lab === 'ころころボール' ? 2 : PAGE2.has(lab) ? 1 : 0);
+  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ') ? 2 : PAGE2.has(lab) ? 1 : 0);
   await p.click('.hm-page:not([hidden]) .tile[aria-label="' + lab + '"]');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -134,10 +136,11 @@ async function holdOpen(p, ms) {
     await p.click('.hm-dot:nth-child(2)'); await sleep(400);
     await p.click('#hm-next'); await sleep(400);
     const t3 = await tileInfo();
-    ok(await icoChk(), tag + ' page3 tile icons + title image loaded');
-    const ar = await p.locator('#hm-area').boundingBox(), t1b = tiles[0];
-    ok(t3.length === 1 && t3[0].ok && t3[0].w === t1b.w && t3[0].h === t1b.h && !t3[0].clip, tag + ' page3: 1 tile, same size as others ' + JSON.stringify(t3[0]));
-    ok(Math.abs((t3[0].cx + t3[0].w / 2) - (ar.x + ar.width / 2)) <= 2 && t3[0].cy === tiles[0].cy, tag + ' page3: tile centred in first row');
+    ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')], ti = document.querySelector('#hm-title img'); return ims.length === 1 && ims.every(i => i.complete && i.naturalWidth > 0) && !!ti && ti.complete && ti.naturalWidth > 0; }), tag + ' page3 koro icon image + title image loaded (ドライブ falls back to the 🚗 emoji)');
+    const t1b = tiles[0];
+    ok(t3.length === 2 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 2 tiles, same size as others ' + JSON.stringify(t3));
+    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx, tag + ' page3: tiles in first row, columns 1-2');
+    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗', tag + ' page3 order + ドライブ uses 🚗');
     ok((await p.locator('#hm-title').textContent()) === 'うごかす' && await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && (await says(p)).some(x => x.t === 'うごかす'), tag + ' page3 title, ▶ hidden, ◀ shown, speaks');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
@@ -153,7 +156,7 @@ async function holdOpen(p, ms) {
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
-    for (let i = 0; i < 19; i++) {
+    for (let i = 0; i < 20; i++) {
       await tapTile(p, LAB[i]); await sleep(i === 8 ? 600 : 500);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
@@ -1008,7 +1011,7 @@ async function holdOpen(p, ms) {
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 17 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (17 rows)');
+      ok(await p.locator('.st-row.zero').count() === 18 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (18 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -1333,6 +1336,108 @@ async function holdOpen(p, ms) {
       }
     }
     ok(p.errs.length === 0, 'rotate: no console errors ' + p.errs.join('|'));
+    await p.context().close();
+  }
+
+  /* ---------- ドライブ: ハンドル・ボタン・片づけ ---------- */
+  for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }]) {
+    const tag = 'drive ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/drive-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true });
+    const D = () => p.evaluate(() => ({ ang: window.__dr.ang, cam: window.__dr.cam, on: window.__dr.on }));
+    const cnt = s => p.locator(s).count();
+    const btn = lab => p.click('.dr-b[aria-label="' + lab + '"]');
+    const lastSay = async () => { const s = await says(p); return s.length ? s[s.length - 1].t : ''; };
+    const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    const tx = id => p.evaluate(id => { const m = /translateX\((-?[\d.]+)px\)/.exec(document.querySelector(id).style.transform); return m ? parseFloat(m[1]) : NaN; }, id);
+    await tapTile(p, 'ドライブ'); await sleep(600);
+    ok(await p.locator('#stage-drive').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens ドライブ');
+    ok((await says(p)).some(x => x.t === 'ドライブ！'), tag + ': speaks ドライブ！');
+    ok(await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': shared 🏠 back button, no adult button');
+    const geo = await p.evaluate(() => { const r = e => document.querySelector(e).getBoundingClientRect(), st = r('#stage-drive'); const ins = b => b.left >= st.left - 0.5 && b.right <= st.right + 0.5 && b.top >= st.top - 0.5 && b.bottom <= st.bottom + 0.5;
+      const bs = [...document.querySelectorAll('.dr-b')].map(b => b.getBoundingClientRect()); const w = r('#dr-wheel'), h = r('#dr-horn'), f = r('.dr-frame');
+      return { n: bs.length, minB: Math.min(...bs.map(b => Math.min(b.width, b.height))), bIn: bs.every(ins), wIn: ins(w), wd: w.width, hornMin: Math.min(h.width, h.height), fr: f.height / st.height, st: st.width, hs: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth || document.querySelector('#stage-drive').scrollWidth > document.querySelector('#stage-drive').clientWidth,
+        hit: bs.map(b => { const e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!e && !!e.closest('.dr-b'); }).every(Boolean), overlap: bs.some(b => b.top < w.bottom - 1 && b.bottom > w.top + 1 && b.left < w.right - 1 && b.right > w.left + 1) }; });
+    ok(geo.n === 8 && geo.minB >= 80 && geo.bIn && geo.hornMin >= 80, tag + ': 8 buttons >=80px inside stage, horn >=80px (' + geo.n + ', ' + Math.round(geo.minB) + ', ' + Math.round(geo.hornMin) + ')');
+    ok(geo.wIn && !geo.overlap && geo.hit && !geo.hs, tag + ': wheel inside, no overlap with buttons, buttons hit-testable, no hscroll');
+    ok(vp.width < 700 ? geo.fr > 0.38 && geo.fr < 0.5 && geo.wd >= Math.min(0.6 * geo.st, 200) && geo.wd <= 320 : geo.fr > 0.3, tag + ': windshield ' + Math.round(geo.fr * 100) + '% / wheel ' + Math.round(geo.wd) + 'px');
+    const f0 = await p.evaluate(() => window.__drFrames || 0); await sleep(250);
+    ok((await p.evaluate(() => window.__drFrames || 0)) - f0 >= 4, tag + ': rAF loop runs');
+    const d0 = await p.evaluate(() => [...document.querySelectorAll('.dr-road .dash')].map(d => d.getAttribute('points')).join('|')); await sleep(200);
+    ok(d0 !== await p.evaluate(() => [...document.querySelectorAll('.dr-road .dash')].map(d => d.getAttribute('points')).join('|')) && await cnt('.dr-road .dash') === 8, tag + ': road dashes flow');
+    await shot('day');
+    /* ハンドル: 時計まわりにつかんで回す -> 回転 + けしきが左へ。遠景ほどゆっくり */
+    const wb = await p.locator('#dr-wheel').boundingBox(), cx = wb.x + wb.width / 2, cy = wb.y + wb.height / 2, R = wb.width * 0.4;
+    const at = deg => [cx + R * Math.cos(deg * Math.PI / 180), cy + R * Math.sin(deg * Math.PI / 180)];
+    const far0 = await tx('#dr-l-far'), mid0 = await tx('#dr-l-mid'), near0 = await tx('#dr-l-near');
+    await p.mouse.move(...at(-90)); await p.mouse.down();
+    for (let a = -90; a <= -10; a += 8) { await p.mouse.move(...at(a)); await sleep(10); }
+    await sleep(450);
+    let d = await D(); const matA = await p.evaluate(() => { const m = /rotate\((-?[\d.]+)deg\)/.exec(document.querySelector('#dr-wsvg').style.transform); return m ? parseFloat(m[1]) : NaN; });
+    ok(d.ang > 60 && d.ang <= 120 && Math.abs(matA - d.ang) < 25, tag + ': dragging clockwise rotates the wheel (' + Math.round(d.ang) + 'deg, css ' + Math.round(matA) + ')');
+    const far1 = await tx('#dr-l-far'), mid1 = await tx('#dr-l-mid'), near1 = await tx('#dr-l-near');
+    ok(d.cam > 0 && far1 < far0 && mid1 < mid0 && near1 < near0 - 1, tag + ': turning right moves the scenery left (' + [far1, mid1, near1].map(Math.round).join(',') + ')');
+    ok(Math.abs(near1 - near0) > Math.abs(mid1 - mid0) && Math.abs(mid1 - mid0) > Math.abs(far1 - far0), tag + ': parallax (far slowest, near fastest)');
+    await shot('turn');
+    for (let a = -10; a <= 700; a += 25) { await p.mouse.move(...at(a)); await sleep(5); }
+    d = await D(); ok(Math.abs(d.ang) <= 120.001 && d.ang >= 119, tag + ': clamped to +-120deg (' + Math.round(d.ang) + ')');
+    await p.mouse.up(); await sleep(150);
+    const r1 = Math.abs((await D()).ang); await sleep(900);
+    const r2 = Math.abs((await D()).ang); ok(r2 < r1 && r2 > 0, tag + ': wheel eases back slowly after release (' + Math.round(r1) + ' -> ' + Math.round(r2) + ')');
+    await sleep(2800); ok(Math.abs((await D()).ang) < 1, tag + ': wheel returns to 0deg');
+    const camB = (await D()).cam;
+    await p.mouse.move(...at(-90)); await p.mouse.down();
+    for (let a = -90; a >= -170; a -= 8) { await p.mouse.move(...at(a)); await sleep(10); }
+    await sleep(350); d = await D(); ok(d.ang < -40 && d.cam < camB, tag + ': counter-clockwise turns left, scenery moves right (' + Math.round(d.ang) + ')');
+    await p.mouse.up(); await sleep(3000);
+    /* クラクション */
+    await clearSays(p);
+    await p.click('#dr-horn'); await sleep(80);
+    ok((await lastSay()) === 'ぷっぷー' && (await big()) === 'ぷっぷー', tag + ': horn says ぷっぷー + bigWord');
+    const ang1 = (await D()).ang; await p.click('#dr-horn'); await sleep(50); ok(Math.abs((await D()).ang - ang1) < 3, tag + ': tapping the horn does not turn the wheel');
+    /* ボタン */
+    const BT = [['とり', 'とり！'], ['くるま', 'くるま！'], ['よる', 'よる！'], ['あさ', 'あさ！'], ['ライト', 'ライト！'], ['あめ', 'あめ！'], ['どうぶつ', null], ['おんがく', 'るんるん']];
+    for (const [lab, w] of BT) {
+      await sleep(1300); await clearSays(p);
+      await btn(lab); await sleep(100);
+      const s = await lastSay(), b = await big();
+      ok(w ? s === w && b === w : /^[぀-ゟ]+$/.test(s.replace('！', '')) && b === s.replace('！', ''), tag + ': ' + lab + ' speaks "' + s + '" and shows the same word big');
+      if (lab === 'とり') { await sleep(900); ok((await cnt('#dr-fxv .dr-bird')) >= 3, tag + ': とり -> birds flying (' + await cnt('#dr-fxv .dr-bird') + ')'); }
+      if (lab === 'くるま') { await sleep(900); ok((await cnt('#dr-fxv .dr-car')) === 1, tag + ': くるま -> one car coming'); await shot('car');
+        const sc = []; for (let k = 0; k < 3; k++) { sc.push(await p.evaluate(() => { const c = document.querySelector('#dr-fxv .dr-car'); return c ? c.getBoundingClientRect().width : 0; })); await sleep(700); }
+        ok(sc[0] > 0 && sc[2] > sc[0] * 1.5, tag + ': car grows as it approaches (' + sc.map(Math.round).join('->') + ')'); }
+      if (lab === 'よる') { await sleep(1900); await shot('night');
+        const nz = await p.evaluate(() => ({ cls: document.querySelector('#dr-view').classList.contains('night'), sky: getComputedStyle(document.querySelector('.dr-sky.n')).opacity, stars: getComputedStyle(document.querySelector('.dr-stars')).opacity, win: getComputedStyle(document.querySelector('#dr-l-mid .f-win')).fill, moon: getComputedStyle(document.querySelector('.dr-moon')).opacity }));
+        ok(nz.cls && nz.sky === '1' && nz.stars === '1' && nz.moon === '1' && /255, 230, 128/.test(nz.win), tag + ': よる -> night sky, stars, moon, lit windows ' + JSON.stringify(nz)); }
+      if (lab === 'あさ') { await sleep(1900);
+        const nz = await p.evaluate(() => ({ cls: document.querySelector('#dr-view').classList.contains('night'), sky: getComputedStyle(document.querySelector('.dr-sky.n')).opacity, sun: getComputedStyle(document.querySelector('.dr-sun')).transform }));
+        ok(!nz.cls && nz.sky === '0', tag + ': あさ -> back to day ' + JSON.stringify(nz)); }
+      if (lab === 'ライト') { ok(await p.locator('#dr-beam.on').count() === 1, tag + ': ライト -> beam on'); await btn('ライト'); await sleep(100); ok(await p.locator('#dr-beam.on').count() === 0, tag + ': ライト again -> beam off (toggle)'); }
+      if (lab === 'あめ') { await sleep(300); ok(await p.locator('#dr-rain.on').count() === 1 && await p.locator('.dr-wiper.go').count() === 2, tag + ': あめ -> rain + wipers moving'); await shot('rain');
+        await sleep(4800); ok(await p.locator('#dr-rain.on').count() === 0 && await p.locator('.dr-wiper.go').count() === 0, tag + ': rain stops by itself'); }
+      if (lab === 'どうぶつ') { await sleep(300); ok((await cnt('#dr-fxv .dr-animal')) === 1, tag + ': どうぶつ -> animal by the road'); await shot('animal'); }
+      if (lab === 'おんがく') { await sleep(1200); ok((await cnt('#dr-fxv .dr-note')) >= 3, tag + ': おんがく -> notes floating (' + await cnt('#dr-fxv .dr-note') + ')'); await shot('music'); }
+    }
+    /* れんだ: えんしゅつの数に上限 */
+    await sleep(3000);
+    const mx = { bird: 0, car: 0, animal: 0, note: 0 };
+    const samp = async () => { for (const k of Object.keys(mx)) mx[k] = Math.max(mx[k], await cnt('#dr-fxv .dr-' + k)); };
+    for (let i = 0; i < 8; i++) { await btn('とり'); await btn('くるま'); await btn('どうぶつ'); await btn('おんがく'); await sleep(60); await samp(); }
+    for (let i = 0; i < 12; i++) { await sleep(150); await samp(); }
+    ok(mx.bird <= 8 && mx.car <= 3 && mx.animal <= 2 && mx.note <= 14 && mx.bird >= 3 && mx.car >= 1, tag + ': spammed buttons stay capped ' + JSON.stringify(mx));
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join('|'));
+    /* もどる: きれいに かたづく */
+    await btn('よる'); await btn('ライト'); await btn('あめ'); await btn('おんがく'); await sleep(200);
+    await p.click('#homebtn'); await sleep(250);
+    ok(await p.locator('#hm-p2').isVisible() && await p.locator('#home').isVisible() && await p.locator('#stage-drive').isHidden(), tag + ': 🏠 returns to the home page 3');
+    const fa = await p.evaluate(() => window.__drFrames); await sleep(400);
+    ok((await p.evaluate(() => window.__drFrames)) === fa && !(await D()).on, tag + ': leave() stops rAF');
+    await sleep(2500);
+    const left = await p.evaluate(() => ({ fx: document.querySelector('#dr-fxv').children.length + document.querySelector('#fx-drive').children.length, night: document.querySelector('#dr-view').classList.contains('night'), beam: document.querySelector('#dr-beam').classList.contains('on'), rain: document.querySelector('#dr-rain').classList.contains('on'), ang: window.__dr.ang, cam: window.__dr.cam, pend: window.__dr.rainId + window.__dr.musicIds.length }));
+    ok(left.fx === 0 && !left.night && !left.beam && !left.rain && left.ang === 0 && left.cam === 0 && left.pend === 0, tag + ': nothing left after leave (timers/music/rain/elements) ' + JSON.stringify(left));
+    await tapTile(p, 'ドライブ'); await sleep(500);
+    ok(!(await p.evaluate(() => document.querySelector('#dr-view').classList.contains('night'))) && (await D()).on && (await p.evaluate(() => window.__drFrames)) > fa, tag + ': re-entry starts fresh in daytime and runs again');
+    await p.click('#homebtn'); await sleep(200);
+    ok(p.errs.length === 0, tag + ': no console errors at end ' + p.errs.join('|'));
     await p.context().close();
   }
 
