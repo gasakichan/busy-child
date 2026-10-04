@@ -1550,11 +1550,23 @@
     if (bwAnim) { try { bwAnim.cancel(); } catch (e) {} bwAnim = null; }
     bw.hidden = true;
   }
+  /* 字の色が濃いときは縁を白に（縁の --ink と見分けがつかなくなるため）。白と --ink のうちコントラストの高いほう */
+  function lum(hex) {
+    var m = /^#([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 1;
+    var n = parseInt(m[1], 16);
+    return [n >> 16, (n >> 8) & 255, n & 255].reduce(function (a, v, i) {
+      v /= 255; v = v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      return a + v * [0.2126, 0.7152, 0.0722][i];
+    }, 0);
+  }
+  var INK_L = lum(DARK);
   function bigWord(text, color, size) {
     if (bwAnim) { try { bwAnim.cancel(); } catch (e) {} }
     bw.textContent = text;
     bw.style.fontSize = size || '';
     bw.style.color = color || DARK;
+    var L = lum(color || DARK);
+    bw.style.webkitTextStrokeColor = 1.05 / (L + 0.05) > (L + 0.05) / (INK_L + 0.05) ? '#FFFFFF' : '';
     bw.hidden = false;
     bwAnim = bw.animate([
       { opacity: 0, transform: 'translate(0,-50%) scale(.6)' },

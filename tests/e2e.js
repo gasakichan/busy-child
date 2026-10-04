@@ -1393,6 +1393,7 @@ async function holdOpen(p, ms) {
     await clearSays(p);
     await p.click('#dr-horn'); await sleep(80);
     ok((await lastSay()) === 'ぷっぷー' && (await big()) === 'ぷっぷー', tag + ': horn says ぷっぷー + bigWord');
+    ok((await p.evaluate(() => getComputedStyle(document.getElementById('bigword')).webkitTextStrokeColor)) !== 'rgb(255, 255, 255)', tag + ': big word outline stays ink on light text');
     const ang1 = (await D()).ang; await p.click('#dr-horn'); await sleep(50); ok(Math.abs((await D()).ang - ang1) < 3, tag + ': tapping the horn does not turn the wheel');
     /* ボタン */
     const BT = [['とり', 'とり！'], ['くるま', 'くるま！'], ['よる', 'よる！'], ['あさ', 'あさ！'], ['ライト', 'ライト！'], ['あめ', 'あめ！'], ['どうぶつ', null], ['おんがく', 'るんるん']];
@@ -1401,6 +1402,8 @@ async function holdOpen(p, ms) {
       await btn(lab); await sleep(100);
       const s = await lastSay(), b = await big();
       ok(w ? s === w && b === w : /^[぀-ゟ]+$/.test(s.replace('！', '')) && b === s.replace('！', ''), tag + ': ' + lab + ' speaks "' + s + '" and shows the same word big');
+      if (lab === 'よる') { const sk = await p.evaluate(() => getComputedStyle(document.getElementById('bigword')).webkitTextStrokeColor);
+        ok(sk === 'rgb(255, 255, 255)', tag + ': big word outline is white on dark text (' + sk + ')'); }
       if (lab === 'とり') { await sleep(900); ok((await cnt('#dr-fxv .dr-bird')) >= 3, tag + ': とり -> birds flying (' + await cnt('#dr-fxv .dr-bird') + ')'); }
       if (lab === 'くるま') { await sleep(900); ok((await cnt('#dr-fxv .dr-car')) === 1, tag + ': くるま -> one car coming'); await shot('car');
         const sc = []; for (let k = 0; k < 3; k++) { sc.push(await p.evaluate(() => { const c = document.querySelector('#dr-fxv .dr-car'); return c ? c.getBoundingClientRect().width : 0; })); await sleep(700); }
