@@ -1,5 +1,5 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v2';
+var CACHE = 'ponpon-v3';
 var FONTS = 'ponpon-fonts-v1';
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
   './assets/ani/buta.webp',
@@ -35,7 +35,43 @@ var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.sv
   './assets/ico/touch.webp',
   './assets/ico/train.webp',
   './assets/ico/yubi.webp',
-  './assets/ico/zoo.webp'
+  './assets/ico/zoo.webp',
+  './assets/stk/bus.webp',
+  './assets/stk/car.webp',
+  './assets/stk/chou.webp',
+  './assets/stk/densha.webp',
+  './assets/stk/fusen.webp',
+  './assets/stk/hana.webp',
+  './assets/stk/heart.webp',
+  './assets/stk/hikoushi.webp',
+  './assets/stk/hoshi.webp',
+  './assets/stk/inu.webp',
+  './assets/stk/iruka.webp',
+  './assets/stk/kaigara.webp',
+  './assets/stk/kani.webp',
+  './assets/stk/ki.webp',
+  './assets/stk/kinoko.webp',
+  './assets/stk/kitsune.webp',
+  './assets/stk/kujira.webp',
+  './assets/stk/kuma.webp',
+  './assets/stk/mise.webp',
+  './assets/stk/nagare.webp',
+  './assets/stk/nettaigyo.webp',
+  './assets/stk/niji.webp',
+  './assets/stk/patocar.webp',
+  './assets/stk/risu.webp',
+  './assets/stk/rocket.webp',
+  './assets/stk/sakana.webp',
+  './assets/stk/shingou.webp',
+  './assets/stk/shoubou.webp',
+  './assets/stk/tako.webp',
+  './assets/stk/tentou.webp',
+  './assets/stk/tsuki.webp',
+  './assets/stk/uchuujin.webp',
+  './assets/stk/ufo.webp',
+  './assets/stk/usagi.webp',
+  './assets/stk/wakusei.webp',
+  './assets/stk/yotto.webp'
 ]);
 
 self.addEventListener('install', function (e) {

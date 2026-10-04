@@ -713,6 +713,8 @@ async function holdOpen(p, ms) {
     const lay = await p.evaluate(() => { const st = document.querySelector('#stage-sticker').getBoundingClientRect(), b = document.querySelector('#stk-board').getBoundingClientRect(), sh = document.querySelector('#stk-sheet').getBoundingClientRect(); const tabs = [...document.querySelectorAll('.stk-tab')].map(t => { const r = t.getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); }); return { ratio: +(b.height / st.height).toFixed(2), tabs, cells: document.querySelectorAll('.stk-cell').length, cw: Math.round(document.querySelector('.stk-cell').getBoundingClientRect().width), sheetIn: sh.bottom <= st.bottom, hs: document.documentElement.scrollWidth > innerWidth }; });
     ok(lay.cells === 12 && lay.tabs.length === 4 && lay.tabs.every(t => t === '64x64') && lay.sheetIn && !lay.hs, 'sticker: 4 tabs 64px, 12 sheet stickers, sheet inside ' + JSON.stringify(lay));
     ok(await cnt() === 0, 'sticker: starts empty');
+    const imgState = sel => p.evaluate(s => [...document.querySelectorAll(s)].map(i => i.complete && i.naturalWidth > 0 && !i.src.startsWith('data:') && /assets\/stk\/.*\.webp$/.test(i.src)), sel);
+    { const st = await imgState('.stk-cell .stk-img'); ok(st.length === 12 && st.every(Boolean), 'sticker: 12 palette images loaded (not data:) ' + st.length); }
     const names = await p.evaluate(() => [...document.querySelectorAll('.stk-cell')].map(c => c.getAttribute('aria-label')).join());
     ok(names === 'おさかな,たこ,くじら,かに,ねったいぎょ,いるか,かいがら,よっと,おはな,はーと,にじ,ふうせん', 'sticker: うみ sheet = 8 themed + 4 common');
     const B = await box('#stk-board'), bc = cc(B);
@@ -720,6 +722,7 @@ async function holdOpen(p, ms) {
     await clearSays(p);
     await dragTo(cc(await box('.stk-cell:nth-child(1)')), [bc[0] - 60, bc[1] - 80]); await sleep(300);
     ok(await cnt() === 1 && (await said()).indexOf('おさかな！') >= 0, 'sticker: drag to board sticks 1, speaks おさかな！');
+    { const st = await imgState('#stk-layer .stk.placed .stk-img'); ok(st.length === 1 && st.every(Boolean), 'sticker: placed sticker is an image on the board'); }
     ok(await p.evaluate(() => document.querySelector('#bigword').textContent) === 'おさかな！', 'sticker: spoken word on screen');
     const sz = await p.evaluate(() => { const e = document.querySelector('#stk-layer .stk.placed'), b = document.querySelector('#stk-board').getBoundingClientRect(); const px = parseFloat(e.style.fontSize); return px / Math.min(b.width, b.height); });
     ok(sz >= 0.139 && sz <= 0.181, 'sticker: size 14-18% of board short side (' + sz.toFixed(3) + ')');
@@ -762,6 +765,18 @@ async function holdOpen(p, ms) {
     await p.reload(); await sleep(400);
     await tapTile(p, 'シールちょう'); await sleep(500);
     ok(await cnt() === 2, 'sticker: stuck stickers survive reload');
+    { const st = await imgState('#stk-layer .stk.placed .stk-img'); ok(st.length === 2 && st.every(Boolean), 'sticker: restored stickers render as images'); }
+    // old-format board (emoji keys) seeded before load still renders images
+    await p.evaluate(() => localStorage.setItem('ponpon.stickers.v1', JSON.stringify({ umi: [{ e: '🐟', x: 0.3, y: 0.4, r: 5, s: 0.16 }, { e: '🌸', x: 0.6, y: 0.5, r: -8, s: 0.16 }, { e: '⛵', x: 0.5, y: 0.7, r: 0, s: 0.16 }], mori: [{ e: '🐻', x: 0.4, y: 0.4, r: 0, s: 0.16 }], machi: [], uchuu: [{ e: '👩‍🚀', x: 0.5, y: 0.5, r: 0, s: 0.16 }] })));
+    await p.reload(); await sleep(400);
+    await tapTile(p, 'シールちょう'); await sleep(500);
+    { const st = await imgState('#stk-layer .stk.placed .stk-img'); ok(await cnt() === 3 && st.length === 3 && st.every(Boolean), 'sticker: pre-seeded old-format board renders images'); }
+    await p.screenshot({ path: SP + '/sticker-old-board.png' });
+    // restore the 2-sticker state used by the rest of this section
+    await p.evaluate(() => localStorage.setItem('ponpon.stickers.v1', JSON.stringify({ umi: [{ e: '🐟', x: 0.3, y: 0.4, r: 5, s: 0.16 }, { e: '🐙', x: 0.6, y: 0.5, r: -8, s: 0.16 }], mori: [], machi: [], uchuu: [] })));
+    await p.reload(); await sleep(400);
+    await tapTile(p, 'シールちょう'); await sleep(500);
+    ok(await cnt() === 2, 'sticker: back to 2 after reseed');
     // scenes
     await p.click('.stk-tab[data-k="mori"]'); await sleep(250);
     ok(await cnt() === 0 && (await p.locator('.stk-cell').first().getAttribute('aria-label')) === 'くま', 'sticker: switching scene shows its own (empty) board + sheet');

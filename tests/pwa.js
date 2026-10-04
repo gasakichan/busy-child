@@ -54,7 +54,7 @@ const ok = (c, m) => { if (!c) throw new Error('NG: ' + m); console.log('ok  ' +
     await pg.waitForSelector('#home', { state: 'attached' });
     ok(await pg.evaluate(() => { const h = document.querySelector('#home'); return !!h && !h.hidden && document.querySelectorAll('#home .tile').length > 0; }), 'offline reload shows home with tiles');
     const pre = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8').match(/var PRECACHE = \[[\s\S]*?\]\)?;/)[0].match(/'\.\/[^']*'/g).map(s => s.slice(1, -1));
-    ok(pre.filter(s => s.startsWith('./assets/')).length === 34, 'PRECACHE lists 34 assets');
+    ok(pre.filter(s => s.startsWith('./assets/')).length === 70, 'PRECACHE lists 70 assets');
     ok(pre.every(s => fs.existsSync(path.join(ROOT, s === './' ? 'index.html' : s))), 'every PRECACHE entry exists on disk');
     const codes = await pg.evaluate(async list => Promise.all(list.map(u => caches.match(u).then(r => !!r))), pre);
     ok(codes.every(Boolean), 'every PRECACHE entry is in the cache while offline');

@@ -20,7 +20,7 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/e2e.js   # E2E（約5分、
 - 共通ヘルパー: `say()`（日本語の読み上げ）、`sayEn()`（英語。カタカナにフォールバックする）、`bigWord()`（話した言葉を大きく表示）、`tone()`（効果音）、`holdButton()`（長押しボタン）。
 - 大人用の設定はホームの ⚙️（1.5 秒長押し）の `openSettings()` に集約。ゲーム画面には大人用ボタンを置かない。
 - localStorage: `ponpon.settings.v1` / `ponpon.family.v1` / `ponpon.stickers.v1` / `ponpon.stats.v1`。必ず try/catch で囲む。音なし・声なしは保存しない。
-- イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
+- イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）、`assets/stk/`（シールちょうのシール、`STK_IMG`。白フチ込み 256px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
 - カメラ検出（おみせやさん）は `/* camdet:begin */`〜`/* camdet:end */` の純粋関数。単体テストはこの範囲を抜き出して実行する。
 
 ## 守ること

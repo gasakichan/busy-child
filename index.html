@@ -848,6 +848,10 @@
     background: linear-gradient(118deg, rgba(255,255,255,0) 38%, rgba(255,255,255,.42) 47%, rgba(255,255,255,0) 56%); }
   .stk.lift::before, .stk-cell.held .stk::before { content: ""; position: absolute; top: 6%; right: 6%; width: 26%; height: 26%; z-index: 2; pointer-events: none;
     background: linear-gradient(225deg, transparent 50%, #F4F5F8 50%, #D5D9E3 100%); border-radius: 0 0 0 6px; box-shadow: -3px 3px 4px rgba(43,58,103,.3); }
+  .stk.pic .stk-i { text-shadow: none; filter: drop-shadow(0 2px 2px rgba(43,58,103,.35)); }
+  .stk.pic::after { display: none; }
+  .stk-img { display: block; width: 1.18em; height: 1.18em; max-width: none; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+  .stk.pic.lift .stk-i, .stk-cell.held .stk.pic .stk-i { filter: drop-shadow(0 10px 6px rgba(43,58,103,.35)); }
   .stk.lift { z-index: 3; }
   .stk.lift .stk-i, .stk-cell.held .stk-i { filter: drop-shadow(0 10px 6px rgba(43,58,103,.35)); }
   .stk-cell.held .stk { animation: stkHeld .55s ease-in-out infinite; }
@@ -4019,6 +4023,7 @@
   var SK_NAME = {};
   SK_SC.forEach(function (sc) { sc.th.forEach(function (t) { SK_NAME[t[0]] = t[1]; }); });
   SK_COMMON.forEach(function (t) { SK_NAME[t[0]] = t[1]; });
+  var STK_IMG = {'おはな': 'assets/stk/hana.webp', 'はーと': 'assets/stk/heart.webp', 'にじ': 'assets/stk/niji.webp', 'ふうせん': 'assets/stk/fusen.webp', 'おさかな': 'assets/stk/sakana.webp', 'たこ': 'assets/stk/tako.webp', 'くじら': 'assets/stk/kujira.webp', 'かに': 'assets/stk/kani.webp', 'ねったいぎょ': 'assets/stk/nettaigyo.webp', 'いるか': 'assets/stk/iruka.webp', 'かいがら': 'assets/stk/kaigara.webp', 'よっと': 'assets/stk/yotto.webp', 'くま': 'assets/stk/kuma.webp', 'うさぎ': 'assets/stk/usagi.webp', 'きつね': 'assets/stk/kitsune.webp', 'りす': 'assets/stk/risu.webp', 'きのこ': 'assets/stk/kinoko.webp', 'き': 'assets/stk/ki.webp', 'ちょうちょ': 'assets/stk/chou.webp', 'てんとうむし': 'assets/stk/tentou.webp', 'くるま': 'assets/stk/car.webp', 'ばす': 'assets/stk/bus.webp', 'しょうぼうしゃ': 'assets/stk/shoubou.webp', 'ぱとかー': 'assets/stk/patocar.webp', 'でんしゃ': 'assets/stk/densha.webp', 'おみせ': 'assets/stk/mise.webp', 'しんごう': 'assets/stk/shingou.webp', 'いぬ': 'assets/stk/inu.webp', 'ろけっと': 'assets/stk/rocket.webp', 'ゆーふぉー': 'assets/stk/ufo.webp', 'おつきさま': 'assets/stk/tsuki.webp', 'おほしさま': 'assets/stk/hoshi.webp', 'わくせい': 'assets/stk/wakusei.webp', 'うちゅうじん': 'assets/stk/uchuujin.webp', 'ながれぼし': 'assets/stk/nagare.webp', 'うちゅうひこうし': 'assets/stk/hikoushi.webp'};   /* なまえ → え。ほぞん形式は えもじのまま（ひょうじの ときに SK_NAME で ひく） */
   var skData = { umi: [], mori: [], machi: [], uchuu: [] };
   (function () {
     try {
@@ -4136,7 +4141,13 @@
   /* シール（ダイカットふう） */
   function skMake(em, px, rot) {
     var d = document.createElement('div'); d.className = 'stk'; d.style.fontSize = n1(px) + 'px';
-    var i = document.createElement('span'); i.className = 'stk-i'; i.textContent = em;
+    var i = document.createElement('span'); i.className = 'stk-i'; var src = STK_IMG[SK_NAME[em]];
+    if (src) {
+      d.className += ' pic';
+      var im = document.createElement('img'); im.className = 'stk-img'; im.src = src; im.alt = ''; im.decoding = 'async'; im.draggable = false;
+      im.onerror = function () { d.className = d.className.replace(' pic', ''); i.textContent = em; if (im.parentNode) im.parentNode.removeChild(im); };
+      i.appendChild(im);
+    } else i.textContent = em;
     if (rot) i.style.transform = 'rotate(' + rot + 'deg)';
     d.appendChild(i); return d;
   }
