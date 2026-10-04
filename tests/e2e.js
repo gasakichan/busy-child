@@ -1,4 +1,7 @@
-// E2E テスト（Playwright）。使い方: node tests/e2e.js  （スクショは tests/out/ に出る）
+// E2E テスト（Playwright）。スクショは tests/out/ に出る。
+// 使い方: node tests/e2e.js [-j N] [--bail] [--list] [名前の一部...]
+//   既定は全ブロックを 6 並列（4 コアでも待ち時間が大半なので安定。8 以上は時間ぎりぎりのテストが不安定になることがある）（-j N か環境変数 E2E_JOBS で変更）。名前を渡すと部分一致するブロックだけ実行。
+//   --list でブロック名の一覧、--bail で最初の FAIL で全体を止める。
 const path = require('path'), os = require('os');
 function loadPw() {
   for (const p of ['playwright', '/home/claude/.npm-global/lib/node_modules/playwright', '/opt/node-tools/node_modules/playwright']) { try { return require(p); } catch (e) {} }
@@ -6,6 +9,7 @@ function loadPw() {
 }
 const { chromium } = loadPw();
 const fs = require('fs');
+const WORKER = process.argv[2] === '--worker';
 const SP = path.join(__dirname, 'out'); fs.mkdirSync(SP, { recursive: true });
 const SITE = path.join(__dirname, '..', 'index.html');
 // instrumented copy: count shopScan calls
@@ -22,7 +26,7 @@ for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook faile
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
-fs.writeFileSync(SP + '/hooked7.html', hooked);
+if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
 const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive'];
 const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ'];
@@ -61,7 +65,7 @@ const INIT = (voices) => `
 const ENV = [{ name: 'Kyoko', lang: 'ja-JP' }, { name: 'Samantha', lang: 'en-US' }, { name: 'Daniel', lang: 'en-GB' }];
 const JAV = [{ name: 'Kyoko', lang: 'ja-JP' }];
 
-async function newPage(br, vp, { voices = ENV, deny = false, storage, init } = {}) {
+async function newPage(br, vp, { voices = ENV, deny = false, storage, init, settle = 300 } = {}) {
   const ctx = await br.newContext({ viewport: vp });
   const p = await ctx.newPage();
   p.errs = [];
@@ -70,7 +74,7 @@ async function newPage(br, vp, { voices = ENV, deny = false, storage, init } = {
   await p.addInitScript(INIT(voices));
   if (deny) await p.addInitScript('window.__denyCam = true;');
   if (init) await p.addInitScript(init);
-  await p.goto(URL); await sleep(300);
+  await p.goto(URL); await sleep(settle);
   return p;
 }
 const says = p => p.evaluate(() => window.__says.slice());
@@ -81,11 +85,15 @@ async function holdOpen(p, ms) {
   await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(ms); await p.mouse.up();
 }
 
-(async () => {
-  const br = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
+// テストブロック登録。T(名前, fn(br)) / TV(名前, [viewport...], fn(br, vp))（TV は viewport ごとに別ブロック: 名前-幅x高さ）
+let br;  // ワーカーの browser（ブロック共通ヘルパーが使う）
+const TESTS = [];
+const T = (name, fn) => TESTS.push({ name, fn });
+const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + vp.height, br => fn(br, vp)));
+{
 
   /* ---------- 1. every viewport: home, 16 games, scroll, forbidden buttons ---------- */
-  for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+  TV('home', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }], async (br, vp) => {
     const tag = vp.width + 'x' + vp.height;
     const p = await newPage(br, vp, { deny: true });
     const scrollInfo = () => p.evaluate(() => ({ h: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth, v: document.documentElement.scrollHeight > innerHeight }));
@@ -182,10 +190,10 @@ async function holdOpen(p, ms) {
     }
     ok(p.errs.length === 0, tag + ' no console errors ' + p.errs.join(' | '));
     await p.context().close();
-  }
+  });
 
   /* ---------- 2. settings ---------- */
-  {
+  T('settings', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     await holdOpen(p, 300); await sleep(100);
     ok(await p.locator('#setsheet').isHidden(), 'settings: 300ms hold does not open');
@@ -248,10 +256,10 @@ async function holdOpen(p, ms) {
     ok((await says(p)).length === 0, 'voice off: no speech on tile tap');
     ok(p.errs.length === 0, 'settings: no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
+  });
 
   /* ---------- 3. sayEn ---------- */
-  {
+  T('sayen', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 }, { voices: ENV, deny: true });
     await tapTile(p, LAB[14]); await sleep(500);
     await clearSays(p);
@@ -286,12 +294,13 @@ async function holdOpen(p, ms) {
     const spell = await p.evaluate(() => 0);
     await p.context().close();
     // no voices at all (iOS-like, first second): still en-US
-    const p0 = await newPage(br, { width: 390, height: 844 }, { voices: [], deny: true });
-    await tapTile(p0, LAB[14]); await sleep(100);
+    // 1 秒以内に押すので、ページ切り替えの待ちを省いてタイルを直接クリックする（並列の負荷でも間に合うように）
+    const p0 = await newPage(br, { width: 390, height: 844 }, { voices: [], deny: true, settle: 50 });
+    await p0.evaluate(lab => document.querySelector('.tile[aria-label="' + lab + '"]').click(), LAB[14]); await sleep(100);
     await clearSays(p0);
     await p0.click('.abc-pc[data-l="A"]', { force: true }); await sleep(150);
     s = await says(p0);
-    ok(s.length === 1 && s[0].lang === 'en-US' && s[0].t === 'A.' && !s[0].voice, 'empty voices (<1s): lang en-US "A." no voice');
+    ok(s.length === 1 && s[0].lang === 'en-US' && s[0].t === 'A.' && !s[0].voice, 'empty voices (<1s): lang en-US "A." no voice' + (s.length === 1 && s[0].t === 'A.' ? '' : ' ' + JSON.stringify(s)));
     await sleep(1100);
     await clearSays(p0);
     await p0.click('.abc-pc[data-l="B"]', { force: true }); await sleep(150);
@@ -315,10 +324,10 @@ async function holdOpen(p, ms) {
     s = await says(pj);
     ok(s.some(x => /ノー/.test(x.t)), 'ja-only: No! -> ノー ' + JSON.stringify(s.map(x => x.t)));
     await pj.context().close();
-  }
+  });
 
   /* ---------- 4. shop camera ---------- */
-  for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+  TV('shopcam', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }], async (br, vp) => {
     const tag = vp.width + 'x' + vp.height;
     const p = await newPage(br, vp);
     await tapTile(p, LAB[8]); await sleep(2200);
@@ -379,8 +388,8 @@ async function holdOpen(p, ms) {
     ok((await says(p)).some(x => x.t === 'ひだりの カメラに みせてね'), tag + ' shop: guidance says ひだり');
     ok(p.errs.length === 0, tag + ' shop cam: no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
-  {
+  });
+  T('shop-denied', async (br) => {
     // denied camera -> glass window, no arrows
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     await tapTile(p, LAB[8]); await sleep(900);
@@ -389,9 +398,9 @@ async function holdOpen(p, ms) {
     await p.click('.prod:nth-child(1)'); await sleep(900);
     ok((await p.locator('#basket .hint').count()) === 0, 'shop denied: shelf tap still scans');
     await p.context().close();
-  }
+  });
   /* ---------- 4b. shop pay: お金の山が重ならない（.stk はシールと名前がぶつかっていた）・iPad で大きく ---------- */
-  for (const vp of [{ width: 360, height: 740 }, { width: 820, height: 1180 }, { width: 1180, height: 820 }, { width: 844, height: 390 }]) {
+  TV('shoppay', [{ width: 360, height: 740 }, { width: 820, height: 1180 }, { width: 1180, height: 820 }, { width: 844, height: 390 }], async (br, vp) => {
     const tag = vp.width + 'x' + vp.height;
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, LAB[8]); await sleep(900);
@@ -413,10 +422,10 @@ async function holdOpen(p, ms) {
     await sleep(900);
     ok(await p.locator('#receipt:not([hidden])').count() === 1 && p.errs.length === 0, tag + ' shop pay: ' + n + ' taps -> receipt, no errors ' + p.errs.join('|'));
     await p.context().close();
-  }
+  });
 
   /* ---------- 5. nurie fish ---------- */
-  for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }]) {
+  TV('nurie', [{ width: 390, height: 844 }, { width: 360, height: 740 }], async (br, vp) => {
     const tag = vp.width + 'x' + vp.height;
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, LAB[12]); await sleep(500);
@@ -451,10 +460,10 @@ async function holdOpen(p, ms) {
     if (tag === '390x844') await p.screenshot({ path: SP + '/nurie-fish-v7.png' });
     ok(p.errs.length === 0, tag + ' fish: no console errors');
     await p.context().close();
-  }
+  });
 
   /* ---------- 6. clock ---------- */
-  {
+  T('clock', async (br) => {
     const vp = { width: 390, height: 844 };
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, LAB[15]); await sleep(500);
@@ -549,19 +558,19 @@ async function holdOpen(p, ms) {
     ok(await hour() === 7, 'clock: re-enter starts at 7 again');
     ok(p.errs.length === 0, 'clock: no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
+  });
   // clock at other viewports: layout fits, no overlap with home button
-  for (const vp of [{ width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+  TV('clock-layout', [{ width: 360, height: 740 }, { width: 1024, height: 768 }], async (br, vp) => {
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, LAB[15]); await sleep(500);
     const L = await p.evaluate(() => { const st = document.querySelector('#stage-clock').getBoundingClientRect(); const r = e => document.querySelector(e).getBoundingClientRect(); const f = r('#ck-face'), c = r('#ck-card'), b = r('#ck-btns'), hb = r('#homebtn'), o = r('#ck-orb');
       return { faceIn: f.left >= st.left && f.right <= st.right && f.top >= st.top && f.bottom <= st.bottom, btnIn: b.bottom <= st.bottom + 1 && b.right <= st.right + 1, noOverlap: !(f.left < hb.right && f.right > hb.left && f.top < hb.bottom && f.bottom > hb.top) || (f.top >= hb.bottom - 2), face: Math.round(f.width), cardB: Math.round(c.bottom - st.top), stH: Math.round(st.height), orbIn: o.left >= st.left && o.right <= st.right, hs: document.documentElement.scrollWidth > innerWidth }; });
     ok(L.faceIn && L.btnIn && L.noOverlap && L.orbIn && !L.hs, vp.width + 'x' + vp.height + ' clock layout fits ' + JSON.stringify(L));
     await p.context().close();
-  }
+  });
 
   /* ---------- 7. settings screenshot with fake camera running ---------- */
-  {
+  T('settings-cam', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 });
     await holdOpen(p, 1600); await sleep(200);
     await p.locator('#cam-test').scrollIntoViewIfNeeded();
@@ -575,9 +584,9 @@ async function holdOpen(p, ms) {
     ok(stopped, 'camera test: stopped when sheet closed');
     ok(p.errs.length === 0, 'settings cam: no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
+  });
   /* ---------- 8. v8: ゆびのおうち ---------- */
-  {
+  T('yubi', async (br) => {
     const VP = { width: 390, height: 844 };
     const p = await newPage(br, VP, { deny: true });
     let dialogs = 0; p.on('dialog', d => { dialogs++; d.dismiss(); });
@@ -688,24 +697,24 @@ async function holdOpen(p, ms) {
     ok((await said())[0] === 'おやゆびは じいじ！' && await p.locator('#y-svg image').count() === 1, 'yubi: name + photo persist after reload');
     ok(dialogs === 0 && p.errs.length === 0, 'yubi: no dialogs, no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
-  {
+  });
+  T('yubi-1024', async (br) => {
     const p = await newPage(br, { width: 1024, height: 768 }, { deny: true });
     await tapTile(p, 'ゆびのおうち'); await sleep(500);
     await p.screenshot({ path: SP + '/yubi-1024.png' });
     await p.context().close();
-  }
+  });
   // 360 wide: yubi fits, face boxes big enough
-  {
+  T('yubi-360', async (br) => {
     const p = await newPage(br, { width: 360, height: 740 }, { deny: true });
     await tapTile(p, 'ゆびのおうち'); await sleep(500);
     const L = await p.evaluate(() => { const st = document.querySelector('#stage-yubi').getBoundingClientRect(); return [...document.querySelectorAll('#y-svg .y-f')].map(g => { const r = g.getBoundingClientRect(), fr = g.querySelector('.y-face').getBoundingClientRect(); return { in: fr.left >= st.left - 1 && fr.right <= st.right + 1 && fr.top >= st.top && fr.bottom <= st.bottom, face: Math.round(fr.width), h: Math.round(r.height) }; }); });
     ok(L.every(x => x.in && x.h >= 80), '360x740 yubi: all fingers inside stage, ' + JSON.stringify(L));
     await p.context().close();
-  }
+  });
 
   /* ---------- 9. v8: シールちょう ---------- */
-  {
+  T('sticker', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     const said = async () => (await says(p)).map(x => x.t);
     const cnt = () => p.evaluate(() => document.querySelectorAll('#stk-layer .stk.placed').length);
@@ -822,8 +831,8 @@ async function holdOpen(p, ms) {
     ok(await cnt() === 60 && st2.length === 60 && st2[0].x === 0.02 && st2[59].e === '🐟', 'sticker: cap 60 drops the oldest');
     ok(p.errs.length === 0, 'sticker: no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
-  for (const vp of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 740, height: 360 }, { width: 844, height: 390 }, { width: 667, height: 375 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }]) {
+  });
+  TV('sticker-layout', [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 740, height: 360 }, { width: 844, height: 390 }, { width: 667, height: 375 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }], async (br, vp) => {
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, 'シールちょう'); await sleep(500);
     const L = await p.evaluate(() => { const st = document.querySelector('#stage-sticker').getBoundingClientRect(), r = s => document.querySelector(s).getBoundingClientRect(), b = r('#stk-board'), sh = r('#stk-sheet'), hb = r('#homebtn'), cl = r('#clear'); const tabs = [...document.querySelectorAll('.stk-tab')].map(t => t.getBoundingClientRect()); const ov = (a, c) => a.left < c.right && a.right > c.left && a.top < c.bottom && a.bottom > c.top; return { ratio: +(b.height / st.height).toFixed(2), cell: Math.round(document.querySelector('.stk-cell').getBoundingClientRect().width), sheetIn: sh.bottom <= st.bottom + 1 && sh.left >= st.left && sh.right <= st.right, tabsIn: tabs.every(t => t.left >= st.left && t.right <= st.right && t.top >= st.top), tabOverlap: tabs.some(t => ov(t, hb) || ov(t, cl)), boardTabs: tabs.some(t => ov(t, b)), hs: document.documentElement.scrollWidth > innerWidth }; });
@@ -874,7 +883,7 @@ async function holdOpen(p, ms) {
     ok(await p.evaluate(() => document.querySelectorAll('#stk-layer .stk.placed').length) === (paged ? 3 : 1), vp.width + 'x' + vp.height + ' sticker: drag-stick works');
     ok(p.errs.length === 0, vp.width + 'x' + vp.height + ' sticker: no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
+  });
 
   /* ================= v9: あそびの きろく ================= */
   {
@@ -882,6 +891,13 @@ async function holdOpen(p, ms) {
     const dk = (d) => { const j = new Date(d.getTime() + 9 * 3600e3); return j.toISOString().slice(0, 10); };
     const keyAgo = (n) => dk(new Date(T0.getTime() - n * 86400e3));
     async function cpage(start, seed, vp) {
+      // 負荷で読み込みが 1 秒を超えると pauseAt が過去になって投げる → 作り直す（成功時の状態は同じ）
+      for (let attempt = 0; ; attempt++) {
+        try { return await cpage1(start, seed, vp); }
+        catch (e) { if (attempt >= 4 || !/fast-forward to the past/.test(String(e))) throw e; }
+      }
+    }
+    async function cpage1(start, seed, vp) {
       const ctx = await br.newContext({ viewport: vp || { width: 390, height: 844 }, timezoneId: 'Asia/Tokyo' });
       const p = await ctx.newPage();
       p.errs = []; p.dialogs = 0;
@@ -892,7 +908,7 @@ async function holdOpen(p, ms) {
       await p.addInitScript(INIT(ENV));
       if (seed) await p.addInitScript('if(!localStorage.getItem("ponpon.stats.v1")) localStorage.setItem("ponpon.stats.v1", ' + JSON.stringify(JSON.stringify(seed)) + ');');
       await p.goto(URL); await sleep(300);
-      await p.clock.pauseAt(new Date(start.getTime() + 1000));
+      try { await p.clock.pauseAt(new Date(start.getTime() + 1000)); } catch (e) { await ctx.close(); throw e; }
       return p;
     }
     const tap = () => window.dispatchEvent(new Event('pointerdown'));
@@ -904,7 +920,7 @@ async function holdOpen(p, ms) {
     const hrs = (arr) => arr.reduce((a, b) => a + b, 0);
 
     // 1. かいすう + じかん
-    {
+    T('stats-count', async (br) => {
       const p = await cpage(T0);
       await play(p, 10, true);    // ホームの じかん
       await tapTile(p, 'ふうせん'); await sleep(100);
@@ -926,9 +942,9 @@ async function holdOpen(p, ms) {
       ok(JSON.stringify(after) === before, 'stats: nothing counted while settings open');
       ok(p.errs.length === 0 && p.dialogs === 0, 'stats: no console errors/dialogs (1) ' + p.errs.join('|'));
       await p.context().close();
-    }
+    });
     // 2. ほうち
-    {
+    T('stats-leave', async (br) => {
       const p = await cpage(T0);
       await tapTile(p, 'ふうせん'); await sleep(100);
       await p.clock.runFor(120000);
@@ -936,9 +952,9 @@ async function holdOpen(p, ms) {
       const g = (await store(p)).days[keyAgo(0)].g.sky;
       ok(g && g.s >= 58 && g.s <= 63 && g.s !== 120, 'stats: idle 120s -> counting stops at ~61s, s=' + (g && g.s));
       await p.context().close();
-    }
+    });
     // 3. 3びょうみまん
-    {
+    T('stats-short', async (br) => {
       const p = await cpage(T0);
       await tapTile(p, 'ふうせん'); await sleep(100);
       await p.clock.runFor(2000);
@@ -951,9 +967,9 @@ async function holdOpen(p, ms) {
       await p.click('#homebtn'); await sleep(100);
       ok((await store(p)).days[keyAgo(0)].g.sky.n === 1, 'stats: 3.5s visit counted');
       await p.context().close();
-    }
+    });
     // 4. ひひょうじ / 10びょうほぞん / pagehide
-    {
+    T('stats-save', async (br) => {
       const p = await cpage(T0);
       await tapTile(p, 'ふうせん'); await sleep(100);
       await play(p, 20, true);
@@ -971,9 +987,9 @@ async function holdOpen(p, ms) {
       const s3 = (await store(p)).days[keyAgo(0)].g.sky.s;
       ok(s3 >= s2 + 8, 'stats: visible again resumes; pagehide saves (' + s2 + ' -> ' + s3 + ')');
       await p.context().close();
-    }
+    });
     // 5. ひにちまたぎ
-    {
+    T('stats-day', async (br) => {
       const p = await cpage(new Date('2026-10-02T23:59:40+09:00'));
       await tapTile(p, 'ふうせん'); await sleep(100);
       await play(p, 30, true);
@@ -981,9 +997,9 @@ async function holdOpen(p, ms) {
       const st = await store(p), a = st.days['2026-10-02'], b = st.days['2026-10-03'];
       ok(a && b && a.g.sky && b.g.sky && a.g.sky.s >= 5 && b.g.sky.s >= 5 && a.h[23] === a.g.sky.s && b.h[0] === b.g.sky.s, 'stats: midnight rollover splits days ' + JSON.stringify({ a: a && a.g, b: b && b.g }));
       await p.context().close();
-    }
+    });
     // 6. 120にち ほじ / old
-    {
+    T('stats-trim', async (br) => {
       const old = {}; old[keyAgo(130)] = { g: { zoo: { n: 2, s: 300 } }, h: new Array(24).fill(0), ss: 1 };
       old[keyAgo(121)] = { g: { zoo: { n: 1, s: 100 } }, h: new Array(24).fill(0), ss: 1 };
       old[keyAgo(100)] = { g: { zoo: { n: 4, s: 400 } }, h: new Array(24).fill(0), ss: 1 };
@@ -994,9 +1010,9 @@ async function holdOpen(p, ms) {
       const st = await store(p);
       ok(!st.days[keyAgo(130)] && !st.days[keyAgo(121)] && st.days[keyAgo(100)] && st.old.zoo && st.old.zoo.n === 3 && st.old.zoo.s === 400 && st.old.baa.n === 3, 'stats: >120d rolled into old ' + JSON.stringify(st.old));
       await p.context().close();
-    }
+    });
     // 7. ひょうじ（seed）
-    {
+    T('stats-view', async (br) => {
       const mk = (g, hv) => { const h = new Array(24).fill(0); Object.keys(hv || {}).forEach(k => h[k] = hv[k]); return { g, h, ss: 1, hm: 50 }; };
       const days = {};
       days[keyAgo(0)] = mk({ sky: { n: 3, s: 600 } }, { 10: 400, 11: 200 });
@@ -1042,9 +1058,9 @@ async function holdOpen(p, ms) {
       ok((await txt('#st-empty')) === 'まだ きろくが ありません。ゲームで あそぶと ここに でます', 'stats: empty state text');
       ok(p.errs.length === 0 && p.dialogs === 0, 'stats: no console errors/dialogs (display) ' + p.errs.join('|'));
       await p.context().close();
-    }
+    });
     // 8. 360px / 1024 overflow
-    for (const vp of [{ width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+    TV('stats-overflow', [{ width: 360, height: 740 }, { width: 1024, height: 768 }], async (br, vp) => {
       const days = {}; days[keyAgo(1)] = { g: { sky: { n: 3, s: 600 }, baa: { n: 1, s: 3700 } }, h: new Array(24).fill(10), ss: 1, hm: 1 };
       const p = await cpage(T0, { v: 1, days, since: keyAgo(1), old: {} }, vp);
       await openSet(p);
@@ -1055,7 +1071,7 @@ async function holdOpen(p, ms) {
       }
       ok(p.errs.length === 0, 'stats: ' + vp.width + ' no console errors');
       await p.context().close();
-    }
+    });
   }
 
   /* ---------- v10: ころころボール ---------- */
@@ -1076,7 +1092,7 @@ async function holdOpen(p, ms) {
     const hole = async (p, i) => { const k = await KO(p); const b = await p.locator('#stage-koro').boundingBox(); return { x: b.x + k.holes[i][0], y: b.y + k.holes[i][1] }; };
 
     /* --- 1. sensor flow (iOS-style permission), portrait, ball pinned (red) -> bottom-right green hole --- */
-    {
+    T('koro-sensor', async (br) => {
       const p = await newPage(br, { width: 390, height: 844 }, { deny: true, init: initFor({ perm: 'granted', pin: true }) });
       await tapTile(p, 'ころころボール'); await sleep(400);
       ok(await p.locator('#stage-koro').isVisible() && await p.locator('#ko-start').isVisible() && (await p.locator('#ko-start').textContent()).trim() === '▶ はじめる', 'koro: iOS-style start button shown (▶ はじめる)');
@@ -1130,10 +1146,10 @@ async function holdOpen(p, ms) {
       ok((await p.evaluate(() => window.__koFrames)) > fc, 'koro: loop runs again after re-entry');
       ok(p.errs.length === 0, 'koro sensor flow: no console errors ' + p.errs.join('|'));
       await p.context().close();
-    }
+    });
 
     /* --- 2. denied -> touch mode; hold mouse toward the red hole; red ball -> おなじ いろ --- */
-    {
+    T('koro-touch', async (br) => {
       const p = await newPage(br, { width: 390, height: 844 }, { deny: true, init: initFor({ perm: 'denied', pin: true }) });
       await tapTile(p, 'ころころボール'); await sleep(300);
       await p.click('#ko-start'); await sleep(200);
@@ -1151,10 +1167,10 @@ async function holdOpen(p, ms) {
       ok(sparkles > 0, 'koro: sparkles around hole on matching colour (' + sparkles + ')');
       ok(p.errs.length === 0, 'koro denied: no console errors ' + p.errs.join('|'));
       await p.context().close();
-    }
+    });
 
     /* --- 3. no sensor events within 1s -> touch mode; capture radius at any speed; leave in touch mode --- */
-    {
+    T('koro-nosensor', async (br) => {
       const p = await newPage(br, { width: 390, height: 844 }, { deny: true, init: initFor({ perm: null, pin: true }) });
       await tapTile(p, 'ころころボール'); await sleep(300);
       ok(await p.locator('#ko-start').isHidden() && (await KO(p)).mode === 'sensor', 'koro: no permission API -> starts sensing directly, no button');
@@ -1176,10 +1192,10 @@ async function holdOpen(p, ms) {
       ok((await says(p)).length === 0 && (await p.evaluate(() => __ko.balls.length)) === 0, 'koro: leave() cancels pending round timers (no speech after leaving)');
       ok(p.errs.length === 0, 'koro touch/leave: no console errors ' + p.errs.join('|'));
       await p.context().close();
-    }
+    });
 
     /* --- 4. landscape 1024x768 with screen.orientation.angle = 90, plus rotation control --- */
-    for (const [ang, ctl] of [[90, false], [90, true]]) {
+    for (const [ang, ctl] of [[90, false], [90, true]]) T('koro-landscape-' + ang + '-' + ctl, async (br) => {
       const p = await newPage(br, { width: 1024, height: 768 }, { deny: true, init: initFor({ perm: 'granted', angle: 90, pin: true }) });
       await tapTile(p, 'ころころボール'); await sleep(300);
       await p.click('#ko-start'); await sleep(100);
@@ -1192,10 +1208,10 @@ async function holdOpen(p, ms) {
       const hs = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight);
       ok(!hs && p.errs.length === 0, 'koro landscape: no scroll, no console errors ' + p.errs.join('|'));
       await p.context().close();
-    }
+    });
 
     /* --- 5. deviceorientation fallback (no devicemotion data) --- */
-    {
+    T('koro-orient', async (br) => {
       const p = await newPage(br, { width: 390, height: 844 }, { deny: true, init: initFor({ perm: 'granted', pin: true }) });
       await tapTile(p, 'ころころボール'); await sleep(300); await p.click('#ko-start'); await sleep(100);
       const fo = (beta, gamma) => p.evaluate(([b, g]) => { clearInterval(window.__fi); window.__fi = setInterval(() => { const e = new Event('deviceorientation'); e.beta = b; e.gamma = g; window.dispatchEvent(e); }, 16); }, [beta, gamma]);
@@ -1205,10 +1221,10 @@ async function holdOpen(p, ms) {
       const sy = await waitSay(p, /の あなに はいった！/, 9000);
       ok(sy && sy.t === 'みどりの あなに はいった！', 'koro: deviceorientation fallback tilt right/down -> bottom-right hole "' + (sy && sy.t) + '"');
       await p.context().close();
-    }
+    });
 
     /* --- 6. sensitivity setting: UI, persistence, effect --- */
-    {
+    T('koro-sens', async (br) => {
       const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
       await holdOpen(p, 1600); await sleep(150);
       const lab = await p.evaluate(() => [...document.querySelectorAll('.seg[data-k="koroSens"] button')].map(b => b.textContent));
@@ -1232,10 +1248,10 @@ async function holdOpen(p, ms) {
       };
       const dSlow = await disp(0), dFast = await disp(2);
       ok(dSlow > 3 && dFast / dSlow > 2.0 && dFast / dSlow < 3.4, 'koro sensitivity: はやい/ゆっくり displacement ratio ' + (dFast / dSlow).toFixed(2) + ' (expected ~2.5)');
-    }
+    });
 
     /* --- 6b. かたむきの むき: はんたい -> same tilt, opposite hole --- */
-    {
+    T('koro-reverse', async (br) => {
       const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
       await holdOpen(p, 1600); await sleep(150);
       const lab = await p.evaluate(() => [...document.querySelectorAll('.seg[data-k="koroFlip"] button')].map(b => b.textContent));
@@ -1255,10 +1271,10 @@ async function holdOpen(p, ms) {
       ok(sy && sy.t === 'みどりの あなに はいった！', 'koro flip: up-left tilt with はんたい -> bottom-right green hole within 4s (' + (Date.now() - tl0) + 'ms): "' + (sy && sy.t) + '"');
       ok(q.errs.length === 0, 'koro flip: no console errors ' + q.errs.join('|'));
       await q.context().close();
-    }
+    });
 
     /* --- 6c. はんたい + bottom-right tilt -> top-left; 4 corner tilts without はんたい; layout --- */
-    {
+    T('koro-reverse-corners', async (br) => {
       const q = await newPage(br, { width: 390, height: 844 }, { deny: true, init: initFor({ perm: 'granted', pin: true }) + "try{localStorage.setItem('ponpon.settings.v1', JSON.stringify({koroFlip:true}));}catch(e){}" });
       await tapTile(q, 'ころころボール'); await sleep(300); await q.click('#ko-start'); await sleep(100);
       await feed(q, ...LV); await sleep(800); await clearSays(q);
@@ -1266,8 +1282,8 @@ async function holdOpen(p, ms) {
       const sy = await waitSay(q, /の あなに はいった！/, 4000);
       ok(sy && sy.t === 'あかの あなに はいった！ おなじ いろ！', 'koro flip: bottom-right tilt with はんたい -> top-left red hole within 4s (' + (Date.now() - t0) + 'ms): "' + (sy && sy.t) + '"');
       await q.context().close();
-    }
-    for (const mag of [0.12, 0.3]) for (const [sx, sy2, name] of [[-1, -1, 'あか'], [1, -1, 'あお'], [-1, 1, 'きいろ'], [1, 1, 'みどり']]) {
+    });
+    for (const mag of [0.12, 0.3]) T('koro-corners-' + mag, async (br) => { for (const [sx, sy2, name] of [[-1, -1, 'あか'], [1, -1, 'あお'], [-1, 1, 'きいろ'], [1, 1, 'みどり']]) {
       const q = await newPage(br, { width: 390, height: 844 }, { deny: true, init: initFor({ perm: 'granted', pin: true }) });
       await tapTile(q, 'ころころボール'); await sleep(300); await q.click('#ko-start'); await sleep(100);
       await feed(q, ...LV); await sleep(800); await clearSays(q);
@@ -1275,8 +1291,8 @@ async function holdOpen(p, ms) {
       const sy = await waitSay(q, /の あなに はいった！/, 4000);
       ok(sy && sy.t.startsWith(name + 'の あなに はいった！'), 'koro corner tilt ' + mag + 'G (' + sx + ',' + sy2 + ') -> ' + name + ' within 4s (' + (Date.now() - t0) + 'ms): "' + (sy && sy.t) + '"');
       await q.context().close();
-    }
-    for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+    } });
+    for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }]) T('koro-layout-' + vp.width, async (br) => {
       const q = await newPage(br, vp, { deny: true, init: initFor({ perm: 'granted', pin: true }) });
       await tapTile(q, 'ころころボール'); await sleep(300);
       const L = await q.evaluate(() => { const k = __ko, st = document.querySelector('#stage-koro').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect(), lb = document.querySelector('#ko-lvl').getBoundingClientRect();
@@ -1291,10 +1307,10 @@ async function holdOpen(p, ms) {
       const hl = await q.evaluate(() => document.querySelector('#homebtn').getBoundingClientRect().left);
       ok(hl < 40, 'koro: 🏠 back at top-left in other games (left ' + Math.round(hl) + ')');
       await q.context().close();
-    }
+    });
 
     /* --- 7. re-level button + 3 balls screenshot --- */
-    {
+    T('koro-relevel', async (br) => {
       const p = await newPage(br, { width: 390, height: 844 }, { deny: true, init: initFor({ perm: 'granted', pin: true }) });
       await tapTile(p, 'ころころボール'); await sleep(300); await p.click('#ko-start'); await sleep(100);
       await feed(p, ...LV); await sleep(800);
@@ -1313,14 +1329,14 @@ async function holdOpen(p, ms) {
       await q.screenshot({ path: SP + '/korokoro.png' });
       const q4 = await q.evaluate(() => { __ko.round = 5; return 1; });
       await q.context().close();
-    }
+    });
   }
 
   /* ---------- rotation: portrait -> landscape -> portrait keeps 🏠 tappable ---------- */
-  {
+  [[null].concat(LAB.slice(0, 7)), LAB.slice(7, 14), LAB.slice(14)].forEach((labs, ci) => T('rotation-' + (ci + 1), async (br) => {
     const hit = p => p.evaluate(() => { const b = document.querySelector(document.querySelector('#homebtn').hidden ? '#setbtn' : '#homebtn'), r = b.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!e && (e === b || b.contains(e)); });
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
-    for (const lab of [null].concat(LAB)) {
+    for (const lab of labs) {
       if (lab) { await tapTile(p, lab); await sleep(400); }
       await p.setViewportSize({ width: 844, height: 390 }); await sleep(900);
       ok(await hit(p), 'rotate ' + (lab || 'home') + ': landscape 🏠 hit-tests to itself');
@@ -1337,10 +1353,10 @@ async function holdOpen(p, ms) {
     }
     ok(p.errs.length === 0, 'rotate: no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
+  }));
 
   /* ---------- ドライブ: ハンドル・ボタン・片づけ ---------- */
-  for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }]) {
+  TV('drive', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
     const tag = 'drive ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/drive-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
     const p = await newPage(br, vp, { deny: true });
     const D = () => p.evaluate(() => ({ ang: window.__dr.ang, cam: window.__dr.cam, on: window.__dr.on }));
@@ -1442,10 +1458,10 @@ async function holdOpen(p, ms) {
     await p.click('#homebtn'); await sleep(200);
     ok(p.errs.length === 0, tag + ': no console errors at end ' + p.errs.join('|'));
     await p.context().close();
-  }
+  });
 
   /* ---------- animal illustrations: どうぶつ + いないいないばあ ---------- */
-  for (const vp of [{ width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+  TV('animals', [{ width: 360, height: 740 }, { width: 1024, height: 768 }], async (br, vp) => {
     const tag = 'animals ' + vp.width + 'x' + vp.height;
     const p = await newPage(br, vp, { deny: true });
     const noHs = () => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth);
@@ -1471,9 +1487,80 @@ async function holdOpen(p, ms) {
     ok(await p.evaluate(() => (window.__says || []).some(s => /らいおん|ぺんぎん|うさぎ|ぶた|くま|さる|いぬ|ねこ|うし|ひよこ|かえる|ぞう/.test(s.t))), tag + ' baa: animal name spoken');
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join('|'));
     await p.context().close();
-  }
+  });
 
-  await br.close();
-  console.log(fails ? ('\n' + fails + ' FAILED') : '\nALL OK');
+}
+/* ---------- 実行 ---------- */
+// 重いブロックから先に始める（ブロックを足したら測って足す）
+const WEIGHT = { 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+  'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
+  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
+const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
+
+async function runWorker(name) {
+  const t = TESTS.find(x => x.name === name);
+  if (!t) { console.log('FAIL unknown block ' + name); process.exit(1); }
+  br = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
+  try { await t.fn(br); }
+  catch (e) { ok(false, name + ' threw: ' + (e && e.stack || e)); }
+  try { await br.close(); } catch (e) {}
   process.exit(fails ? 1 : 0);
-})();
+}
+
+async function runAll(argv) {
+  let jobs = parseInt(process.env.E2E_JOBS, 10) || 6, bail = false, list = false; const pats = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '-j') jobs = parseInt(argv[++i], 10) || jobs;
+    else if (/^-j\d+$/.test(argv[i])) jobs = parseInt(argv[i].slice(2), 10);
+    else if (argv[i] === '--bail') bail = true;
+    else if (argv[i] === '--list') list = true;
+    else pats.push(argv[i]);
+  }
+  let sel = pats.length ? TESTS.filter(t => pats.some(p => t.name.includes(p))) : TESTS.slice();
+  if (list) { sel.forEach(t => console.log(t.name)); return 0; }
+  if (!sel.length) { console.log('FAIL 該当するブロックがありません: ' + pats.join(' ') + '（--list で一覧）'); return 1; }
+  sel.sort((a, b) => wt(b.name) - wt(a.name));
+  jobs = Math.max(1, Math.min(jobs, sel.length));
+  const { spawn } = require('child_process');
+  const t0 = Date.now(), results = [], running = new Set();
+  let next = 0, stopped = false, okCount = 0; const failBlocks = [];
+  const finish = (r) => {
+    const lines = r.out.split('\n').filter(l => l.length);
+    const n = lines.filter(l => l.startsWith('ok')).length; okCount += n;
+    const bad = r.code !== 0 || lines.some(l => l.startsWith('FAIL'));
+    console.log('=== ' + r.name + '  ' + (bad ? 'FAILED' : 'ok') + '  ' + n + ' ok  ' + r.sec.toFixed(1) + 's ===');
+    console.log(lines.join('\n'));
+    if (bad) failBlocks.push(r.name);
+    results.push(r);
+    return bad;
+  };
+  await new Promise(resolve => {
+    const launch = () => {
+      while (!stopped && running.size < jobs && next < sel.length) {
+        const t = sel[next++], st = Date.now(); let out = '';
+        const ch = spawn(process.execPath, [__filename, '--worker', t.name], { stdio: ['ignore', 'pipe', 'pipe'], env: process.env });
+        running.add(ch);
+        ch.stdout.on('data', d => { out += d; });
+        ch.stderr.on('data', d => { out += d; });
+        ch.on('close', code => {
+          running.delete(ch);
+          if (!stopped && finish({ name: t.name, out, code, sec: (Date.now() - st) / 1000 }) && bail) {
+            stopped = true; running.forEach(c => c.kill('SIGKILL'));
+            console.log('\n--bail: 最初の失敗で中止しました');
+          }
+          if (!running.size && (stopped || next >= sel.length)) resolve(); else launch();
+        });
+      }
+    };
+    launch();
+  });
+  const total = (Date.now() - t0) / 1000;
+  console.log('\n' + results.length + '/' + sel.length + ' blocks, ' + okCount + ' ok, jobs=' + jobs + ', ' + total.toFixed(0) + 's');
+  console.log('slowest: ' + results.slice().sort((a, b) => b.sec - a.sec).slice(0, 5).map(r => r.name + ' ' + r.sec.toFixed(0) + 's').join(', '));
+  if (failBlocks.length) { console.log('\nFAILED blocks: ' + failBlocks.join(', ')); return 1; }
+  console.log('\nALL OK');
+  return 0;
+}
+
+if (WORKER) runWorker(process.argv[3]);
+else runAll(process.argv.slice(2)).then(c => process.exit(c), e => { console.error(e); process.exit(1); });

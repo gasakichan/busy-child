@@ -10,9 +10,14 @@
 ## テスト
 ```
 node tests/camdet.js                                          # カメラ検出器の単体テスト
-PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/e2e.js   # E2E（約5分、最後に ALL OK）
+PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tests/e2e.js   # E2E（6 並列で約 2 分半、最後に ALL OK）
+node tests/e2e.js drive            # 部分実行（名前の部分一致。複数可: clock koro）
+node tests/e2e.js --list           # ブロック名の一覧（名前を足すと絞り込める）
+node tests/e2e.js --bail           # 最初の FAIL で止める
+node tests/e2e.js -j 4             # 並列数（既定 6。環境変数 E2E_JOBS でも）
 ```
-`tests/out/` にスクショが出る（git 管理外）。ゲームを足したら e2e にも確認を足す。
+E2E はブロックごとに別プロセス・別 browser で独立に走る（`T()` / `TV()` で登録。ブロック間で状態を共有しない）。作業中は対象だけ部分実行し、push 前に全体を 1 回通す。ゲームを足したら e2e にもブロックを足し、重いなら `WEIGHT` に秒数を書く（重いものから先に始まる）。並列を上げすぎると時間ぎりぎりのテストが不安定になる（8 で確認）。
+`tests/out/` にスクショが出る（git 管理外）。
 
 ## コードの地図（index.html の中）
 - ゲームは `games.<id> = { el, enter(), leave() }`。`leave()` でタイマー・rAF・リスナー・カメラを必ず片付ける。
