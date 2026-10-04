@@ -834,6 +834,16 @@
   .stk-board { position: relative; flex: 1 1 0; min-height: 0; border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 0 0 5px #fff, 0 7px 0 5px var(--shadow); touch-action: none; }
   .stk-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
   .stk-layer { position: absolute; inset: 0; overflow: hidden; }
+  .stk-pal { flex: 0 0 auto; display: flex; align-items: stretch; gap: 4px; }
+  .stk-pal .stk-sheet { flex: 1 1 auto; min-width: 0; }
+  .stk-pal.paged .stk-sheet { padding: 6px; }
+  .stk-cell.off { display: none; }
+  .stk-next { flex: 0 0 80px; width: 80px; min-height: 80px; padding: 0; border: 0; border-radius: 18px; background: #FFD21F; color: var(--ink); box-shadow: inset 0 0 0 4px var(--ink), 0 4px 0 var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font: inherit; font-size: 44px; line-height: 1; }
+  .stk-next:active { transform: translateY(3px); }
+  .stk-next[hidden] { display: none; }
+  .stk-dots { display: flex; gap: 7px; }
+  .stk-dots i { width: 12px; height: 12px; border-radius: 50%; background: rgba(43,58,103,.25); }
+  .stk-dots i.on { background: var(--ink); }
   .stk-sheet { flex: 0 0 auto; position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 80px)); justify-content: center; gap: 2px; padding: 8px; border-radius: 18px;
     background: linear-gradient(135deg, #EEF1F6 0%, #D3D9E4 36%, #F7F9FC 50%, #D8DDE8 66%, #EEF1F6 100%);
     outline: 3px dashed #9AA4B8; outline-offset: -5px; box-shadow: inset 0 2px 0 #fff, 0 4px 0 var(--shadow); }
@@ -858,6 +868,12 @@
   @keyframes stkHeld { 0%, 100% { transform: translateY(-4px) rotate(-6deg) scale(1.2); } 50% { transform: translateY(-8px) rotate(6deg) scale(1.28); } }
   .stk-float { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
   .stk-float .stk { transform: scale(1.22); transition: none; }
+  /* よこむき（ひくい がめん）: パレットを ボードの みぎ がわへ */
+  #stage-sticker.side { flex-direction: row; align-items: center; padding-top: 76px; }
+  #stage-sticker.side .stk-tabs { position: absolute; top: 6px; left: 84px; right: 84px; justify-content: center; }
+  #stage-sticker.side .stk-board { align-self: stretch; min-width: 0; }
+  #stage-sticker.side .stk-pal { flex: 0 0 auto; }
+  #stage-sticker.side .stk-pal .stk-sheet { flex: 0 0 auto; }
   @media (min-width: 700px) {
     #stage-sticker { padding-top: 76px; }
     .stk-tabs { position: absolute; top: 6px; left: 84px; right: 84px; justify-content: center; }
@@ -1106,7 +1122,10 @@
       <svg class="stk-bg" id="stk-bg" aria-hidden="true"></svg>
       <div class="stk-layer" id="stk-layer"></div>
     </div>
-    <div class="stk-sheet" id="stk-sheet"></div>
+    <div class="stk-pal" id="stk-pal">
+      <div class="stk-sheet" id="stk-sheet"></div>
+      <button type="button" class="stk-next" id="stk-next" aria-label="つぎの シール" hidden><span id="stk-arrow">▶</span><span class="stk-dots" id="stk-dots"></span></button>
+    </div>
     <div class="stk-float" id="stk-float"></div>
     <div class="fx" id="fx-sticker"></div>
   </section>
@@ -4165,6 +4184,40 @@
   function skSquash(el) {
     el.animate([{ transform: 'scale(1.15)' }, { transform: 'scale(.95)', offset: 0.5 }, { transform: 'scale(1)' }], { duration: reduce ? 120 : 280, easing: 'ease-out' });
   }
+  var skPage = 0, skPages = 1, skPal = $('#stk-pal'), skNext = $('#stk-next'), skArrow = $('#stk-arrow'), skDots = $('#stk-dots');
+  /* パレットの わりつけ: 6れつ が 80px いじょうで はいれば 1ページ（そのまま）。せまい がめんは 2だん ×（はば から きめた れつ）の ページしき */
+  function skLayoutPal(anim) {
+    var n = skSheet.children.length; if (!n) return;
+    var inner = skStage.clientWidth - 16, cols, per;
+    if (!skStage.clientWidth) return;
+    var side = skStage.clientHeight < 470 && skStage.clientWidth > skStage.clientHeight;
+    skStage.classList.toggle('side', side);
+    if (side) { cols = 3; per = 6; }
+    else if (inner >= 6 * 80 + 5 * 2 + 16) { cols = 6; per = n; }
+    else { cols = Math.max(3, Math.floor((inner - 84 - 12 + 2) / 82)); per = cols * 2; }
+    var paged = per < n;
+    skPages = paged ? Math.ceil(n / per) : 1;
+    if (skPage >= skPages) skPage = 0;
+    skPal.classList.toggle('paged', paged);
+    skSheet.style.gridTemplateColumns = paged ? 'repeat(' + cols + ', 80px)' : '';
+    skSheet.style.gridAutoRows = paged ? '80px' : '';
+    skNext.hidden = !paged;
+    [].forEach.call(skSheet.children, function (c, i) {
+      var on = !paged || Math.floor(i / per) === skPage;
+      c.classList.toggle('off', !on);
+      if (on && paged && anim && !reduce && c.animate) c.animate([{ transform: 'translateX(46px)', opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], { duration: 240, easing: 'ease-out' });
+    });
+    skArrow.textContent = skPage >= skPages - 1 ? '◀' : '▶';
+    var d = ''; for (var k = 0; k < skPages; k++) d += '<i' + (k === skPage ? ' class="on"' : '') + '></i>';
+    skDots.innerHTML = d;
+  }
+  onTap(skNext, function () {
+    if (skBusy || skPages < 2) return;
+    skCancelDrag();
+    skPage = (skPage + 1) % skPages;
+    skLayoutPal(true);
+    tone(skPage ? 760 : 560, 0.1, 'triangle', 0.1);
+  });
   function skBuildSheet() {
     skSheet.innerHTML = '';
     skItems().forEach(function (it, i) {
@@ -4172,6 +4225,7 @@
       b.appendChild(skMake(it[0], 0, 0)); b.firstChild.style.fontSize = '';
       skSheet.appendChild(b);
     });
+    skLayoutPal(false);
   }
   function skTabsRefresh() {
     [].forEach.call(skTabs.children, function (b, i) { b.setAttribute('aria-pressed', String(i === skCur)); });
@@ -4189,7 +4243,7 @@
     if (skBusy) return;
     skCancelDrag(); skHeld = -1;
     var same = i === skCur;
-    skCur = i; skTabsRefresh(); skBuildSheet(); skPaint(); skRender();
+    skCur = i; skPage = 0; skTabsRefresh(); skBuildSheet(); skPaint(); skRender();
     tone(660, 0.12, 'triangle', 0.1);
     if (!same) { say(SK_SC[i].lab + '！'); bigWord(SK_SC[i].lab + '！', '#FFD21F', yWordSize(SK_SC[i].lab + '！')); }
   }
@@ -4330,7 +4384,7 @@
   games.sticker = {
     el: skStage,
     enter: function () {
-      skDrag = null; skHeld = -1; skBusy = false;
+      skDrag = null; skHeld = -1; skBusy = false; skPage = 0;
       $('#clear').hidden = false; fxSk.innerHTML = ''; skFloat.innerHTML = '';
       skTabsRefresh(); skBuildSheet(); skPaint(); skRender();
     },
@@ -4339,7 +4393,7 @@
       skFloat.innerHTML = ''; fxSk.innerHTML = ''; $('#clear').hidden = true; skRender();
       if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     },
-    resize: function () { skCancelDrag(); skPaint(); skRender(); }
+    resize: function () { skCancelDrag(); skLayoutPal(false); skPaint(); skRender(); }
   };
 
   /* ====== 19. ころころボール（たんまつを かたむけて ボールを ころがす） ====== */

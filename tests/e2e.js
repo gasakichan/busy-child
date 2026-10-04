@@ -706,7 +706,11 @@ async function holdOpen(p, ms) {
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     const said = async () => (await says(p)).map(x => x.t);
     const cnt = () => p.evaluate(() => document.querySelectorAll('#stk-layer .stk.placed').length);
-    const box = async sel => p.locator(sel).boundingBox();
+    const box = async sel => {
+      const m = /^\.stk-cell:nth-child\((\d+)\)$/.exec(sel);
+      if (m) for (let k = 0; k < 4 && !(await p.locator(sel).evaluate(e => !e.classList.contains('off'))); k++) { await p.click('#stk-next'); await sleep(320); }
+      return p.locator(sel).boundingBox();
+    };
     const cc = b => [b.x + b.width / 2, b.y + b.height / 2];
     const dragTo = async (from, to, steps = 8) => { await p.mouse.move(from[0], from[1]); await p.mouse.down(); await p.mouse.move(to[0], to[1], { steps }); await p.mouse.up(); };
     await tapTile(p, 'シールちょう'); await sleep(500);
@@ -816,15 +820,55 @@ async function holdOpen(p, ms) {
     ok(p.errs.length === 0, 'sticker: no console errors ' + p.errs.join('|'));
     await p.context().close();
   }
-  for (const vp of [{ width: 360, height: 740 }, { width: 1024, height: 768 }]) {
+  for (const vp of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 740, height: 360 }, { width: 844, height: 390 }, { width: 667, height: 375 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }]) {
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, 'シールちょう'); await sleep(500);
     const L = await p.evaluate(() => { const st = document.querySelector('#stage-sticker').getBoundingClientRect(), r = s => document.querySelector(s).getBoundingClientRect(), b = r('#stk-board'), sh = r('#stk-sheet'), hb = r('#homebtn'), cl = r('#clear'); const tabs = [...document.querySelectorAll('.stk-tab')].map(t => t.getBoundingClientRect()); const ov = (a, c) => a.left < c.right && a.right > c.left && a.top < c.bottom && a.bottom > c.top; return { ratio: +(b.height / st.height).toFixed(2), cell: Math.round(document.querySelector('.stk-cell').getBoundingClientRect().width), sheetIn: sh.bottom <= st.bottom + 1 && sh.left >= st.left && sh.right <= st.right, tabsIn: tabs.every(t => t.left >= st.left && t.right <= st.right && t.top >= st.top), tabOverlap: tabs.some(t => ov(t, hb) || ov(t, cl)), boardTabs: tabs.some(t => ov(t, b)), hs: document.documentElement.scrollWidth > innerWidth }; });
     ok(L.sheetIn && L.tabsIn && !L.tabOverlap && !L.boardTabs && !L.hs, vp.width + 'x' + vp.height + ' sticker layout fits ' + JSON.stringify(L));
+    const V = vp.width + 'x' + vp.height;
+    const side = vp.height < 470 && vp.width > vp.height, paged = vp.width < 522 || side;
+    const PL = await p.evaluate(() => { const vis = [...document.querySelectorAll('.stk-cell')].filter(c => !c.classList.contains('off')), sz = vis.map(c => { const r = c.getBoundingClientRect(); return Math.min(r.width, r.height); }), nx = document.querySelector('#stk-next'), nr = nx.getBoundingClientRect(); return { total: document.querySelectorAll('.stk-cell').length, vis: vis.length, min: Math.round(Math.min(...sz) * 10) / 10, nextShown: !nx.hidden && nr.width > 0, nw: Math.round(nr.width), nh: Math.round(nr.height), vs: document.documentElement.scrollHeight > innerHeight }; });
+    ok(PL.min >= 80 && !PL.vs, V + ' sticker: every visible palette cell >= 80px (min ' + PL.min + '), no vertical page scroll');
+    if (paged) {
+      if (side) { const bh = await p.evaluate(() => { const b = document.querySelector('#stk-board').getBoundingClientRect(), pl = document.querySelector('#stk-pal').getBoundingClientRect(); return { h: Math.round(b.height), w: Math.round(b.width), right: pl.left >= b.right }; }); ok(bh.h >= 200 && bh.right, V + ' sticker: landscape side palette, board ' + bh.w + 'x' + bh.h + ' (>=200 tall), palette right of board'); }
+      ok(PL.nextShown && PL.nw >= 80 && PL.nh >= 80 && PL.vis === 6 && PL.total === 12, V + ' sticker: page button >= 80px, 6 of 12 shown ' + JSON.stringify(PL));
+      const names1 = await p.evaluate(() => [...document.querySelectorAll('.stk-cell:not(.off)')].map(c => c.getAttribute('aria-label')).join());
+      await p.screenshot({ path: SP + '/sticker-' + V + '-p1.png' });
+      await p.click('#stk-next'); await sleep(400);
+      const names2 = await p.evaluate(() => [...document.querySelectorAll('.stk-cell:not(.off)')].map(c => c.getAttribute('aria-label')).join());
+      ok(names1.split(',').length === 6 && names2.split(',').length === 6 && new Set((names1 + ',' + names2).split(',')).size === 12 && names2 !== names1, V + ' sticker: page button shows the other 6 (all 12 reachable)');
+      const c2 = await p.locator('.stk-cell:not(.off)').nth(1).boundingBox(), nm2 = names2.split(',')[1], bb = await p.locator('#stk-board').boundingBox();
+      await p.mouse.move(c2.x + c2.width / 2, c2.y + c2.height / 2); await p.mouse.down(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 8 }); await p.mouse.up(); await sleep(300);
+      ok(await p.evaluate(() => document.querySelectorAll('#stk-layer .stk.placed').length) === 1 && (await says(p)).some(x => x.t === nm2 + '！'), V + ' sticker: page-2 sticker (' + nm2 + ') dragged onto the board');
+      const c3 = await p.locator('.stk-cell:not(.off)').nth(4).boundingBox();
+      await p.mouse.click(c3.x + c3.width / 2, c3.y + c3.height / 2); await sleep(150);
+      await p.mouse.click(bb.x + bb.width * 0.3, bb.y + bb.height * 0.3); await sleep(300);
+      ok(await p.evaluate(() => document.querySelectorAll('#stk-layer .stk.placed').length) === 2, V + ' sticker: page-2 sticker tap-held then tap board places');
+      if (side) {
+        const rel = () => p.evaluate(() => { const b = document.querySelector('#stk-board').getBoundingClientRect(); return [...document.querySelectorAll('#stk-layer .stk.placed')].map(e => { const r = e.getBoundingClientRect(); return [+((r.left + r.width / 2 - b.left) / b.width).toFixed(2), +((r.top + r.height / 2 - b.top) / b.height).toFixed(2)]; }); });
+        const saved = await p.evaluate(() => JSON.parse(localStorage.getItem('ponpon.stickers.v1')).umi.map(o => [+o.x.toFixed(2), +o.y.toFixed(2)]));
+        const r1 = await rel(), near = (a, b) => a.length === b.length && a.every((q, i) => Math.abs(q[0] - b[i][0]) < 0.03 && Math.abs(q[1] - b[i][1]) < 0.03);
+        ok(near(r1, saved) && Math.abs(saved[0][0] - 0.5) < 0.06 && Math.abs(saved[0][1] - 0.5) < 0.06, V + ' sticker: side layout drop lands where dropped (' + JSON.stringify(saved) + ')');
+        await p.setViewportSize({ width: 390, height: 844 }); await sleep(400);
+        ok(near(await rel(), saved) && await p.evaluate(() => !document.querySelector('#stage-sticker').classList.contains('side') && document.querySelector('.stk-cell:not(.off)').getBoundingClientRect().width >= 80), V + ' sticker: switching to portrait keeps stickers in place');
+        await p.setViewportSize(vp); await sleep(400);
+        ok(near(await rel(), saved) && await p.evaluate(() => document.querySelector('#stage-sticker').classList.contains('side')), V + ' sticker: back to landscape keeps stickers in place');
+      }
+      await p.screenshot({ path: SP + '/sticker-' + V + '-p2.png' });
+      await p.click('#stk-next'); await sleep(350);
+      ok(await p.evaluate(() => document.querySelector('.stk-cell:not(.off)').getAttribute('aria-label')) === names1.split(',')[0], V + ' sticker: last page button returns to page 1');
+      await p.click('#stk-next'); await sleep(350);
+      await p.click('.stk-tab:nth-child(2)'); await sleep(300);
+      ok(await p.evaluate(() => document.querySelector('.stk-cell:not(.off)').getAttribute('aria-label')) === 'くま', V + ' sticker: switching scene resets to page 1');
+      await p.click('.stk-tab:nth-child(1)'); await sleep(300);
+    } else {
+      ok(!PL.nextShown && PL.vis === 12, V + ' sticker: no page button, all 12 visible ' + JSON.stringify(PL));
+      await p.screenshot({ path: SP + '/sticker-' + V + '.png' });
+    }
     // drag works here too
-    const b = await p.locator('#stk-board').boundingBox(), c = await p.locator('.stk-cell').nth(2).boundingBox();
+    const b = await p.locator('#stk-board').boundingBox(), c = await p.locator('.stk-cell:not(.off)').nth(2).boundingBox();
     await p.mouse.move(c.x + c.width / 2, c.y + c.height / 2); await p.mouse.down(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 }); await p.mouse.up(); await sleep(250);
-    ok(await p.evaluate(() => document.querySelectorAll('#stk-layer .stk.placed').length) === 1, vp.width + 'x' + vp.height + ' sticker: drag-stick works');
+    ok(await p.evaluate(() => document.querySelectorAll('#stk-layer .stk.placed').length) === (paged ? 3 : 1), vp.width + 'x' + vp.height + ' sticker: drag-stick works');
     ok(p.errs.length === 0, vp.width + 'x' + vp.height + ' sticker: no console errors ' + p.errs.join('|'));
     await p.context().close();
   }
