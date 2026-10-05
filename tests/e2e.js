@@ -408,10 +408,10 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('#paybtn'); await sleep(2600);
     const L = await p.evaluate(() => {
       const R = e => e.getBoundingClientRect(), st = R(document.querySelector('#stage-shop')), pp = R(document.querySelector('#paypanel')), cz = R(document.querySelector('#coins'));
-      const ss = [...document.querySelectorAll('#coins .mstk')].map(R);
+      const ss = [...document.querySelectorAll('#coins .mstk')].map(R), vs = [...document.querySelectorAll('#coins .mny')].map(R);
       let overlap = false;
       for (let i = 0; i < ss.length; i++) for (let j = i + 1; j < ss.length; j++) { const a = ss[i], b = ss[j]; if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) overlap = true; }
-      return { n: ss.length, overlap, minW: Math.min(...ss.map(r => r.width)), inside: ss.every(r => r.left >= cz.left - 1 && r.right <= cz.right + 1 && r.top >= cz.top - 1 && r.bottom <= cz.bottom + 1),
+      return { n: ss.length, overlap, minW: Math.min(...ss.map(r => r.width)), inside: ss.every(r => r.left >= cz.left - 1 && r.right <= cz.right + 1 && r.top >= cz.top - 1 && r.bottom <= cz.bottom + 1) && vs.every(r => r.left >= cz.left - 1 && r.right <= cz.right + 1 && r.top >= cz.top - 1 && r.bottom <= cz.bottom + 1) && ss.every((r, i) => Math.abs((r.left + r.right) / 2 - (vs[i].left + vs[i].right) / 2) < 3 && Math.abs((r.top + r.bottom) / 2 - (vs[i].top + vs[i].bottom) / 2) < 3),
         land: innerWidth > innerHeight, panelW: pp.width / st.width, panelH: pp.height / st.height, hs: document.documentElement.scrollWidth > innerWidth };
     });
     const big = vp.width >= 700 && vp.height >= 660;

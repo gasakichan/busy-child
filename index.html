@@ -2286,7 +2286,7 @@
       b.type = 'button'; b.className = 'mstk'; b.setAttribute('aria-label', yen(v));
       b.innerHTML = '<span class="lay"></span>';
       var st = { v: v, done: false, el: b, lay: b.firstChild };
-      st.lay.appendChild(mk(v));
+      var m = mk(v); m.style.transform = 'translate(-50%, -50%)'; st.lay.appendChild(m);
       payStk.push(st); coinsEl.appendChild(b);
       onTap(b, function () { payTap(st); });
     });
