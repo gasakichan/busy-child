@@ -468,20 +468,23 @@
   .mstk .lay { position: absolute; inset: 0; pointer-events: none; transform: scale(var(--k)); }
   .mny { position: absolute; left: 50%; top: 50%; display: block; box-sizing: border-box; width: var(--d); height: var(--d); border-radius: 50%; font-family: "Courier New", ui-monospace, monospace; font-weight: 700; }
   .mny i { font-style: normal; }
+  .m1000.pic { width: 150px; height: 82px; }
+  .mny.pic { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0; }
+  .mny.pic img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
   .mny .lb { position: absolute; left: 0; right: 0; top: 50%; margin-top: -.5em; text-align: center; line-height: 1; font-size: calc(var(--d) * .32); }
   .mny .hl { position: absolute; left: 50%; top: 27%; width: 24%; height: 24%; margin-left: -12%; border-radius: 50%; background: #DDF6EC; box-shadow: inset 0 0 0 2px rgba(0,0,0,.2); }
   .m5 .lb, .m50 .lb { top: auto; bottom: 11%; margin-top: 0; }
-  .m1 { --d: 40px; background: radial-gradient(circle at 34% 28%, #fff 0 14%, #F1F3F6 45%, #D3D8E0 100%); border: 3px solid #E4E8EE; color: #667287; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
-  .m5 { --d: 48px; background: radial-gradient(circle at 34% 28%, #FFF3B0 0 12%, #F6CF4B 45%, #D9A92A 100%); border: 3px solid #E9BF3A; color: #7A5A10; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
-  .m10 { --d: 48px; background: radial-gradient(circle at 34% 28%, #F3B08A 0 12%, #CD7A44 45%, #A25A2B 100%); border: 3px solid #B86B38; color: #fff; box-shadow: 0 2px 0 rgba(43,58,103,.3); }
-  .m50 { --d: 48px; background: radial-gradient(circle at 34% 28%, #fff 0 12%, #DDE2EA 45%, #A9B1BF 100%); border: 3px solid #C3CAD6; color: #4B5870; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
-  .m100 { --d: 58px; background: radial-gradient(circle at 34% 28%, #fff 0 12%, #E6EAF0 40%, #AEB6C3 100%); border: 4px solid #C3CAD6; color: #4B5870; box-shadow: inset 0 0 0 4px rgba(255,255,255,.5), 0 3px 0 rgba(43,58,103,.25); }
-  .m500 { --d: 68px; background: radial-gradient(circle at 34% 28%, #FFF3B0 0 12%, #F6CF4B 42%, #D9A92A 100%); border: 4px solid #E9BF3A; color: #7A5A10; box-shadow: inset 0 0 0 4px rgba(255,255,255,.4), 0 3px 0 rgba(43,58,103,.25); }
-  .m1000 { width: 76px; height: 44px; border-radius: 8px; background: #BFE6FF; border: 3px solid #5BA8E0; color: #1F5F99; box-shadow: 0 3px 0 rgba(43,58,103,.25); }
-  .m1000 .bc { position: absolute; left: 50%; top: 2px; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2px #5BA8E0; font-size: 9px; line-height: 28px; text-align: center; letter-spacing: -.5px; }
-  .m1000 .be { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; line-height: 1; text-align: center; }
-  .m1000 .bs { position: absolute; top: 1px; font-size: 10px; line-height: 1; color: #F2B01F; }
-  .m1000 .bs1 { left: 3px; } .m1000 .bs2 { right: 3px; }
+  .m1 { --d: 52px; background: radial-gradient(circle at 34% 28%, #fff 0 14%, #F1F3F6 45%, #D3D8E0 100%); border: 3px solid #E4E8EE; color: #667287; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
+  .m5 { --d: 62px; background: radial-gradient(circle at 34% 28%, #FFF3B0 0 12%, #F6CF4B 45%, #D9A92A 100%); border: 3px solid #E9BF3A; color: #7A5A10; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
+  .m10 { --d: 62px; background: radial-gradient(circle at 34% 28%, #F3B08A 0 12%, #CD7A44 45%, #A25A2B 100%); border: 3px solid #B86B38; color: #fff; box-shadow: 0 2px 0 rgba(43,58,103,.3); }
+  .m50 { --d: 62px; background: radial-gradient(circle at 34% 28%, #fff 0 12%, #DDE2EA 45%, #A9B1BF 100%); border: 3px solid #C3CAD6; color: #4B5870; box-shadow: 0 2px 0 rgba(43,58,103,.25); }
+  .m100 { --d: 76px; background: radial-gradient(circle at 34% 28%, #fff 0 12%, #E6EAF0 40%, #AEB6C3 100%); border: 4px solid #C3CAD6; color: #4B5870; box-shadow: inset 0 0 0 4px rgba(255,255,255,.5), 0 3px 0 rgba(43,58,103,.25); }
+  .m500 { --d: 90px; background: radial-gradient(circle at 34% 28%, #FFF3B0 0 12%, #F6CF4B 42%, #D9A92A 100%); border: 4px solid #E9BF3A; color: #7A5A10; box-shadow: inset 0 0 0 4px rgba(255,255,255,.4), 0 3px 0 rgba(43,58,103,.25); }
+  .m1000 { width: 150px; height: 82px; border-radius: 12px; background: #BFE6FF; border: 4px solid #5BA8E0; color: #1F5F99; box-shadow: 0 3px 0 rgba(43,58,103,.25); }
+  .m1000 .bc { position: absolute; left: 50%; top: 6px; width: 54px; height: 54px; margin-left: -27px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 3px #5BA8E0; font-size: 17px; line-height: 54px; text-align: center; letter-spacing: -.5px; }
+  .m1000 .be { position: absolute; left: 0; right: 0; bottom: 3px; font-size: 16px; line-height: 1; text-align: center; }
+  .m1000 .bs { position: absolute; top: 4px; font-size: 20px; line-height: 1; color: #F2B01F; }
+  .m1000 .bs1 { left: 8px; } .m1000 .bs2 { right: 8px; }
   .tray {
     flex: 0 0 auto; height: 64px; margin: 0 10px; border-radius: 16px; background: #6B7A99; box-shadow: inset 0 5px 0 rgba(0,0,0,.25);
     display: flex; align-items: center; gap: 4px; padding: 0 10px; overflow: hidden; color: #fff;
@@ -2233,8 +2236,13 @@
     DEN.forEach(function (v) { var n = Math.floor(left / v); if (n > 0) { out.push({ v: v, n: n }); left -= n * v; } });
     return out;
   }
+  var MNY_DIM = { 1: [52, 52], 5: [62, 62], 10: [62, 62], 50: [62, 62], 100: [76, 76], 500: [90, 90], 1000: [150, 82] }, MNY_IMG = {};
+  DEN.forEach(function (v) {
+    var im = new Image(); im.onload = function () { MNY_IMG[v] = true; }; im.src = 'assets/mny/m' + v + '.webp';
+  });
   function mk(v) {
     var el = document.createElement('span'); el.className = 'mny m' + v;
+    if (MNY_IMG[v]) { el.classList.add('pic'); el.innerHTML = '<img src="assets/mny/m' + v + '.webp" alt="" draggable="false">'; return el; }
     if (v === 1000) el.innerHTML = '<i class="bs bs1">★</i><i class="bs bs2">★</i><i class="bc">1000</i><i class="be">えん</i>';
     else el.innerHTML = (v === 5 || v === 50 ? '<i class="hl"></i>' : '') + '<i class="lb">' + v + '</i>';
     return el;
@@ -2248,17 +2256,21 @@
   function layoutCoins() {
     var n = payStk.length, W = coinsEl.clientWidth, H = coinsEl.clientHeight;
     if (!n || !W || !H) return;
-    var k = parseFloat(getComputedStyle(shopStage).getPropertyValue('--k')) || 1, bw = 84 * k, bh = 92 * k, best = 1, bs = 0, c, r, s;
-    for (c = 1; c <= n; c++) { r = Math.ceil(n / c); s = Math.min(W / c, H / r); if (s > bs) { bs = s; best = c; } }
-    var cols = best, rows = Math.ceil(n / cols), cw = W / cols, ch = H / rows, slots = [], i;
+    var k = parseFloat(getComputedStyle(shopStage).getPropertyValue('--k')) || 1;
+    var cols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * W / H)))), rows = Math.ceil(n / cols), cw = W / cols, ch = H / rows, slots = [], i;
     for (i = 0; i < cols * rows; i++) slots.push(i);
     slots = shuffle(slots);
     payStk.forEach(function (st, j) {
+      var d = MNY_DIM[st.v], ang = Math.round(rand(-10, 10)), a = Math.abs(ang) * Math.PI / 180;
+      /* ボタンは 回したあとの 外わく（はみださない）。あそびの ぶんだけ ずらす */
+      var vw = d[0] * k, vh = d[1] * k, bw = Math.ceil(vw * Math.cos(a) + vh * Math.sin(a)) + 8, bh = Math.ceil(vh * Math.cos(a) + vw * Math.sin(a)) + 8;
+      bw = Math.min(Math.max(bw, 80 * k), W); bh = Math.min(Math.max(bh, 80 * k), H);
       var sl = slots[j], cx = (sl % cols + 0.5) * cw, cy = (Math.floor(sl / cols) + 0.5) * ch;
-      var jx = Math.max(0, cw - 76 * k) / 2, jy = Math.max(0, ch - 76 * k) / 2;
+      var jx = Math.max(cw * 0.25, (cw - bw) / 2), jy = Math.max(ch * 0.25, (ch - bh) / 2);
       var x = Math.min(W - bw, Math.max(0, cx - bw / 2 + rand(-jx, jx))), y = Math.min(H - bh, Math.max(0, cy - bh / 2 + rand(-jy, jy)));
+      st.el.style.width = bw + 'px'; st.el.style.height = bh + 'px';
       st.el.style.left = Math.round(x) + 'px'; st.el.style.top = Math.round(y) + 'px';
-      st.lay.style.transform = 'rotate(' + Math.round(rand(-14, 14)) + 'deg) scale(' + k + ')';
+      st.lay.style.transform = 'rotate(' + ang + 'deg) scale(' + k + ')';
     });
   }
   function animPaid(from, to) {
