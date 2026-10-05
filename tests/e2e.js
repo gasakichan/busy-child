@@ -419,7 +419,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(L.n >= 4 && badges === 0 && !packed && L.inside && L.minW >= (big ? 115 : 80) && !L.hs, tag + ' shop pay: ' + L.n + ' loose coins scattered (no x-count), inside, w>=' + Math.round(L.minW));
     if (L.land) ok(L.panelW > 0.4 && L.panelH > 0.9, tag + ' shop pay: landscape pay panel fills right half ' + L.panelW.toFixed(2) + 'x' + L.panelH.toFixed(2));
     if (tag === '820x1180' || tag === '1180x820') await p.screenshot({ path: SP + '/shop-pay-' + tag + '.png' });
-    let n = 0; while (n < 30 && await p.locator('#coins .mstk:not(.gone)').count()) { await p.locator('#coins .mstk:not(.gone)').first().click(); await sleep(420); n++; }
+    let n = 0; while (n < 30 && await p.locator('#coins .mstk:not(.gone)').count()) { await p.locator('#coins .mstk:not(.gone)').last().click(); await sleep(420); n++; }
     await sleep(900);
     ok(await p.locator('#receipt:not([hidden])').count() === 1 && p.errs.length === 0, tag + ' shop pay: ' + n + ' taps -> receipt, no errors ' + p.errs.join('|'));
     await p.context().close();

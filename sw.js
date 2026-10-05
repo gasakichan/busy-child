@@ -1,5 +1,5 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v3';
+var CACHE = 'ponpon-v4';
 var FONTS = 'ponpon-fonts-v1';
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
   './assets/ani/buta.webp',
@@ -71,7 +71,14 @@ var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.sv
   './assets/stk/ufo.webp',
   './assets/stk/usagi.webp',
   './assets/stk/wakusei.webp',
-  './assets/stk/yotto.webp'
+  './assets/stk/yotto.webp',
+  './assets/mny/m1.webp',
+  './assets/mny/m5.webp',
+  './assets/mny/m10.webp',
+  './assets/mny/m50.webp',
+  './assets/mny/m100.webp',
+  './assets/mny/m500.webp',
+  './assets/mny/m1000.webp'
 ]);
 
 self.addEventListener('install', function (e) {
