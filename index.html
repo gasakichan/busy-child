@@ -457,19 +457,15 @@
   /* .paypanel より後に置く（先にあると上書きされて、よこむきで せまく なる） */
   @media (min-aspect-ratio: 1/1) { .shelf, .paypanel { flex: 1 1 0; height: auto; padding-top: 12px; } }
   .paystat { flex: 0 0 auto; text-align: center; font-size: clamp(16px, 4.6vw, 24px); font-weight: 800; color: var(--ink); min-height: 1.3em; }
-  .coins { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; }
+  .coins { flex: 1; min-height: 0; position: relative; }
   /* おかねの山（おもちゃのお金。本物のデザインは写さない） */
   .mstk {
-    position: relative; flex: 0 0 auto; width: calc(84px * var(--k)); height: calc(92px * var(--k)); padding: 0; border: 0; border-radius: 16px; background: none;
+    position: absolute; width: calc(84px * var(--k)); height: calc(92px * var(--k)); padding: 0; border: 0; border-radius: 16px; background: none;
     transition: opacity .3s, visibility 0s .3s;
   }
   .mstk:active .lay { transform: translateY(3px) scale(var(--k)); }
   .mstk.gone { opacity: 0; visibility: hidden; pointer-events: none; }
   .mstk .lay { position: absolute; inset: 0; pointer-events: none; transform: scale(var(--k)); }
-  .mstk .bdg {
-    position: absolute; top: 0; right: 0; z-index: 3; min-width: 30px; height: 26px; padding: 0 6px; border-radius: 13px; background: #F2463C; color: #fff;
-    font-size: 16px; line-height: 26px; text-align: center; box-shadow: 0 2px 0 var(--shadow), 0 0 0 2px #fff; pointer-events: none;
-  }
   .mny { position: absolute; left: 50%; top: 50%; display: block; box-sizing: border-box; width: var(--d); height: var(--d); border-radius: 50%; font-family: "Courier New", ui-monospace, monospace; font-weight: 700; }
   .mny i { font-style: normal; }
   .mny .lb { position: absolute; left: 0; right: 0; top: 50%; margin-top: -.5em; text-align: center; line-height: 1; font-size: calc(var(--d) * .32); }
@@ -516,7 +512,6 @@
     #stage-shop { --k: 1.45; }
     .basket { font-size: 48px; }
     .paystat { font-size: 30px; }
-    .mstk .bdg { min-width: 40px; height: 34px; border-radius: 17px; font-size: 22px; line-height: 34px; }
     .tray { height: 84px; }
     .tray .tc { zoom: 1.4; }
     .tray .tw { font-size: 22px; }
@@ -1124,7 +1119,7 @@
       <div class="rail"></div>
       <div class="train" id="train"></div>
     </div>
-    <div class="tgo"><button class="gobtn" id="gobtn" type="button" aria-label="しゅっぱつ"><span>🚦</span><span>しゅっぱつ！</span></button></div>
+    <div class="tgo"><button class="gobtn" id="gobtn" type="button" aria-label="しゅっぱつ"><span>🚦</span><span>しゅっぱつ</span></button></div>
     <div class="fx" id="fx-train"></div>
   </section>
 
@@ -1150,7 +1145,7 @@
         <div class="ai-tl" id="ai-tl"></div>
         <canvas id="ai-cv"></canvas>
         <button class="ai-back" id="ai-back" type="button">✖ もどる</button>
-        <button class="ai-done" id="ai-done" type="button">できた！</button>
+        <button class="ai-done" id="ai-done" type="button">できた</button>
       </div>
     </div>
     <div class="ai-ctl">
@@ -1431,6 +1426,8 @@
   }
   function poyon() { tone(300, 0.25, 'sine', 0.15, 200); }
   function countTone(n) { tone(SCALE[Math.max(0, Math.min(9, n - 1))], 0.22, 'triangle', 0.18); }
+  /* 画面に出す文字では「！」をはぶく（読み上げは そのまま） */
+  function vis(s) { return String(s).replace(/！/g, ''); }
   function say(text) {
     if (quiet() || voiceOff || !('speechSynthesis' in window)) return;
     try {
@@ -1562,7 +1559,7 @@
   var INK_L = lum(DARK);
   function bigWord(text, color, size) {
     if (bwAnim) { try { bwAnim.cancel(); } catch (e) {} }
-    bw.textContent = text;
+    bw.textContent = vis(text);
     bw.style.fontSize = size || '';
     bw.style.color = color || DARK;
     var L = lum(color || DARK);
@@ -1991,7 +1988,7 @@
       cFinished = true;
       later(function () {
         var n = cN;
-        countSay.textContent = 'ぜんぶで ' + NUMV[n] + '！';
+        countSay.textContent = 'ぜんぶで ' + NUMV[n];
         say('ぜんぶで ' + NUMV[n] + '！');
         bigWord(String(n), '#FF6F61');
         arpeggio();
@@ -2145,11 +2142,11 @@
   var lcd = { ico: $('#lcd-ico'), name: $('#lcd-name'), price: $('#lcd-price'), say: $('#lcd-say'), sum: $('#lcd-sum'), tot: $('#lcd-tot') };
   var payBtn = $('#paybtn');
   var shopOpen = false, shopPhase = 'shop', shopTotal = 0, shopBasket = [], totalTids = [], payTids = [];
-  var DEN = [1000, 500, 100, 50, 10, 5, 1], payStk = [], payTotalN = 0, payLanded = 0, paidSum = 0, payChips = false, trayCnt = {}, trayOrder = [];
+  var DEN = [1000, 500, 100, 50, 10, 5, 1], payStk = [], payTotalN = 0, payLanded = 0, paidSum = 0, trayOrder = [];
   var payStat = $('#paystat');
 
   function lcdItem(p, txt) {
-    lcd.ico.textContent = p.e; lcd.name.textContent = p.cam ? 'ピッ！' : p.n; lcd.price.textContent = fmt(p.p); lcd.say.textContent = txt || '';
+    lcd.ico.textContent = p.e; lcd.name.textContent = p.cam ? 'ピッ' : p.n; lcd.price.textContent = fmt(p.p); lcd.say.textContent = txt || '';
   }
   function lcdMsg(name, txt) {
     lcd.ico.textContent = ''; lcd.name.textContent = name; lcd.price.textContent = ''; lcd.say.textContent = txt || '';
@@ -2185,7 +2182,7 @@
   function shopReset() {
     totalTids.forEach(cancel); totalTids = [];
     shopPhase = 'shop'; shopTotal = 0; shopBasket = [];
-    payTids.forEach(cancel); payTids = []; payStk = []; payTotalN = 0; payLanded = 0; paidSum = 0; trayCnt = {}; trayOrder = [];
+    payTids.forEach(cancel); payTids = []; payStk = []; payTotalN = 0; payLanded = 0; paidSum = 0; trayOrder = [];
     renderBasket(false); showTotal(0);
     lcdMsg('いらっしゃいませ', '');
     lcd.tot.classList.remove('blink');
@@ -2198,7 +2195,7 @@
     tone(2000, 0.09, 'square', 0.22);
     camGlow(null); scanwin.classList.add('ok'); later(function () { scanwin.classList.remove('ok'); }, 260);
     var txt = prod.cam ? yen(prod.p) + '！' : prod.n + '、' + yen(prod.p) + '！';
-    lcdItem(prod, txt);
+    lcdItem(prod, vis(txt));
     later(function () { if (shopPhase === 'shop') say(txt); }, 250);
     if (shopBasket.length < 12 && shopTotal < 9999) {
       var from = shopTotal;
@@ -2245,24 +2242,24 @@
   function trayMini(v) { var i = document.createElement('i'); i.className = 'tm t' + v; return i; }
   function trayRender() {
     trayCoins.innerHTML = '';
-    if (payChips) {
-      DEN.forEach(function (v) {
-        if (!trayCnt[v]) return;
-        var c = document.createElement('b'); c.className = 'chip';
-        c.appendChild(trayMini(v)); c.appendChild(document.createTextNode('×' + trayCnt[v]));
-        trayCoins.appendChild(c);
-      });
-    } else trayOrder.forEach(function (v) { trayCoins.appendChild(trayMini(v)); });
+    trayOrder.forEach(function (v) { trayCoins.appendChild(trayMini(v)); });
   }
-  function renderStack(st) {
-    st.lay.innerHTML = '';
-    var show = Math.min(st.rem, 4);
-    for (var i = show - 1; i >= 0; i--) {
-      var m = mk(st.v); m.style.transform = 'translate(calc(-50% + ' + (i * 2) + 'px), calc(-50% - ' + (i * 2.5) + 'px))';
-      st.lay.appendChild(m);
-    }
-    st.bdg.textContent = '×' + st.rem;
-    if (st.rem <= 0) st.el.classList.add('gone');
+  /* おかねは 1まいずつ、エリアの なかに ばらばらに ちらす（かずは まとめて ださない） */
+  function layoutCoins() {
+    var n = payStk.length, W = coinsEl.clientWidth, H = coinsEl.clientHeight;
+    if (!n || !W || !H) return;
+    var k = parseFloat(getComputedStyle(shopStage).getPropertyValue('--k')) || 1, bw = 84 * k, bh = 92 * k, best = 1, bs = 0, c, r, s;
+    for (c = 1; c <= n; c++) { r = Math.ceil(n / c); s = Math.min(W / c, H / r); if (s > bs) { bs = s; best = c; } }
+    var cols = best, rows = Math.ceil(n / cols), cw = W / cols, ch = H / rows, slots = [], i;
+    for (i = 0; i < cols * rows; i++) slots.push(i);
+    slots = shuffle(slots);
+    payStk.forEach(function (st, j) {
+      var sl = slots[j], cx = (sl % cols + 0.5) * cw, cy = (Math.floor(sl / cols) + 0.5) * ch;
+      var jx = Math.max(0, cw - 76 * k) / 2, jy = Math.max(0, ch - 76 * k) / 2;
+      var x = Math.min(W - bw, Math.max(0, cx - bw / 2 + rand(-jx, jx))), y = Math.min(H - bh, Math.max(0, cy - bh / 2 + rand(-jy, jy)));
+      st.el.style.left = Math.round(x) + 'px'; st.el.style.top = Math.round(y) + 'px';
+      st.lay.style.transform = 'rotate(' + Math.round(rand(-14, 14)) + 'deg) scale(' + k + ')';
+    });
   }
   function animPaid(from, to) {
     payTids.forEach(cancel); payTids = [];
@@ -2280,17 +2277,20 @@
     shelfEl.hidden = true; payPanel.hidden = false; receiptEl.hidden = true; coinsEl.hidden = false; trayEl.hidden = false; payStat.hidden = false;
     var plan = greedy(shopTotal);
     payTotalN = 0; plan.forEach(function (p) { payTotalN += p.n; });
-    payLanded = 0; paidSum = 0; payChips = payTotalN > 15; trayCnt = {}; trayOrder = []; payStk = [];
+    payLanded = 0; paidSum = 0; trayOrder = []; payStk = [];
     coinsEl.innerHTML = ''; trayCoins.innerHTML = ''; trayWord.textContent = '';
     payStat.textContent = 'はらった: ' + fmt(0) + ' / ' + fmt(shopTotal);
-    plan.forEach(function (p) {
+    var flat = []; plan.forEach(function (p) { for (var q = 0; q < p.n; q++) flat.push(p.v); });
+    shuffle(flat).forEach(function (v) {
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'mstk'; b.setAttribute('aria-label', yen(p.v));
-      b.innerHTML = '<span class="lay"></span><b class="bdg"></b>';
-      var st = { v: p.v, rem: p.n, el: b, lay: b.firstChild, bdg: b.lastChild };
-      payStk.push(st); coinsEl.appendChild(b); renderStack(st);
+      b.type = 'button'; b.className = 'mstk'; b.setAttribute('aria-label', yen(v));
+      b.innerHTML = '<span class="lay"></span>';
+      var st = { v: v, done: false, el: b, lay: b.firstChild };
+      st.lay.appendChild(mk(v));
+      payStk.push(st); coinsEl.appendChild(b);
       onTap(b, function () { payTap(st); });
     });
+    layoutCoins();
     lcdMsg('おかねを いれてね', 'おかねを いれてね');
     say('おかねを いれてね');
   }
@@ -2306,8 +2306,8 @@
     src.start();
   }
   function payTap(st) {
-    if (shopPhase !== 'pay' || st.rem <= 0) return;
-    st.rem--; var from = paidSum; paidSum += st.v;
+    if (shopPhase !== 'pay' || st.done) return;
+    st.done = true; st.el.classList.add('gone'); var from = paidSum; paidSum += st.v;
     if (st.v === 1000) billSound(); else { tone(1900, 0.18, 'sine', 0.16, 2300); tone(2600, 0.25, 'sine', 0.1, 0, 0.05); }
     var w = yen(st.v) + '！';
     say(w); trayWord.textContent = yen(st.v);
@@ -2315,14 +2315,13 @@
     var a = centerIn(st.lay, fxShop), t = centerIn(trayEl, fxShop);
     var k = parseFloat(getComputedStyle(shopStage).getPropertyValue('--k')) || 1;
     var f = mk(st.v); f.style.left = a.x + 'px'; f.style.top = a.y + 'px'; f.style.transform = 'translate(-50%, -50%) scale(' + k + ')'; fxShop.appendChild(f);
-    renderStack(st);
     var an = f.animate([
       { transform: 'translate(-50%, -50%) scale(' + k + ')', opacity: 1 },
       { transform: 'translate(calc(-50% + ' + (t.x - a.x) + 'px), calc(-50% + ' + (t.y - a.y) + 'px)) scale(' + (0.45 * k) + ')', opacity: 0.95 }
     ], { duration: reduce ? 120 : 350, easing: 'ease-in', fill: 'forwards' });
     an.onfinish = function () {
       f.remove();
-      trayCnt[st.v] = (trayCnt[st.v] || 0) + 1; trayOrder.push(st.v); trayRender();
+      trayOrder.push(st.v); trayRender();
       payLanded++;
       if (shopOpen && payLanded >= payTotalN && shopPhase === 'pay') finishPay();
     };
@@ -2331,7 +2330,7 @@
     shopPhase = 'done';
     later(function () {
       say('ちょうど です！ ありがとうございました！');
-      lcdMsg('ありがとう', 'ちょうど です！ ありがとう！');
+      lcdMsg('ありがとう', 'ちょうど です ありがとう');
       arpeggio();
       burst(fxShop, fxShop.clientWidth / 2, fxShop.clientHeight * 0.4, { n: 14, emoji: ['⭐', '🎉', '✨', '💮'], far: 2 });
       showReceipt();
@@ -2358,7 +2357,7 @@
     }
     shopPhase = 'pay';
     var t = 'ぜんぶで ' + yen(shopTotal) + ' です！';
-    say(t); lcdMsg('おかいけい', t); tone(880, 0.12, 'triangle', 0.12);
+    say(t); lcdMsg('おかいけい', vis(t)); tone(880, 0.12, 'triangle', 0.12);
     lcd.tot.classList.remove('blink'); void lcd.tot.offsetWidth; lcd.tot.classList.add('blink');
     later(function () { lcd.tot.classList.remove('blink'); showCoins(); }, 2000);
   });
@@ -2602,6 +2601,7 @@
   }
   games.shop = {
     el: shopStage,
+    resize: function () { if (shopPhase === 'pay') layoutCoins(); },
     enter: function () {
       shopOpen = true; guideAt = -1e9;
       shopReset();
@@ -2656,7 +2656,7 @@
     phAnimal.style.setProperty('--c', a.c);
     phAnimal.textContent = a.e;
     var t = 'もしもし！\n' + a.n + ' です！\n' + a.w + '！';
-    phText.textContent = t;
+    phText.textContent = vis(t);
     say('もしもし！ ' + a.n + ' です！ ' + a.w + '！');
     phAnimal.animate([{ transform: 'scale(.3)' }, { transform: 'scale(1.15)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: reduce ? 150 : 450, easing: 'ease-out' });
     a.s.forEach(function (p) { tone(p[0], p[1], p[2], p[3], p[4], p[5] + 0.9); });
@@ -2821,7 +2821,7 @@
       p.lift = 0; p.tx = dx; p.ty = dy; p.el.classList.add('placed'); shRender(p);
       if (shSel === p) shSel = null;
       var t = 'ぴったり！ ' + ADJ[p.col.k] + ' ' + p.shape.n + '！';
-      say(t); shSay.textContent = t;
+      say(t); shSay.textContent = vis(t);
       tone(784, 0.12, 'triangle', 0.16); tone(1046.5, 0.25, 'triangle', 0.16, 0, 0.1);
       later(function () {
         var c = centerIn(h.el, fxShape);
@@ -2831,7 +2831,7 @@
         shBusy = true;
         later(function () {
           bigWord('やったー！', '#FF6F61');
-          say('やったー！ ぜんぶ ぴったり！'); shSay.textContent = 'やったー！ ぜんぶ ぴったり！';
+          say('やったー！ ぜんぶ ぴったり！'); shSay.textContent = 'やったー ぜんぶ ぴったり';
           arpeggio(); later(arpeggio, 350);
           var w = fxShape.clientWidth, hh = fxShape.clientHeight;
           for (var i = 0; i < 4; i++) (function (i) {
@@ -3756,8 +3756,8 @@
     if (sc) { ckEmo.textContent = sc[1]; line = sc[0]; }
     else if (night) { ckEmo.textContent = '🌙💤'; line = hr + '！ みんな ねんね してるよ…'; }
     else { ckEmo.textContent = CLOCKEMO[h % 12] + ' ' + n12; line = hr + '！'; }
-    ckLine.textContent = line;
-    ckCard.setAttribute('aria-label', line);
+    ckLine.textContent = vis(line);
+    ckCard.setAttribute('aria-label', vis(line));
     if (!announce) return;
     if (!reduce) ckCard.animate([{ transform: 'scale(.6)', opacity: 0.3 }, { transform: 'scale(1.1)', opacity: 1, offset: 0.55 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420, easing: 'ease-out' });
     if (sc || !night) say(line); else ckSayNight(hr);
@@ -4001,7 +4001,7 @@
     if (yLast[i] && now - yLast[i] <= 3000) {
       yLast[i] = 0;
       var g = nm + ' だよ！ こんにちは！';
-      say(g); yBubble(i, g);
+      say(g); yBubble(i, vis(g));
     } else {
       yLast[i] = now;
       say(YF[i].k + 'は ' + nm + '！');

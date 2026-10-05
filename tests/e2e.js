@@ -399,7 +399,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok((await p.locator('#basket .hint').count()) === 0, 'shop denied: shelf tap still scans');
     await p.context().close();
   });
-  /* ---------- 4b. shop pay: お金の山が重ならない（.stk はシールと名前がぶつかっていた）・iPad で大きく ---------- */
+  /* ---------- 4b. shop pay: お金は1まいずつばらばら（まとめ表示なし）・iPad で大きく ---------- */
   TV('shoppay', [{ width: 360, height: 740 }, { width: 820, height: 1180 }, { width: 1180, height: 820 }, { width: 844, height: 390 }], async (br, vp) => {
     const tag = vp.width + 'x' + vp.height;
     const p = await newPage(br, vp, { deny: true });
@@ -415,7 +415,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
         land: innerWidth > innerHeight, panelW: pp.width / st.width, panelH: pp.height / st.height, hs: document.documentElement.scrollWidth > innerWidth };
     });
     const big = vp.width >= 700 && vp.height >= 660;
-    ok(L.n >= 4 && !L.overlap && L.inside && L.minW >= (big ? 115 : 80) && !L.hs, tag + ' shop pay: ' + L.n + ' money stacks apart, inside, w>=' + Math.round(L.minW));
+    const badges = await p.locator('#coins .bdg').count(), packed = await p.evaluate(() => /×\d/.test(document.querySelector('#coins').textContent + document.querySelector('#tray').textContent));
+    ok(L.n >= 4 && badges === 0 && !packed && L.inside && L.minW >= (big ? 115 : 80) && !L.hs, tag + ' shop pay: ' + L.n + ' loose coins scattered (no x-count), inside, w>=' + Math.round(L.minW));
     if (L.land) ok(L.panelW > 0.4 && L.panelH > 0.9, tag + ' shop pay: landscape pay panel fills right half ' + L.panelW.toFixed(2) + 'x' + L.panelH.toFixed(2));
     if (tag === '820x1180' || tag === '1180x820') await p.screenshot({ path: SP + '/shop-pay-' + tag + '.png' });
     let n = 0; while (n < 30 && await p.locator('#coins .mstk:not(.gone)').count()) { await p.locator('#coins .mstk:not(.gone)').first().click(); await sleep(420); n++; }
@@ -488,7 +489,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let s = await says(p);
     ok(await hour() === 15, 'clock: drag clockwise 7 -> 3 o\'clock => 15h (got ' + (await hour()) + ')');
     ok(s.some(x => x.t === 'さんじ！ おやつの じかん！' && x.lang === 'ja-JP'), 'clock: reads "さんじ！ おやつの じかん！" ' + JSON.stringify(s.map(x => x.t)));
-    ok((await p.locator('#ck-line').textContent()) === 'さんじ！ おやつの じかん！' && /🍪🧃/.test(await p.locator('#ck-emo').textContent()), 'clock: card shows scene');
+    ok((await p.locator('#ck-line').textContent()) === 'さんじ おやつの じかん' && /🍪🧃/.test(await p.locator('#ck-emo').textContent()), 'clock: card shows scene');
     await p.screenshot({ path: SP + '/clock-v7.png' });
     // hand angle
     const hang = await p.evaluate(() => document.querySelector('#ck-hhand').getAttribute('transform'));
@@ -536,7 +537,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       const want = nxt >= 21 || nxt <= 5 ? EXP[nxt].split('！')[0] + '！|みんな ねんね してるよ' : EXP[nxt];
       const nightOk = nxt >= 21 || nxt <= 5 ? ss.length === 2 && ss[1].vol < 0.6 && ss[1].rate < 0.8 && ss[1].pitch < 1 : true;
       const line = await p.locator('#ck-line').textContent();
-      if (h !== nxt || spoken !== want || !nightOk || line !== EXP[nxt]) { allOk = false; bad.push(nxt + ':h=' + h + ' said=' + spoken + ' line=' + line); }
+      if (h !== nxt || spoken !== want || !nightOk || line !== EXP[nxt].replace(/！/g, '')) { allOk = false; bad.push(nxt + ':h=' + h + ' said=' + spoken + ' line=' + line); }
       cur = nxt;
     }
     ok(allOk, 'clock: 24 hours clockwise (incl. 12 crossing, AM/PM): readings/cards/night whisper all match ' + bad.slice(0, 3).join(' ;; '));
@@ -624,7 +625,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('#homebtn'); await tapTile(p, 'ゆびのおうち'); await sleep(400);
     await clearSays(p); await tapFace(0); await sleep(300); await tapFace(0); await sleep(300);
     ok((await said()).indexOf('パパ だよ！ こんにちは！') >= 0, 'yubi: 2nd tap says greeting');
-    ok(await p.evaluate(() => { const b = document.querySelector('#y-bubble'); return !b.hidden && b.textContent === 'パパ だよ！ こんにちは！'; }), 'yubi: greeting bubble visible');
+    ok(await p.evaluate(() => { const b = document.querySelector('#y-bubble'); return !b.hidden && b.textContent === 'パパ だよ こんにちは'; }), 'yubi: greeting bubble visible');
     await sleep(1700);
     ok(await p.locator('#y-bubble').isHidden(), 'yubi: bubble gone after 1.5s');
     // ぐー / ぱー
@@ -739,7 +740,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await dragTo(cc(await box('.stk-cell:nth-child(1)')), [bc[0] - 60, bc[1] - 80]); await sleep(300);
     ok(await cnt() === 1 && (await said()).indexOf('おさかな！') >= 0, 'sticker: drag to board sticks 1, speaks おさかな！');
     { const st = await imgState('#stk-layer .stk.placed .stk-img'); ok(st.length === 1 && st.every(Boolean), 'sticker: placed sticker is an image on the board'); }
-    ok(await p.evaluate(() => document.querySelector('#bigword').textContent) === 'おさかな！', 'sticker: spoken word on screen');
+    ok(await p.evaluate(() => document.querySelector('#bigword').textContent) === 'おさかな', 'sticker: spoken word on screen');
     const sz = await p.evaluate(() => { const e = document.querySelector('#stk-layer .stk.placed'), b = document.querySelector('#stk-board').getBoundingClientRect(); const px = parseFloat(e.style.fontSize); return px / Math.min(b.width, b.height); });
     ok(sz >= 0.139 && sz <= 0.181, 'sticker: size 14-18% of board short side (' + sz.toFixed(3) + ')');
     ok(await p.evaluate(() => document.querySelectorAll('.stk-cell.empty').length) === 1, 'sticker: sheet slot empties after peel');
@@ -1417,7 +1418,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       await sleep(1300); await clearSays(p);
       await btn(lab); await sleep(100);
       const s = await lastSay(), b = await big();
-      ok(w ? s === w && b === w : /^[぀-ゟ]+$/.test(s.replace('！', '')) && b === s.replace('！', ''), tag + ': ' + lab + ' speaks "' + s + '" and shows the same word big');
+      ok(w ? s === w && b === w.replace('！', '') : /^[぀-ゟ]+$/.test(s.replace('！', '')) && b === s.replace('！', ''), tag + ': ' + lab + ' speaks "' + s + '" and shows the same word big');
       if (lab === 'よる') { const sk = await p.evaluate(() => getComputedStyle(document.getElementById('bigword')).webkitTextStrokeColor);
         ok(sk === 'rgb(255, 255, 255)', tag + ': big word outline is white on dark text (' + sk + ')'); }
       if (lab === 'とり') { await sleep(900); ok((await cnt('#dr-fxv .dr-bird')) >= 3, tag + ': とり -> birds flying (' + await cnt('#dr-fxv .dr-bird') + ')'); }
