@@ -388,6 +388,31 @@
     animation: laser 1.8s ease-in-out infinite alternate;
   }
   @keyframes laser { from { top: 18%; } to { top: 78%; } }
+  /* ピアノ */
+  #stage-piano { background: #FFEBD9; }
+  .pn-keys {
+    position: absolute; left: 8px; right: 8px; top: 96px; bottom: 8px; display: grid; gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+  @media (min-aspect-ratio: 1/1) {
+    .pn-keys { left: 6px; right: 6px; gap: 4px; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+  }
+  .pn-k {
+    position: relative; min-width: 0; min-height: 0; padding: 0 0 14px; border: 0; border-radius: 18px; background: #fff; color: var(--ink);
+    display: flex; align-items: flex-end; justify-content: center; font-size: clamp(30px, 8vw, 44px); line-height: 1.1; white-space: nowrap;
+    box-shadow: inset 0 -16px 0 var(--kc), 0 6px 0 rgba(120,80,40,.28); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    transition: background .08s, transform .08s;
+  }
+  .pn-k span { pointer-events: none; margin-bottom: 18px; }
+  .pn-k.on { background: var(--kc); transform: translateY(5px); box-shadow: inset 0 -16px 0 rgba(255,255,255,.35), 0 1px 0 rgba(120,80,40,.28); }
+  #pn-song {
+    position: absolute; top: 8px; right: 12px; z-index: 6; min-width: 150px; height: 80px; padding: 0 22px; border: 0; border-radius: 40px;
+    background: #FF8FB1; color: #fff; font-size: 26px; line-height: 1; white-space: nowrap; box-shadow: 0 6px 0 #D8668A;
+  }
+  #pn-song:active { transform: translateY(4px); box-shadow: 0 2px 0 #D8668A; }
+  #pn-song.on { background: #8E7CF0; box-shadow: 0 6px 0 #6656C8; }
+  @media (max-width: 400px) { #pn-song { min-width: 140px; padding: 0 16px; font-size: 24px; } }
+
   @media (prefers-reduced-motion: reduce) { .laser { animation: none; } .camarrows .ar { animation: none !important; opacity: 1 !important; } }
   .scanlbl { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); letter-spacing: .1em; pointer-events: none; }
   .scanwin.live .scanlbl { display: none; }
@@ -1204,6 +1229,12 @@
     <button id="ko-start" type="button" hidden>▶ はじめる</button>
     <div id="ko-hint" hidden>👆 ゆびで さわっても ころがるよ</div>
     <div class="fx" id="fx-koro"></div>
+  </section>
+
+  <section class="stage" id="stage-piano" aria-label="ピアノ" hidden>
+    <button id="pn-song" type="button" aria-label="おんがく">♪ おんがく</button>
+    <div class="pn-keys" id="pn-keys"></div>
+    <div class="fx" id="fx-piano"></div>
   </section>
 
   <section class="stage" id="stage-drive" aria-label="ドライブ" hidden>
@@ -5232,6 +5263,123 @@
     resize: function () { if (dr.on) drGeo(); }
   };
 
+  /* ====== ピアノ ====== */
+  var pnStage = $('#stage-piano'), pnKeysEl = $('#pn-keys'), pnSong = $('#pn-song'), fxPn = $('#fx-piano');
+  var PN = [
+    { n: 'ど', f: 261.63, c: '#FF9AA2' }, { n: 'れ', f: 293.66, c: '#FFB866' }, { n: 'み', f: 329.63, c: '#FFE27A' }, { n: 'ふぁ', f: 349.23, c: '#A8E6A1' },
+    { n: 'そ', f: 392.0, c: '#8FD8F0' }, { n: 'ら', f: 440.0, c: '#9DB4FF' }, { n: 'し', f: 493.88, c: '#C9A8F5' }, { n: 'ど', f: 523.25, c: '#FFA8D8' }
+  ];
+  /* きらきらぼし: [鍵の番号, 拍] */
+  var PN_SONG = (function () {
+    var m = [0,0,4,4,5,5,4,'h', 3,3,2,2,1,1,0,'h', 4,4,3,3,2,2,1,'h', 4,4,3,3,2,2,1,'h', 0,0,4,4,5,5,4,'h', 3,3,2,2,1,1,0,'h'], out = [], i;
+    for (i = 0; i < m.length; i++) { if (m[i] === 'h') out[out.length - 1][1] = 2; else out.push([m[i], 1]); }
+    return out;
+  })();
+  var pnEls = [], pnHeld = {}, pnCnt = [], pnOff = [], pnSongT = 0, pnSongI = -1, pnOn = false;
+  PN.forEach(function (k, i) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'pn-k'; b.setAttribute('aria-label', k.n);
+    b.style.setProperty('--kc', k.c);
+    b.innerHTML = '<span>' + k.n + '</span>';
+    b.dataset.i = i;
+    pnKeysEl.appendChild(b); pnEls.push(b);
+  });
+  function pnSound(f) {
+    tone(f, 1.1, 'triangle', 0.16);
+    tone(f * 2, 0.7, 'sine', 0.07);
+    tone(f * 3, 0.4, 'sine', 0.025);
+  }
+  function pnNote(i, x, y) {
+    var k = PN[i];
+    pnSound(k.f);
+    bigWord(k.n, k.c);
+    while (fxPn.children.length > 11) fxPn.removeChild(fxPn.firstChild);
+    var el = document.createElement('span');
+    el.textContent = pick(['♪', '♫']); el.style.fontSize = rand(30, 46) + 'px'; el.style.color = k.c;
+    el.style.textShadow = '0 2px 0 rgba(120,80,40,.5)';
+    fxPn.appendChild(el);
+    var dx = rand(-30, 30);
+    var a = el.animate([
+      { transform: 'translate(' + x + 'px,' + y + 'px) scale(.6)', opacity: 0 },
+      { transform: 'translate(' + x + 'px,' + (y - 30) + 'px) scale(1.1)', opacity: 1, offset: 0.2 },
+      { transform: 'translate(' + (x + dx) + 'px,' + (y - 130) + 'px) scale(1)', opacity: 0 }
+    ], { duration: reduce ? 400 : 1000, easing: 'ease-out' });
+    a.onfinish = function () { el.remove(); };
+  }
+  function pnLayerPos(i) {
+    var r = pnEls[i].getBoundingClientRect(), s = pnStage.getBoundingClientRect();
+    return [r.left - s.left + r.width / 2, r.top - s.top + r.height * 0.35];
+  }
+  function pnLight(i, ms) {
+    pnEls[i].classList.add('on');
+    clearTimeout(pnOff[i]);
+    pnOff[i] = setTimeout(function () { if (!pnCnt[i]) pnEls[i].classList.remove('on'); }, ms);
+  }
+  function pnDown(e) {
+    var b = e.target.closest ? e.target.closest('.pn-k') : null;
+    if (!b) return;
+    var i = +b.dataset.i;
+    pnHeld[e.pointerId] = i;
+    pnCnt[i] = (pnCnt[i] || 0) + 1;
+    clearTimeout(pnOff[i]);
+    b.classList.add('on');
+    var p = pnLayerPos(i);
+    pnNote(i, p[0], p[1]);
+  }
+  function pnUp(e) {
+    var i = pnHeld[e.pointerId];
+    if (i === undefined) return;
+    delete pnHeld[e.pointerId];
+    pnCnt[i] = Math.max(0, (pnCnt[i] || 1) - 1);
+    if (!pnCnt[i]) pnLight(i, 160);
+  }
+  function pnStop() {
+    clearTimeout(pnSongT); pnSongT = 0; pnSongI = -1; pnOn = false;
+    pnSong.classList.remove('on'); pnSong.textContent = '♪ おんがく';
+    pnSong.setAttribute('aria-label', 'おんがく');
+  }
+  function pnStep() {
+    pnSongT = 0;
+    if (!pnOn) return;
+    pnSongI++;
+    if (pnSongI >= PN_SONG.length) { pnStop(); return; }
+    var s = PN_SONG[pnSongI], p = pnLayerPos(s[0]), beat = 430;
+    pnLight(s[0], beat * s[1] * 0.8);
+    pnNote(s[0], p[0], p[1]);
+    pnSongT = setTimeout(pnStep, beat * s[1]);
+  }
+  function pnToggle() {
+    if (pnOn) { pnStop(); return; }
+    pnOn = true; pnSongI = -1;
+    pnSong.classList.add('on'); pnSong.textContent = '■ とめる';
+    pnSong.setAttribute('aria-label', 'とめる');
+    pnStep();
+  }
+  function pnReset() {
+    pnStop();
+    pnOff.forEach(clearTimeout); pnOff = [];
+    pnHeld = {}; pnCnt = [];
+    pnEls.forEach(function (b) { b.classList.remove('on'); });
+    fxPn.innerHTML = '';
+  }
+  games.piano = {
+    el: pnStage,
+    enter: function () {
+      pnReset();
+      pnKeysEl.addEventListener('pointerdown', pnDown);
+      window.addEventListener('pointerup', pnUp);
+      window.addEventListener('pointercancel', pnUp);
+      pnSong.addEventListener('click', pnToggle);
+    },
+    leave: function () {
+      pnKeysEl.removeEventListener('pointerdown', pnDown);
+      window.removeEventListener('pointerup', pnUp);
+      window.removeEventListener('pointercancel', pnUp);
+      pnSong.removeEventListener('click', pnToggle);
+      pnReset();
+    }
+  };
+
   /* ---------- せってい（おとなよう）シート ---------- */
   var setSheet = $('#setsheet'), setBtn = $('#setbtn'), thrIn = $('#thr'), segs = [].slice.call(setSheet.querySelectorAll('.seg'));
   var ctBtn = $('#cam-test'), ctVideo = $('#set-video'), ctMsg = $('#cam-msg'), diagEl = $('#diag');
@@ -5368,12 +5516,13 @@
     sticker: { html: '<span class="stk-ico">⭐</span>', lab: 'シールちょう', br: 'シール', c: '#FFE58F', say: 'シールちょう！' },
     yubi:  { ico: '✋', lab: 'ゆびのおうち', br: 'ゆびの', c: '#FFD9B8', say: 'ゆびのおうち！' },
     koro:  { ico: '🔴', lab: 'ころころボール', br: 'ころころ', c: '#C8F0B0', say: 'ころころボール！' },
-    drive: { ico: '🚗', lab: 'ドライブ',       c: '#BFE6FF', say: 'ドライブ！' }
+    drive: { ico: '🚗', lab: 'ドライブ',       c: '#BFE6FF', say: 'ドライブ！' },
+    piano: { ico: '🎹', lab: 'ピアノ',         c: '#FFD6E8', say: 'ピアノ！' }
   };
   var HPAGES = [
     { title: 'あそぶ', ico: '🎈', img: 'pg-asobu', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
     { title: 'まなぶ', ico: '🔤', img: 'pg-manabu', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
-    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive'] }
+    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
   var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
