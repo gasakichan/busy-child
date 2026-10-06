@@ -1435,7 +1435,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       if (lab === 'あめ') { await sleep(300); ok(await p.locator('#dr-rain.on').count() === 1 && await p.locator('.dr-wiper.go').count() === 2, tag + ': あめ -> rain + wipers moving'); await shot('rain');
         await sleep(4800); ok(await p.locator('#dr-rain.on').count() === 0 && await p.locator('.dr-wiper.go').count() === 0, tag + ': rain stops by itself'); }
       if (lab === 'どうぶつ') { await sleep(300); ok((await cnt('#dr-fxv .dr-animal')) === 1, tag + ': どうぶつ -> animal by the road'); await shot('animal'); }
-      if (lab === 'おんがく') { await sleep(1200); ok((await cnt('#dr-fxv .dr-note')) >= 3, tag + ': おんがく -> notes floating (' + await cnt('#dr-fxv .dr-note') + ')'); await shot('music'); }
+      if (lab === 'きらきらぼし') { await sleep(1200); ok((await cnt('#dr-fxv .dr-note')) >= 3, tag + ': おんがく -> notes floating (' + await cnt('#dr-fxv .dr-note') + ')'); await shot('music'); }
     }
     /* れんだ: えんしゅつの数に上限 */
     await sleep(3000);
@@ -1501,14 +1501,14 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#stage-piano').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens ピアノ');
     ok((await says(p)).some(x => x.t === 'ピアノ！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks ピアノ！, shared 🏠, no adult button');
     const land = vp.width > vp.height;
-    const geo = await p.evaluate(() => { const st = document.querySelector('#stage-piano').getBoundingClientRect(); const all = [...document.querySelectorAll('.pn-k')]; const rs = all.map(k => k.getBoundingClientRect()); const sb = document.querySelector('#pn-song').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
+    const geo = await p.evaluate(() => { const st = document.querySelector('#stage-piano').getBoundingClientRect(); const all = [...document.querySelectorAll('.pn-k')]; const rs = all.map(k => k.getBoundingClientRect()); const sbs = [...document.querySelectorAll('#pn-song, #pn-song2')].map(e => e.getBoundingClientRect()), sb = sbs[0], hb = document.querySelector('#homebtn').getBoundingClientRect();
       const ov = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
       const W = rs.filter((r, i) => all[i].classList.contains('w')), B = rs.filter((r, i) => all[i].classList.contains('b'));
-      return { nw: W.length, nb: B.length, wW: Math.min(...W.map(r => r.width)), wH: Math.min(...W.map(r => r.height)), bW: Math.min(...B.map(r => r.width)), bH: Math.min(...B.map(r => r.height)), inside: rs.every(r => r.left >= st.left - 1 && r.right <= st.right + 1 && r.top >= st.top - 1 && r.bottom <= st.bottom + 1), sw: sb.width, sh: sb.height, sIn: sb.left >= st.left && sb.right <= st.right && sb.top >= st.top && sb.bottom <= st.bottom, ovl: rs.some(r => ov(r, sb) || ov(r, hb)) || ov(sb, hb),
+      return { nw: W.length, nb: B.length, wW: Math.min(...W.map(r => r.width)), wH: Math.min(...W.map(r => r.height)), bW: Math.min(...B.map(r => r.width)), bH: Math.min(...B.map(r => r.height)), inside: rs.every(r => r.left >= st.left - 1 && r.right <= st.right + 1 && r.top >= st.top - 1 && r.bottom <= st.bottom + 1), sIn: sbs.every(sb => sb.left >= st.left && sb.right <= st.right && sb.top >= st.top && sb.bottom <= st.bottom), ovl: rs.some(r => sbs.some(q => ov(r, q)) || ov(r, hb)) || sbs.some(q => ov(q, hb)) || ov(sbs[0], sbs[1]), sw: Math.min(...sbs.map(q => q.width)), sh: Math.min(...sbs.map(q => q.height)),
         hs: document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 }; });
     ok(geo.nw === 8 && geo.nb === 5 && geo.inside, tag + ': 8 white + 5 black keys, all inside stage');
     ok(land ? (geo.wW >= 44 && geo.wH >= 200 && geo.bW >= 32 && geo.bH >= 110) : (geo.wH >= 80 && geo.wW >= 200 && geo.bH >= 32 && geo.bW >= 110), tag + ': key sizes ok (white ' + Math.round(geo.wW) + 'x' + Math.round(geo.wH) + ', black ' + Math.round(geo.bW) + 'x' + Math.round(geo.bH) + ')');
-    ok(geo.sw >= 80 && geo.sh >= 80 && geo.sIn && !geo.ovl && !geo.hs, tag + ': おんがく button >=80px, no overlap with keys/🏠, no hscroll');
+    ok(geo.sw >= 80 && geo.sh >= 80 && geo.sIn && !geo.ovl && !geo.hs, tag + ': 2 song buttons >=80px, no overlap with keys/🏠, no hscroll');
     await p.screenshot({ path: SP + '/piano-' + vp.width + 'x' + vp.height + '-a.png' });
     /* tap: active while held, note name big */
     const kb = i => p.locator('.pn-k').nth(i).boundingBox();
@@ -1537,7 +1537,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const seen = await p.evaluate(() => new Promise(res => { const s = new Set(); const t0 = Date.now(); const iv = setInterval(() => { document.querySelectorAll('.pn-k.on').forEach(k => s.add(k.dataset.i)); if (Date.now() - t0 > 2600) { clearInterval(iv); res([...s]); } }, 40); }));
     ok(seen.includes('4') && seen.includes('5') && seen.length >= 3, tag + ': melody lights そ ら ふぁ in turn ' + seen);
     await p.click('#pn-song'); await sleep(500);
-    ok((await p.locator('#pn-song').getAttribute('aria-label')) === 'おんがく' && (await on()) === 0, tag + ': tapping again stops');
+    ok((await p.locator('#pn-song').getAttribute('aria-label')) === 'きらきらぼし' && (await on()) === 0, tag + ': tapping again stops');
     const w0 = await big(); await sleep(1500);
     ok((await on()) === 0, tag + ': no more keys light after stop');
     /* play then leave mid-song: nothing left behind */
@@ -1546,7 +1546,20 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const left = await p.evaluate(() => ({ fx: document.querySelectorAll('#fx-piano span').length, on: document.querySelectorAll('.pn-k.on').length }));
     await sleep(1200);
     const left2 = await p.evaluate(() => ({ fx: document.querySelectorAll('#fx-piano span').length, on: document.querySelectorAll('.pn-k.on').length, song: document.querySelector('#pn-song').textContent }));
-    ok(left.on === 0 && left2.on === 0 && left2.fx === 0 && left2.song.length <= 6 && await p.locator('#home').isVisible(), tag + ': leave() clears timers/fx (' + JSON.stringify(left2) + ')');
+    ok(left.on === 0 && left2.on === 0 && left2.fx === 0 && left2.song.length <= 2 && await p.locator('#home').isVisible(), tag + ': leave() clears timers/fx (' + JSON.stringify(left2) + ')');
+    await tapTile(p, 'ピアノ'); await sleep(400);
+    /* 2きょくめ（マーチ）: ならす -> ほかの きょくに きりかえ不要 -> とめる */
+    await p.click('#pn-song2'); await sleep(900);
+    ok((await p.locator('#pn-song2').getAttribute('aria-label')) === 'とめる' && (await p.locator('#pn-song').getAttribute('aria-label')) === 'きらきらぼし' && (await on()) >= 1, tag + ': song 2 plays, only its button shows とめる, a key lights');
+    const seen2 = await p.evaluate(() => new Promise(res => { const s = new Set(); const t0 = Date.now(); const iv = setInterval(() => { document.querySelectorAll('.pn-k.on').forEach(k => s.add(k.dataset.i)); if (Date.now() - t0 > 3200) { clearInterval(iv); res([...s]); } }, 40); }));
+    ok(seen2.length >= 3, tag + ': march lights several keys ' + seen2);
+    await p.click('#pn-song2'); await sleep(500);
+    ok((await p.locator('#pn-song2').getAttribute('aria-label')) === 'アンパンマンマーチ' && (await on()) === 0, tag + ': tapping song 2 again stops');
+    await p.click('#pn-song2'); await sleep(700);
+    await p.click('#homebtn'); await sleep(300);
+    await sleep(1200);
+    const left3 = await p.evaluate(() => ({ fx: document.querySelectorAll('#fx-piano span').length, on: document.querySelectorAll('.pn-k.on').length, a: document.querySelector('#pn-song2').getAttribute('aria-label') }));
+    ok(left3.on === 0 && left3.fx === 0 && left3.a === 'アンパンマンマーチ' && await p.locator('#home').isVisible(), tag + ': leaving mid-march leaves nothing behind ' + JSON.stringify(left3));
     /* re-enter, multi-touch via CDP not needed: two pointer ids */
     await tapTile(p, 'ピアノ'); await sleep(400);
     await p.evaluate(() => { const ks = document.querySelectorAll('.pn-k'); [[0, 11], [4, 12]].forEach(([i, id]) => { const r = ks[i].getBoundingClientRect(); ks[i].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: id, clientX: r.x + 10, clientY: r.y + 10 })); }); });

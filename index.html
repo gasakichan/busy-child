@@ -407,19 +407,21 @@
     background: #4B3A36; border-radius: 10px 0 0 10px; box-shadow: 0 4px 0 rgba(0,0,0,.35);
   }
   .pn-k.b.on { background: var(--kc); transform: translateX(3px); }
-  #pn-song {
+  #pn-song, #pn-song2 {
     position: absolute; top: 96px; left: 8px; z-index: 6; width: 80px; height: 80px; padding: 0; border: 0; border-radius: 40px;
     background: #FF8FB1; color: #fff; font-size: 38px; line-height: 1; box-shadow: 0 6px 0 #D8668A;
   }
-  #pn-song:active { transform: translateY(4px); box-shadow: 0 2px 0 #D8668A; }
-  #pn-song.on { background: #8E7CF0; box-shadow: 0 6px 0 #6656C8; }
+  #pn-song2 { top: 184px; background: #5FC8A8; box-shadow: 0 6px 0 #3E9C80; }
+  #pn-song:active, #pn-song2:active { transform: translateY(4px); box-shadow: 0 2px 0 #D8668A; }
+  #pn-song.on, #pn-song2.on { background: #8E7CF0; box-shadow: 0 6px 0 #6656C8; }
   @media (min-aspect-ratio: 1/1) {
     .pn-keys { left: 8px; right: 8px; top: 96px; bottom: 8px; flex-direction: row; }
     .pn-k.w { border-radius: 0 0 14px 14px; align-items: flex-end; justify-content: center; padding: 0 0 20px; box-shadow: inset 0 -16px 0 var(--kc), inset 0 0 0 2px #E2CDB8; }
     .pn-k.w.on { transform: translateY(4px); box-shadow: inset 0 -16px 0 rgba(255,255,255,.4), inset 0 0 0 2px #E2CDB8; }
     .pn-k.b { right: auto; top: 0; width: 7.5%; height: 60%; left: calc((var(--bi) + 1) * 12.5% - 3.75%); border-radius: 0 0 10px 10px; }
     .pn-k.b.on { transform: translateY(3px); }
-    #pn-song { top: 8px; left: auto; right: 12px; width: auto; min-width: 150px; padding: 0 22px; font-size: 26px; white-space: nowrap; }
+    #pn-song, #pn-song2 { top: 8px; left: auto; right: 12px; }
+    #pn-song2 { right: 104px; }
   }
 
   @media (prefers-reduced-motion: reduce) { .laser { animation: none; } .camarrows .ar { animation: none !important; opacity: 1 !important; } }
@@ -1241,7 +1243,8 @@
   </section>
 
   <section class="stage" id="stage-piano" aria-label="ピアノ" hidden>
-    <button id="pn-song" type="button" aria-label="おんがく">♪</button>
+    <button id="pn-song" type="button" aria-label="おんがく">⭐</button>
+    <button id="pn-song2" type="button" aria-label="アンパンマンマーチ">🎵</button>
     <div class="pn-keys" id="pn-keys"></div>
     <div class="fx" id="fx-piano"></div>
   </section>
@@ -5273,7 +5276,7 @@
   };
 
   /* ====== ピアノ ====== */
-  var pnStage = $('#stage-piano'), pnKeysEl = $('#pn-keys'), pnSong = $('#pn-song'), fxPn = $('#fx-piano');
+  var pnStage = $('#stage-piano'), pnKeysEl = $('#pn-keys'), fxPn = $('#fx-piano');
   var PN = [
     { n: 'ど', f: 261.63, c: '#FF9AA2' }, { n: 'れ', f: 293.66, c: '#FFB866' }, { n: 'み', f: 329.63, c: '#FFE27A' }, { n: 'ふぁ', f: 349.23, c: '#A8E6A1' },
     { n: 'そ', f: 392.0, c: '#8FD8F0' }, { n: 'ら', f: 440.0, c: '#9DB4FF' }, { n: 'し', f: 493.88, c: '#C9A8F5' }, { n: 'ど', f: 523.25, c: '#FFA8D8' },
@@ -5285,7 +5288,21 @@
     for (i = 0; i < m.length; i++) { if (m[i] === 'h') out[out.length - 1][1] = 2; else out.push([m[i], 1]); }
     return out;
   })();
-  var pnEls = [], pnHeld = {}, pnCnt = [], pnOff = [], pnSongT = 0, pnSongI = -1, pnOn = false;
+  /* アンパンマンのマーチ（C たんちょうに いちょう。きおくで かいた ので ずれが あれば なおす）。[鍵の番号, 拍] */
+  var PN_MARCH = [
+    [4,1],[4,1],[4,1],[2,1],[0,1],[2,1],[4,2],
+    [4,1],[5,1],[4,1],[2,1],[0,1],[2,1],[4,2],
+    [5,1],[5,1],[5,1],[3,1],[1,1],[3,1],[5,2],
+    [4,1],[2,1],[4,1],[2,1],[0,1],[1,1],[0,2],
+    [7,1],[7,1],[7,1],[5,1],[4,1],[5,1],[7,2],
+    [5,1],[4,1],[5,1],[4,1],[2,1],[1,1],[2,2],
+    [4,1],[2,1],[4,1],[5,1],[4,1],[2,1],[0,2]
+  ];
+  var PN_SONGS = [
+    { btn: $('#pn-song'), icon: '⭐', label: 'きらきらぼし', notes: PN_SONG, beat: 430 },
+    { btn: $('#pn-song2'), icon: '🎵', label: 'アンパンマンマーチ', notes: PN_MARCH, beat: 520 }
+  ];
+  var pnEls = [], pnHeld = {}, pnCnt = [], pnOff = [], pnSongT = 0, pnSongI = -1, pnOn = -1;
   PN.forEach(function (k, i) {
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'pn-k ' + (k.n ? 'w' : 'b'); b.setAttribute('aria-label', k.n || 'くろいけん');
@@ -5344,27 +5361,28 @@
     pnCnt[i] = Math.max(0, (pnCnt[i] || 1) - 1);
     if (!pnCnt[i]) pnLight(i, 160);
   }
-  function pnWide() { return window.matchMedia('(min-aspect-ratio: 1/1)').matches; }
   function pnStop() {
-    clearTimeout(pnSongT); pnSongT = 0; pnSongI = -1; pnOn = false;
-    pnSong.classList.remove('on'); pnSong.textContent = pnWide() ? '♪ おんがく' : '♪';
-    pnSong.setAttribute('aria-label', 'おんがく');
+    clearTimeout(pnSongT); pnSongT = 0; pnSongI = -1; pnOn = -1;
+    PN_SONGS.forEach(function (g) { g.btn.classList.remove('on'); g.btn.textContent = g.icon; g.btn.setAttribute('aria-label', g.label); });
   }
   function pnStep() {
     pnSongT = 0;
-    if (!pnOn) return;
+    if (pnOn < 0) return;
+    var g = PN_SONGS[pnOn];
     pnSongI++;
-    if (pnSongI >= PN_SONG.length) { pnStop(); return; }
-    var s = PN_SONG[pnSongI], p = pnLayerPos(s[0]), beat = 430;
-    pnLight(s[0], beat * s[1] * 0.8);
+    if (pnSongI >= g.notes.length) { pnStop(); return; }
+    var s = g.notes[pnSongI], p = pnLayerPos(s[0]);
+    pnLight(s[0], g.beat * s[1] * 0.8);
     pnNote(s[0], p[0], p[1]);
-    pnSongT = setTimeout(pnStep, beat * s[1]);
+    pnSongT = setTimeout(pnStep, g.beat * s[1]);
   }
-  function pnToggle() {
-    if (pnOn) { pnStop(); return; }
-    pnOn = true; pnSongI = -1;
-    pnSong.classList.add('on'); pnSong.textContent = pnWide() ? '■ とめる' : '■';
-    pnSong.setAttribute('aria-label', 'とめる');
+  function pnToggle(n) {
+    var was = pnOn;
+    pnStop();
+    if (was === n) return;   /* ならしている きょくを おすと とまる */
+    pnOn = n; pnSongI = -1;
+    PN_SONGS[n].btn.classList.add('on'); PN_SONGS[n].btn.textContent = '■';
+    PN_SONGS[n].btn.setAttribute('aria-label', 'とめる');
     pnStep();
   }
   function pnReset() {
@@ -5381,13 +5399,13 @@
       pnKeysEl.addEventListener('pointerdown', pnDown);
       window.addEventListener('pointerup', pnUp);
       window.addEventListener('pointercancel', pnUp);
-      pnSong.addEventListener('click', pnToggle);
+      PN_SONGS.forEach(function (g, n) { g.fn = function () { pnToggle(n); }; g.btn.addEventListener('click', g.fn); });
     },
     leave: function () {
       pnKeysEl.removeEventListener('pointerdown', pnDown);
       window.removeEventListener('pointerup', pnUp);
       window.removeEventListener('pointercancel', pnUp);
-      pnSong.removeEventListener('click', pnToggle);
+      PN_SONGS.forEach(function (g) { g.btn.removeEventListener('click', g.fn); });
       pnReset();
     }
   };
