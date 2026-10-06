@@ -1494,21 +1494,21 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   /* ---------- ピアノ ---------- */
   TV('piano', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
     const tag = 'piano ' + vp.width + 'x' + vp.height;
-    const p = await newPage(br, vp, { deny: true });
+    const p = await newPage(br, vp, { deny: true, init: 'window.__fq = []; (function(){ const sv = AudioParam.prototype.setValueAtTime; AudioParam.prototype.setValueAtTime = function(v, t){ window.__fq.push(v); return sv.call(this, v, t); }; })();' });
     const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
     const on = () => p.evaluate(() => [...document.querySelectorAll('.pn-k.on')].length);
     await tapTile(p, 'ピアノ'); await sleep(500);
     ok(await p.locator('#stage-piano').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens ピアノ');
     ok((await says(p)).some(x => x.t === 'ピアノ！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks ピアノ！, shared 🏠, no adult button');
     const land = vp.width > vp.height;
-    const geo = await p.evaluate(() => { const st = document.querySelector('#stage-piano').getBoundingClientRect(); const all = [...document.querySelectorAll('.pn-k')]; const rs = all.map(k => k.getBoundingClientRect()); const sbs = [...document.querySelectorAll('#pn-song, #pn-song2')].map(e => e.getBoundingClientRect()), sb = sbs[0], hb = document.querySelector('#homebtn').getBoundingClientRect();
+    const geo = await p.evaluate(() => { const st = document.querySelector('#stage-piano').getBoundingClientRect(); const all = [...document.querySelectorAll('.pn-k')]; const rs = all.map(k => k.getBoundingClientRect()); const sbs = [...document.querySelectorAll('#pn-song, #pn-song2, .pn-oct')].map(e => e.getBoundingClientRect()), sb = sbs[0], hb = document.querySelector('#homebtn').getBoundingClientRect();
       const ov = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
       const W = rs.filter((r, i) => all[i].classList.contains('w')), B = rs.filter((r, i) => all[i].classList.contains('b'));
-      return { nw: W.length, nb: B.length, wW: Math.min(...W.map(r => r.width)), wH: Math.min(...W.map(r => r.height)), bW: Math.min(...B.map(r => r.width)), bH: Math.min(...B.map(r => r.height)), inside: rs.every(r => r.left >= st.left - 1 && r.right <= st.right + 1 && r.top >= st.top - 1 && r.bottom <= st.bottom + 1), sIn: sbs.every(sb => sb.left >= st.left && sb.right <= st.right && sb.top >= st.top && sb.bottom <= st.bottom), ovl: rs.some(r => sbs.some(q => ov(r, q)) || ov(r, hb)) || sbs.some(q => ov(q, hb)) || ov(sbs[0], sbs[1]), sw: Math.min(...sbs.map(q => q.width)), sh: Math.min(...sbs.map(q => q.height)),
+      return { nw: W.length, nb: B.length, wW: Math.min(...W.map(r => r.width)), wH: Math.min(...W.map(r => r.height)), bW: Math.min(...B.map(r => r.width)), bH: Math.min(...B.map(r => r.height)), inside: rs.every(r => r.left >= st.left - 1 && r.right <= st.right + 1 && r.top >= st.top - 1 && r.bottom <= st.bottom + 1), sIn: sbs.every(sb => sb.left >= st.left && sb.right <= st.right && sb.top >= st.top && sb.bottom <= st.bottom), ovl: rs.some(r => sbs.some(q => ov(r, q)) || ov(r, hb)) || sbs.some(q => ov(q, hb)) || sbs.some((q, a) => sbs.some((q2, b) => a < b && ov(q, q2))), sw: Math.min(...sbs.map(q => q.width)), sh: Math.min(...sbs.map(q => q.height)),
         hs: document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 }; });
     ok(geo.nw === 8 && geo.nb === 5 && geo.inside, tag + ': 8 white + 5 black keys, all inside stage');
     ok(land ? (geo.wW >= 44 && geo.wH >= 200 && geo.bW >= 32 && geo.bH >= 110) : (geo.wH >= 80 && geo.wW >= 200 && geo.bH >= 32 && geo.bW >= 110), tag + ': key sizes ok (white ' + Math.round(geo.wW) + 'x' + Math.round(geo.wH) + ', black ' + Math.round(geo.bW) + 'x' + Math.round(geo.bH) + ')');
-    ok(geo.sw >= 80 && geo.sh >= 80 && geo.sIn && !geo.ovl && !geo.hs, tag + ': 2 song buttons >=80px, no overlap with keys/🏠, no hscroll');
+    ok(geo.sw >= 80 && geo.sh >= 80 && geo.sIn && !geo.ovl && !geo.hs, tag + ': song + octave buttons >=80px, no overlap with keys/🏠, no hscroll');
     await p.screenshot({ path: SP + '/piano-' + vp.width + 'x' + vp.height + '-a.png' });
     /* tap: active while held, note name big */
     const kb = i => p.locator('.pn-k').nth(i).boundingBox();
@@ -1548,6 +1548,36 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const left2 = await p.evaluate(() => ({ fx: document.querySelectorAll('#fx-piano span').length, on: document.querySelectorAll('.pn-k.on').length, song: document.querySelector('#pn-song').textContent }));
     ok(left.on === 0 && left2.on === 0 && left2.fx === 0 && left2.song.length <= 2 && await p.locator('#home').isVisible(), tag + ': leave() clears timers/fx (' + JSON.stringify(left2) + ')');
     await tapTile(p, 'ピアノ'); await sleep(400);
+    /* オクターブ: ↑↓で -1..+1。手弾きだけ周波数が変わる。じどうえんそうは そのまま */
+    const oct = () => p.evaluate(() => document.querySelector('#stage-piano').dataset.oct);
+    const lastF = async () => { const a = await p.evaluate(() => window.__fq.slice()); return a.filter(v => v > 100 && v < 2200); };
+    const tapKey = async i => { const bb = await kb(i); await p.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2); await sleep(60); };
+    ok((await oct()) === '0', tag + ': octave starts at 0');
+    await p.evaluate(() => { window.__fq.length = 0; }); await tapKey(0);
+    let f0 = (await lastF())[0];
+    await p.click('#pn-up'); await sleep(100);
+    ok((await oct()) === '1' && await p.locator('#pn-up').evaluate(e => e.classList.contains('lim')), tag + ': ↑ -> octave +1, button marked as limit');
+    await p.click('#pn-up'); await sleep(50);
+    ok((await oct()) === '1', tag + ': ↑ at top stays +1');
+    await p.evaluate(() => { window.__fq.length = 0; }); await tapKey(0);
+    let fU = (await lastF())[0];
+    ok(Math.abs(fU / f0 - 2) < 0.02, tag + ': hand-played pitch doubles at +1 (' + f0 + ' -> ' + fU + ')');
+    await p.click('#pn-dn'); await p.click('#pn-dn'); await sleep(100);
+    ok((await oct()) === '-1', tag + ': ↓↓ -> octave -1');
+    await p.evaluate(() => { window.__fq.length = 0; }); await tapKey(9);
+    let fD = (await lastF())[0];
+    ok(Math.abs(fD / (f0 * 311.13 / 261.63) - 0.5) < 0.02, tag + ': black key follows octave too (' + fD + ')');
+    await p.screenshot({ path: SP + '/piano-' + vp.width + 'x' + vp.height + '-oct.png' });
+    /* マーチ: オクターブ-1のままでも 楽譜どおり（さいしょの ミ=E5 659*2=1318） */
+    await p.evaluate(() => { window.__fq.length = 0; });
+    await p.click('#pn-song2'); await sleep(400);
+    const fm = await lastF();
+    ok(fm.length && Math.abs(fm[0] - 659.26) < 2, tag + ': march first note is E5 (' + fm[0] + ') regardless of octave setting');
+    await p.click('#pn-song2'); await sleep(200);
+    await p.evaluate(() => { window.__fq.length = 0; }); await tapKey(0);
+    await p.click('#homebtn'); await sleep(200);
+    await tapTile(p, 'ピアノ'); await sleep(400);
+    ok((await oct()) === '0' && await p.locator('.pn-oct.on').count() === 0, tag + ': octave resets to 0 on re-enter');
     /* 2きょくめ（マーチ）: ならす -> ほかの きょくに きりかえ不要 -> とめる */
     await p.click('#pn-song2'); await sleep(900);
     ok((await p.locator('#pn-song2').getAttribute('aria-label')) === 'とめる' && (await p.locator('#pn-song').getAttribute('aria-label')) === 'きらきらぼし' && (await on()) >= 1, tag + ': song 2 plays, only its button shows とめる, a key lights');
