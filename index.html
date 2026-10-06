@@ -388,30 +388,39 @@
     animation: laser 1.8s ease-in-out infinite alternate;
   }
   @keyframes laser { from { top: 18%; } to { top: 78%; } }
-  /* ピアノ */
+  /* ピアノ（縦持ちは かぎばんを 90度まわして 白けんが たてに つみあがる） */
   #stage-piano { background: #FFEBD9; }
-  .pn-keys {
-    position: absolute; left: 8px; right: 8px; top: 96px; bottom: 8px; display: grid; gap: 8px;
-    grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr));
-  }
-  @media (min-aspect-ratio: 1/1) {
-    .pn-keys { left: 6px; right: 6px; gap: 4px; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
-  }
+  .pn-keys { position: absolute; left: 96px; right: 8px; top: 8px; bottom: 8px; display: flex; flex-direction: column; }
   .pn-k {
-    position: relative; min-width: 0; min-height: 0; padding: 0 0 14px; border: 0; border-radius: 18px; background: #fff; color: var(--ink);
-    display: flex; align-items: flex-end; justify-content: center; font-size: clamp(30px, 8vw, 44px); line-height: 1.1; white-space: nowrap;
-    box-shadow: inset 0 -16px 0 var(--kc), 0 6px 0 rgba(120,80,40,.28); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    position: relative; min-width: 0; min-height: 0; padding: 0; border: 0; color: var(--ink); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
     transition: background .08s, transform .08s;
   }
-  .pn-k span { pointer-events: none; margin-bottom: 18px; }
-  .pn-k.on { background: var(--kc); transform: translateY(5px); box-shadow: inset 0 -16px 0 rgba(255,255,255,.35), 0 1px 0 rgba(120,80,40,.28); }
+  .pn-k.w {
+    flex: 1 1 0; background: #fff; border-radius: 14px 0 0 14px; font-size: clamp(30px, 8vw, 44px); line-height: 1.1; white-space: nowrap;
+    display: flex; align-items: center; justify-content: flex-start; padding-left: 26px;
+    box-shadow: inset 16px 0 0 var(--kc), inset 0 0 0 2px #E2CDB8;
+  }
+  .pn-k.w.on { background: var(--kc); transform: translateX(4px); box-shadow: inset 16px 0 0 rgba(255,255,255,.4), inset 0 0 0 2px #E2CDB8; }
+  .pn-k.w span { pointer-events: none; }
+  .pn-k.b {
+    position: absolute; z-index: 2; right: 0; width: 56%; height: 7.5%; top: calc((var(--bi) + 1) * 12.5% - 3.75%);
+    background: #4B3A36; border-radius: 10px 0 0 10px; box-shadow: 0 4px 0 rgba(0,0,0,.35);
+  }
+  .pn-k.b.on { background: var(--kc); transform: translateX(3px); }
   #pn-song {
-    position: absolute; top: 8px; right: 12px; z-index: 6; min-width: 150px; height: 80px; padding: 0 22px; border: 0; border-radius: 40px;
-    background: #FF8FB1; color: #fff; font-size: 26px; line-height: 1; white-space: nowrap; box-shadow: 0 6px 0 #D8668A;
+    position: absolute; top: 96px; left: 8px; z-index: 6; width: 80px; height: 80px; padding: 0; border: 0; border-radius: 40px;
+    background: #FF8FB1; color: #fff; font-size: 38px; line-height: 1; box-shadow: 0 6px 0 #D8668A;
   }
   #pn-song:active { transform: translateY(4px); box-shadow: 0 2px 0 #D8668A; }
   #pn-song.on { background: #8E7CF0; box-shadow: 0 6px 0 #6656C8; }
-  @media (max-width: 400px) { #pn-song { min-width: 140px; padding: 0 16px; font-size: 24px; } }
+  @media (min-aspect-ratio: 1/1) {
+    .pn-keys { left: 8px; right: 8px; top: 96px; bottom: 8px; flex-direction: row; }
+    .pn-k.w { border-radius: 0 0 14px 14px; align-items: flex-end; justify-content: center; padding: 0 0 20px; box-shadow: inset 0 -16px 0 var(--kc), inset 0 0 0 2px #E2CDB8; }
+    .pn-k.w.on { transform: translateY(4px); box-shadow: inset 0 -16px 0 rgba(255,255,255,.4), inset 0 0 0 2px #E2CDB8; }
+    .pn-k.b { right: auto; top: 0; width: 7.5%; height: 60%; left: calc((var(--bi) + 1) * 12.5% - 3.75%); border-radius: 0 0 10px 10px; }
+    .pn-k.b.on { transform: translateY(3px); }
+    #pn-song { top: 8px; left: auto; right: 12px; width: auto; min-width: 150px; padding: 0 22px; font-size: 26px; white-space: nowrap; }
+  }
 
   @media (prefers-reduced-motion: reduce) { .laser { animation: none; } .camarrows .ar { animation: none !important; opacity: 1 !important; } }
   .scanlbl { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); letter-spacing: .1em; pointer-events: none; }
@@ -1232,7 +1241,7 @@
   </section>
 
   <section class="stage" id="stage-piano" aria-label="ピアノ" hidden>
-    <button id="pn-song" type="button" aria-label="おんがく">♪ おんがく</button>
+    <button id="pn-song" type="button" aria-label="おんがく">♪</button>
     <div class="pn-keys" id="pn-keys"></div>
     <div class="fx" id="fx-piano"></div>
   </section>
@@ -5267,7 +5276,8 @@
   var pnStage = $('#stage-piano'), pnKeysEl = $('#pn-keys'), pnSong = $('#pn-song'), fxPn = $('#fx-piano');
   var PN = [
     { n: 'ど', f: 261.63, c: '#FF9AA2' }, { n: 'れ', f: 293.66, c: '#FFB866' }, { n: 'み', f: 329.63, c: '#FFE27A' }, { n: 'ふぁ', f: 349.23, c: '#A8E6A1' },
-    { n: 'そ', f: 392.0, c: '#8FD8F0' }, { n: 'ら', f: 440.0, c: '#9DB4FF' }, { n: 'し', f: 493.88, c: '#C9A8F5' }, { n: 'ど', f: 523.25, c: '#FFA8D8' }
+    { n: 'そ', f: 392.0, c: '#8FD8F0' }, { n: 'ら', f: 440.0, c: '#9DB4FF' }, { n: 'し', f: 493.88, c: '#C9A8F5' }, { n: 'ど', f: 523.25, c: '#FFA8D8' },
+    { n: '', b: 0, f: 277.18, c: '#FFAF84' }, { n: '', b: 1, f: 311.13, c: '#FFD070' }, { n: '', b: 3, f: 369.99, c: '#98E0D0' }, { n: '', b: 4, f: 415.3, c: '#9AC4F8' }, { n: '', b: 5, f: 466.16, c: '#D8A8F0' }
   ];
   /* きらきらぼし: [鍵の番号, 拍] */
   var PN_SONG = (function () {
@@ -5278,9 +5288,10 @@
   var pnEls = [], pnHeld = {}, pnCnt = [], pnOff = [], pnSongT = 0, pnSongI = -1, pnOn = false;
   PN.forEach(function (k, i) {
     var b = document.createElement('button');
-    b.type = 'button'; b.className = 'pn-k'; b.setAttribute('aria-label', k.n);
+    b.type = 'button'; b.className = 'pn-k ' + (k.n ? 'w' : 'b'); b.setAttribute('aria-label', k.n || 'くろいけん');
+    if (!k.n) b.style.setProperty('--bi', k.b);
     b.style.setProperty('--kc', k.c);
-    b.innerHTML = '<span>' + k.n + '</span>';
+    if (k.n) b.innerHTML = '<span>' + k.n + '</span>';
     b.dataset.i = i;
     pnKeysEl.appendChild(b); pnEls.push(b);
   });
@@ -5292,7 +5303,7 @@
   function pnNote(i, x, y) {
     var k = PN[i];
     pnSound(k.f);
-    bigWord(k.n, k.c);
+    if (k.n) bigWord(k.n, k.c);
     while (fxPn.children.length > 11) fxPn.removeChild(fxPn.firstChild);
     var el = document.createElement('span');
     el.textContent = pick(['♪', '♫']); el.style.fontSize = rand(30, 46) + 'px'; el.style.color = k.c;
@@ -5333,9 +5344,10 @@
     pnCnt[i] = Math.max(0, (pnCnt[i] || 1) - 1);
     if (!pnCnt[i]) pnLight(i, 160);
   }
+  function pnWide() { return window.matchMedia('(min-aspect-ratio: 1/1)').matches; }
   function pnStop() {
     clearTimeout(pnSongT); pnSongT = 0; pnSongI = -1; pnOn = false;
-    pnSong.classList.remove('on'); pnSong.textContent = '♪ おんがく';
+    pnSong.classList.remove('on'); pnSong.textContent = pnWide() ? '♪ おんがく' : '♪';
     pnSong.setAttribute('aria-label', 'おんがく');
   }
   function pnStep() {
@@ -5351,7 +5363,7 @@
   function pnToggle() {
     if (pnOn) { pnStop(); return; }
     pnOn = true; pnSongI = -1;
-    pnSong.classList.add('on'); pnSong.textContent = '■ とめる';
+    pnSong.classList.add('on'); pnSong.textContent = pnWide() ? '■ とめる' : '■';
     pnSong.setAttribute('aria-label', 'とめる');
     pnStep();
   }
