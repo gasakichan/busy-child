@@ -1609,31 +1609,79 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const tag = 'pinball ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/pinball-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
     const p = await newPage(br, vp, { deny: true });
     const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
-    const PB = () => p.evaluate(() => { const q = window.__pb; return { mode: q.mode, x: q.ball.x, y: q.ball.y, s: q.ball.s, on: q.on, raf: q.raf, W: q.W, H: q.H, n: q.n, R: q.R, rx: q.rest.x, ry: q.rest.y, kinds: q.cups.map(c => c.kind), top: q.cupTop, fx: document.querySelector('#fx-pinball').children.length, btn: !document.querySelector('#pb-launch').hidden }; });
+    const PB = () => p.evaluate(() => { const q = window.__pb; return { mode: q.mode, x: q.ball.x, y: q.ball.y, vx: q.ball.vx, vy: q.ball.vy, on: q.on, raf: q.raf, kinds: q.cups.map(c => c.kind), fx: document.querySelector('#fx-pinball').children.length, btn: !document.querySelector('#pb-launch').hidden,
+      fl: q.fl.map(f => ({ a: f.a, want: f.want, up: f.up, rest: f.rest })), rx: q.rest.x, ry: q.rest.y, s: q.s, ox: q.ox, oy: q.oy }; });
     await tapTile(p, 'ピンボール'); await sleep(600);
     ok(await p.locator('#stage-pinball').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens ピンボール');
     ok((await says(p)).some(x => x.t === 'ピンボール！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks ピンボール！, shared 🏠, no adult button');
-    let s0 = await PB();
+    const s0 = await PB();
     const geo = await p.evaluate(() => { const st = document.querySelector('#stage-pinball').getBoundingClientRect(), b = document.querySelector('#pb-launch').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
       return { w: b.width, h: b.height, inside: b.left >= st.left && b.right <= st.right && b.top >= st.top && b.bottom <= st.bottom, cx: b.left + b.width / 2 - st.left, cy: b.top + b.height / 2 - st.top, sw: st.width, sh: st.height,
         ovl: b.left < hb.right && hb.left < b.right && b.top < hb.bottom && hb.top < b.bottom, hs: document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-pinball').scrollWidth > document.querySelector('#stage-pinball').clientWidth }; });
+    const bx = s0.ox + s0.rx * s0.s, by = s0.oy + s0.ry * s0.s;
     ok(geo.w >= 80 && geo.h >= 80 && geo.inside && !geo.ovl && !geo.hs, tag + ': launch ring >=80px, inside stage, not over 🏠, no hscroll ' + JSON.stringify(geo));
-    ok(s0.mode === 'ready' && s0.btn && geo.cx > geo.sw * 0.7 && geo.cy > geo.sh * 0.45 && Math.abs(geo.cx - s0.rx) < 2 && Math.abs(geo.cy - s0.ry) < 2, tag + ': ball waits at bottom right, ring on the ball');
-    ok(s0.n === (vp.width >= 500 ? 5 : 4) && s0.kinds.length === s0.n, tag + ': ' + s0.n + ' cups ' + s0.kinds.join());
-    await sleep(500); await shot('a');
-    /* tap -> launched */
-    await p.click('#pb-launch', { force: true }); await sleep(350);
-    let s1 = await PB();
-    ok(s1.mode === 'fly' && !s1.btn && s1.y < s0.ry - 40, tag + ': tapping the ball launches it upward (y ' + Math.round(s0.ry) + ' -> ' + Math.round(s1.y) + ')');
-    await shot('b');
-    let inb = true, moved = 0, last = s1.y, seenCheer = false;
-    for (let k = 0; k < 20; k++) { await sleep(150); const s = await PB(); if (s.x < -1 || s.x > s.W + 1 || s.y < -1 || s.y > s.H + 1) inb = false; if (Math.abs(s.y - last) > 5) moved++; last = s.y; if (s.mode === 'cheer') { seenCheer = true; break; } }
-    ok(inb && moved >= 3, tag + ': ball keeps moving and stays on the board (moved ' + moved + ')');
+    ok(s0.mode === 'ready' && s0.btn && bx > geo.sw * 0.5 && by > geo.sh * 0.6 && Math.hypot(geo.cx - bx, geo.cy - by) < 36, tag + ': ball waits at bottom right inside the ring');
+    ok(s0.kinds.length === 5 && new Set(s0.kinds).size === 5, tag + ': 5 cups, 5 different reactions ' + s0.kinds.join());
+    const board = await p.evaluate(() => { const q = window.__pb; return { l: q.ox, r: q.ox + q.L.W * q.s, t: q.oy, b: q.oy + q.L.H * q.s, W: q.W, H: q.H }; });
+    ok(board.l >= 0 && board.r <= board.W && board.t >= 0 && board.b <= board.H && Math.abs(board.l - (board.W - board.r)) < 2, tag + ': board fits and is centered ' + JSON.stringify(board));
+    await sleep(300); await shot('a');
+    /* flippers: left half / right half, hold to raise, release to lower */
+    const stb = await p.locator('#stage-pinball').boundingBox();
+    const fy = stb.y + stb.height * 0.7, lx = stb.x + stb.width * 0.25, rx = stb.x + stb.width * 0.75;
+    await p.mouse.move(lx, fy); await p.mouse.down(); await sleep(250);
+    let f1 = (await PB()).fl;
+    ok(f1[0].want && !f1[1].want && f1[0].a < f1[0].rest - 0.7 && Math.abs(f1[1].a - f1[1].rest) < 0.01, tag + ': tapping the left half raises only the left flipper');
+    await shot('flip');
+    await p.mouse.up(); await sleep(300);
+    f1 = (await PB()).fl;
+    ok(!f1[0].want && Math.abs(f1[0].a - f1[0].rest) < 0.01, tag + ': releasing lowers it');
+    await p.mouse.move(rx, fy); await p.mouse.down(); await sleep(250);
+    f1 = (await PB()).fl;
+    ok(f1[1].want && !f1[0].want && f1[1].a < f1[1].rest - 0.7, tag + ': tapping the right half raises only the right flipper');
+    await p.mouse.up(); await sleep(300);
+    /* multi-touch with pointer ids */
+    await p.evaluate(([l, r, y]) => { const cv = document.querySelector('#pb-cv'); [[l, 31], [r, 32]].forEach(([x, id]) => cv.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: id, clientX: x, clientY: y }))); }, [lx, rx, fy]);
+    f1 = (await PB()).fl;
+    ok(f1[0].want && f1[1].want, tag + ': two fingers raise both flippers');
+    await p.evaluate(() => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 31 })));
+    f1 = (await PB()).fl;
+    ok(!f1[0].want && f1[1].want, tag + ': lifting one finger lowers only that flipper');
+    await p.evaluate(() => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 32 })));
+    await sleep(250);
+    /* a flipper swing sends a ball upward (both sides) */
+    const kick = await p.evaluate(() => { const q = window.__pb, out = []; [0, 1].forEach(i => {
+        q.mode = 'fly'; q.tFly = 0; q.tLaunch = 0; q.ball.s = 1; const f = q.fl[i];
+        q.fl.forEach(g => { g.want = false; g.a = g.rest; }); q.step(0.2);
+        const tx = f.px + f.dir * q.L.fl * Math.cos(f.rest), ty = f.py + q.L.fl * Math.sin(f.rest);
+        q.ball.x = f.px + (tx - f.px) * 0.7; q.ball.y = f.py + (ty - f.py) * 0.7 - q.L.R - q.L.fr - 2; q.ball.vx = 0; q.ball.vy = 0;
+        let vmin = 0; f.want = true; for (let k = 0; k < 30; k++) { q.step(1 / 120); vmin = Math.min(vmin, q.ball.vy); }
+        f.want = false; out.push(vmin); });
+      q.ball.s = 1; return out; });
+    ok(kick[0] < -250 && kick[1] < -250, tag + ': flipper swing launches the ball upward ' + kick.map(Math.round));
+    await p.evaluate(() => { const q = window.__pb; q.fl.forEach(g => { g.want = false; }); q.ready(); });
     await sleep(300);
-    /* the lane sim: 40 launches end in a cup or return, never hang */
-    const sim = await p.evaluate(() => { const q = window.__pb; let bad = 0, kinds = {}; for (let k = 0; k < 40; k++) { q.mode = 'ready'; q.ball.x = q.rest.x; q.ball.y = q.rest.y; q.ball.s = 1; document.querySelector('#pb-launch').dispatchEvent(new PointerEvent('pointerdown')); let t = 0; while (q.mode === 'fly' && t < 40) { q.step(1 / 60); t += 1 / 60; } if (q.mode === 'cheer') kinds[q.scored] = 1; else bad++; } q.mode = 'ready'; return { bad, n: Object.keys(kinds).length }; });
-    ok(sim.bad <= 3 && sim.n >= 3, tag + ': 40 simulated launches mostly reach a cup, ' + sim.n + ' different cups ' + JSON.stringify(sim));
-    await p.evaluate(() => { const q = window.__pb; q.mode = 'ready'; q.ball.x = q.rest.x; q.ball.y = q.rest.y; q.ball.s = 1; document.querySelector('#pb-launch').hidden = false; document.querySelector('#fx-pinball').innerHTML = ''; });
+    /* tap the ball -> plunger, then launch up the lane */
+    await p.click('#pb-launch', { force: true }); await sleep(120);
+    ok((await PB()).mode === 'plunge' && !(await PB()).btn, tag + ': tapping the ball pulls the plunger');
+    await sleep(500);
+    const s1 = await PB();
+    ok(s1.mode === 'fly' && s1.y < s0.ry - 100, tag + ': ball shoots up the lane (y ' + Math.round(s0.ry) + ' -> ' + Math.round(s1.y) + ')');
+    await shot('b');
+    let cheer = false;
+    for (let k = 0; k < 120 && !cheer; k++) { await sleep(150); cheer = (await PB()).mode === 'cheer'; if (k === 10) await shot('c'); }
+    ok(cheer, tag + ': left alone, the ball always ends in a cup');
+    await sleep(300);
+    /* many simulated shots: stays on the board, never hangs, reaches every cup */
+    const run = play => p.evaluate(play => { const q = window.__pb, L = q.L; let bad = 0, oob = 0; const cups = {};
+      for (let k = 0; k < (play ? 100 : 60); k++) { q.ready(); q.ball.s = 1; document.querySelector('#pb-launch').dispatchEvent(new PointerEvent('pointerdown'));
+        let t = 0, nextp = 0; while ((q.mode === 'plunge' || q.mode === 'fly') && t < 60) { if (play && t >= nextp) { nextp = t + Math.random() * 0.5; q.fl[0].want = Math.random() < 0.5; q.fl[1].want = Math.random() < 0.5; } q.step(1 / 60); t += 1 / 60; const b = q.ball; if (b.x < 0 || b.x > L.W || b.y < 0 || b.y > L.H) oob++; }
+        q.fl[0].want = q.fl[1].want = false;
+        if (q.mode === 'cheer') cups[q.scored] = (cups[q.scored] || 0) + 1; else bad++; }
+      q.ready(); return { bad, oob, n: Object.keys(cups).length, cups }; }, play);
+    const idle = await run(false), played = await run(true);
+    ok(idle.bad === 0 && idle.oob === 0 && idle.n >= 2, tag + ': 60 hands-off shots all end in a cup, none off the board ' + JSON.stringify(idle));
+    ok(played.bad === 0 && played.oob === 0 && played.n === 5, tag + ': 100 shots with random flipper play: every cup reached, none stuck or off the board ' + JSON.stringify(played));
+    await p.evaluate(() => { const q = window.__pb; q.ready(); document.querySelector('#fx-pinball').innerHTML = ''; });
     /* each cup -> its own reaction */
     const kinds = s0.kinds;
     for (let i = 0; i < kinds.length; i++) {
@@ -1644,34 +1692,28 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       const okWord = kinds[i] === 'animal' ? /さん$/.test(bw) : bw === want;
       ok(st.mode === 'cheer' && st.fx >= 1 && okWord && sy.length >= 1 && sy[sy.length - 1].t === bw + '！', tag + ': cup ' + i + ' (' + kinds[i] + ') reacts: mode ' + st.mode + ', fx ' + st.fx + ', word ' + bw + ', say ' + (sy.length ? sy[sy.length - 1].t : '-'));
       await shot('cup' + i);
-      if (i === 0) {   /* the first one: wait for the natural return to the lower right */
+      if (i === 0) {
         let back = false; for (let k = 0; k < 30 && !back; k++) { await sleep(150); back = (await PB()).mode === 'ready'; }
         const sb = await PB();
         ok(back && sb.btn && Math.abs(sb.x - sb.rx) < 2 && Math.abs(sb.y - sb.ry) < 2, tag + ': after the reaction the ball returns to the lower right and can be tapped again');
       } else { await p.evaluate(() => { window.__pb.wait = 0.05; }); await sleep(250); }
     }
     ok((await PB()).fx <= 160, tag + ': fx count stays bounded');
-    /* relaunch works; then a stuck ball is nudged / returned (no failure screen) */
+    /* rapid flipper tapping stays sane */
     await sleep(1500);
-    await p.click('#pb-launch', { force: true }); await sleep(300);
-    ok((await PB()).mode === 'fly', tag + ': second launch works');
-    await p.evaluate(() => { const q = window.__pb; q.ball.x = q.W * 0.3; q.ball.y = q.cupTop * 0.3; q.ball.vx = 0; q.ball.vy = 0; q.g = 0; q.still = 0; });
-    await sleep(900);
-    const nud = await PB();
-    ok(nud.mode !== 'ready' ? true : true, tag + ': (gravity-off ball) state ' + nud.mode);
-    ok(await p.evaluate(() => { const q = window.__pb; return Math.abs(q.ball.vx) + Math.abs(q.ball.vy) > 1; }), tag + ': motionless ball gets a gentle nudge');
+    for (let k = 0; k < 30; k++) { await p.mouse.click(k % 2 ? lx : rx, fy); }
+    ok(p.errs.length === 0, tag + ': 30 rapid flipper taps, no errors');
     /* leave mid-reaction: nothing left behind */
-    await p.evaluate(() => { window.__pb.g = window.__pb.H * 0.75; window.__pb.drop(0); });
+    await p.evaluate(() => { window.__pb.drop(0); });
     await sleep(100);
     await p.click('#homebtn'); await sleep(200);
     const f0 = await p.evaluate(() => window.__pbFrames);
     await sleep(500);
-    const f1 = await p.evaluate(() => window.__pbFrames), sl = await PB();
-    ok(f1 === f0 && !sl.on && sl.raf === 0, tag + ': leave() stops the rAF loop (' + f0 + ' -> ' + f1 + ')');
+    const f2 = await p.evaluate(() => window.__pbFrames), sl = await PB();
+    ok(f2 === f0 && !sl.on && sl.raf === 0, tag + ': leave() stops the rAF loop (' + f0 + ' -> ' + f2 + ')');
     await sleep(1200);
     const sl2 = await PB();
-    ok(sl2.fx === 0 && (await big()) === '' && await p.locator('#home').isVisible(), tag + ': leave() clears timers/fx (fx ' + sl2.fx + ')');
-    /* re-enter -> fresh state */
+    ok(sl2.fx === 0 && (await big()) === '' && await p.locator('#home').isVisible() && sl2.fl.every(f => !f.want), tag + ': leave() clears timers/fx/flippers (fx ' + sl2.fx + ')');
     await tapTile(p, 'ピンボール'); await sleep(500);
     const re = await PB();
     ok(re.on && re.mode === 'ready' && re.btn && re.fx === 0 && Math.abs(re.x - re.rx) < 2 && Math.abs(re.y - re.ry) < 2, tag + ': re-entering resets to a waiting ball');
