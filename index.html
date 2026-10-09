@@ -391,10 +391,11 @@
   /* ねこさがし */
   #stage-neko { background: #FFE3C4; }
   .nk-bg { position: absolute; inset: 0; overflow: hidden; }
-  .nk-bg.room { background: linear-gradient(#FFE6C9 0 49%, #C98B52 49% 52%, #EBC08A 52% 100%); }
-  .nk-bg.room::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 49%; background: radial-gradient(circle at 14px 14px, rgba(255,255,255,.55) 3px, transparent 4px) 0 0 / 28px 28px; }
-  .nk-bg.room::after { content: ''; position: absolute; left: 0; right: 0; top: 52%; bottom: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--u) * .9 - 3px), rgba(150,95,50,.18) calc(var(--u) * .9 - 3px) calc(var(--u) * .9)); }
-  .nk-win { position: absolute; right: 7%; top: 17%; width: calc(var(--u) * .85); height: calc(var(--u) * .75); border: 6px solid #fff; border-radius: 14px; background: linear-gradient(#9ED8FF, #D9F3FF); box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+  .nk-bg.room { --fl: 27%; --wn: .6; background: linear-gradient(#FFE6C9 0 var(--fl), #C98B52 var(--fl) calc(var(--fl) + 3%), #EBC08A calc(var(--fl) + 3%) 100%); }
+  @media (min-aspect-ratio: 23/20) { .nk-bg.room { --fl: 40%; --wn: .52; } }
+  .nk-bg.room::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: var(--fl); background: radial-gradient(circle at 14px 14px, rgba(255,255,255,.55) 3px, transparent 4px) 0 0 / 28px 28px; }
+  .nk-bg.room::after { content: ''; position: absolute; left: 0; right: 0; top: calc(var(--fl) + 3%); bottom: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--u) * .9 - 3px), rgba(150,95,50,.18) calc(var(--u) * .9 - 3px) calc(var(--u) * .9)); }
+  .nk-win { position: absolute; right: 7%; top: calc(var(--fl) - var(--u) * var(--wn) - 4%); width: calc(var(--u) * var(--wn) * 1.13); height: calc(var(--u) * var(--wn)); border: 6px solid #fff; border-radius: 14px; background: linear-gradient(#9ED8FF, #D9F3FF); box-shadow: 0 3px 0 rgba(0,0,0,.1); }
   .nk-win::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 5px; margin-left: -2px; background: #fff; }
   .nk-win::after { content: '☁️'; position: absolute; left: 10%; top: 12%; font-size: calc(var(--u) * .28); line-height: 1; }
   .nk-bg.park { background: linear-gradient(#9ED8FF 0, #D9F3FF 40%, #A6E58A 40%, #6CC35A 100%); }
@@ -6003,7 +6004,7 @@
   function nkClamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function nkDims() {
     var W = nkStage.clientWidth, H = nkStage.clientHeight, land = W > H * 1.15;
-    var u = land ? Math.min(W / 5.2, H / 2.8) : Math.min(W / 3.2, H / 5);
+    var u = land ? Math.min(W / 4.7, H / 2.55) : Math.min(W / 2.65, H / 4.3);
     return { W: W, H: H, land: land, u: u };
   }
   function nkDepth(y) { return nkClamp((y - 34) / 60, 0, 1); }
