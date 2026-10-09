@@ -388,6 +388,35 @@
     animation: laser 1.8s ease-in-out infinite alternate;
   }
   @keyframes laser { from { top: 18%; } to { top: 78%; } }
+  /* ねこさがし */
+  #stage-neko { background: #FFE3C4; }
+  .nk-bg { position: absolute; inset: 0; overflow: hidden; }
+  .nk-bg.room { background: linear-gradient(#FFE6C9 0 49%, #C98B52 49% 52%, #EBC08A 52% 100%); }
+  .nk-bg.room::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 49%; background: radial-gradient(circle at 14px 14px, rgba(255,255,255,.55) 3px, transparent 4px) 0 0 / 28px 28px; }
+  .nk-bg.room::after { content: ''; position: absolute; left: 0; right: 0; top: 52%; bottom: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(var(--u) * .9 - 3px), rgba(150,95,50,.18) calc(var(--u) * .9 - 3px) calc(var(--u) * .9)); }
+  .nk-win { position: absolute; right: 7%; top: 17%; width: calc(var(--u) * .85); height: calc(var(--u) * .75); border: 6px solid #fff; border-radius: 14px; background: linear-gradient(#9ED8FF, #D9F3FF); box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+  .nk-win::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 5px; margin-left: -2px; background: #fff; }
+  .nk-win::after { content: '☁️'; position: absolute; left: 10%; top: 12%; font-size: calc(var(--u) * .28); line-height: 1; }
+  .nk-bg.park { background: linear-gradient(#9ED8FF 0, #D9F3FF 40%, #A6E58A 40%, #6CC35A 100%); }
+  .nk-bg.park::before { content: ''; position: absolute; left: -20%; right: -20%; top: 34%; height: 30%; border-radius: 50%; background: #93DD78; }
+  .nk-sun { position: absolute; right: 8%; top: 14%; font-size: calc(var(--u) * .5); line-height: 1; }
+  .nk-cloud { position: absolute; left: 10%; top: 22%; font-size: calc(var(--u) * .5); line-height: 1; opacity: .9; }
+  .nk-world { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .nk-hits { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .nk-count { position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); left: 80px; right: 80px; height: 56px; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 10px; pointer-events: none; }
+  .nk-face { width: 52px; height: 52px; border-radius: 50%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1; background: rgba(255,255,255,.55); border: 4px dashed rgba(107,79,60,.45); filter: grayscale(1); opacity: .55; overflow: hidden; }
+  .nk-face.on { background: #fff; border: 4px solid var(--ink); filter: none; opacity: 1; }
+  .nk-face img { width: 38px; height: auto; display: block; }
+  .nk-g { position: absolute; pointer-events: none; }
+  .nk-cat { position: absolute; z-index: 0; pointer-events: none; }
+  .nk-o { position: absolute; pointer-events: none; }
+  .nk-prop { position: relative; z-index: 1; display: block; padding: 0; border: 0; background: none; pointer-events: auto; transform-origin: 50% 100%; -webkit-tap-highlight-color: transparent; }
+  .nk-prop::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 80px); height: max(100%, 80px); transform: translate(-50%, -50%); }
+  .nk-sp { display: block; -webkit-user-select: none; user-select: none; }
+  .nk-sp img { width: 100%; height: auto; display: block; object-fit: contain; pointer-events: none; -webkit-user-drag: none; filter: drop-shadow(0 3px 0 rgba(0,0,0,.1)); }
+  .nk-sp.em { display: flex; align-items: flex-end; justify-content: center; line-height: 1; filter: drop-shadow(0 3px 0 rgba(0,0,0,.1)); }
+  .nk-sp.flip { transform: scaleX(-1); }
+  .nk-hit { position: absolute; width: 80px; height: 80px; padding: 0; border: 0; background: transparent; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
   /* ピンボール */
   #stage-pinball { background: #D8EEFF; }
   #pb-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
@@ -1275,6 +1304,14 @@
     <canvas id="pb-cv" aria-label="ピンボール"></canvas>
     <button id="pb-launch" type="button" aria-label="ボールを ぽん"></button>
     <div class="fx" id="fx-pinball"></div>
+  </section>
+
+  <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
+    <div class="nk-bg" id="nk-bg" aria-hidden="true"></div>
+    <div class="nk-world" id="nk-world"></div>
+    <div class="nk-hits" id="nk-hits"></div>
+    <div class="nk-count" id="nk-count" role="img" aria-label="ねこ 3びき"></div>
+    <div class="fx" id="fx-neko"></div>
   </section>
 
   <section class="stage" id="stage-drive" aria-label="ドライブ" hidden>
@@ -5929,6 +5966,363 @@
   $('#setx').addEventListener('click', closeSettings);
   holdButton(setBtn, 1500, openSettings);
 
+  /* ====== ねこさがし ====== */
+  /* え: キー → 'assets/neko/<key>.webp'（とうめい WebP・がいせつ四角でトリミングずみ）。キーが あれば <img>（はば指定・たかさ auto）、なければ えもじ。
+     キー: cat_sit cat_sleep cat_peek cat_side cat_tail cat_walk cat_jump / sofa plant box toybox basket table bear ball / tree bush slide bench rock flowers mushroom bucket */
+  var NEKO_IMG = {};
+  var nkStage = $('#stage-neko'), nkBg = $('#nk-bg'), nkWorld = $('#nk-world'), nkHits = $('#nk-hits'), nkCount = $('#nk-count'), fxNk = $('#fx-neko');
+  var NK_H1 = 10000, NK_H2 = 8000;   /* ヒント: さいしょ 10びょう、そのあと 8びょうごと */
+  var NK_EMO = { cat_sit: '🐱', cat_sleep: '😺', cat_peek: '😺', cat_side: '😸', cat_tail: '🐈', cat_walk: '🐈', cat_jump: '😸',
+    sofa: '🛋️', plant: '🪴', box: '📦', toybox: '🧰', basket: '🧺', table: '🍽️', bear: '🧸', ball: '⚽',
+    tree: '🌳', bush: '🌿', slide: '🛝', bench: '🪑', rock: '🪨', flowers: '🌷', mushroom: '🍄', bucket: '🪣' };
+  var NK_NAME = { sofa: 'そふぁ', plant: 'うえきばち', box: 'だんぼーる', toybox: 'おもちゃばこ', basket: 'かご', table: 'てーぶる', bear: 'くまさん', ball: 'ぼーる',
+    tree: 'き', bush: 'くさむら', slide: 'すべりだい', bench: 'べんち', rock: 'いし', flowers: 'おはな', mushroom: 'きのこ', bucket: 'ばけつ' };
+  /* ひょうじの おおきさ: 1 = u（ばめんの たんい。nkDims 参照）。奥ほど ちいさく（0.72〜1.0 ばい） */
+  var NK_PW = { sofa: 1.25, plant: 0.62, box: 0.85, toybox: 0.9, basket: 0.75, table: 1.2, bear: 0.55, ball: 0.4,
+    tree: 1.1, bush: 1.0, slide: 1.3, bench: 1.15, rock: 0.8, flowers: 0.55, mushroom: 0.5, bucket: 0.5 };
+  var NK_PH = { sofa: 0.7, plant: 1.2, box: 0.85, toybox: 0.8, basket: 0.85, table: 0.75, bear: 1.1, ball: 1, tree: 1.3, bush: 0.8, slide: 1, bench: 0.75, rock: 0.75, flowers: 1, mushroom: 1, bucket: 1 };   /* たかさ/はば（ばしょ けいさんの めやす） */
+  var NK_CW = { cat_sit: 0.7, cat_sleep: 0.85, cat_walk: 0.9, cat_peek: 0.85, cat_side: 0.6, cat_tail: 0.5, cat_jump: 0.95 };
+  var NK_CH = { cat_sit: 1.1, cat_sleep: 0.55, cat_walk: 0.65, cat_peek: 0.75, cat_side: 1, cat_tail: 1.3, cat_jump: 1.05 };
+  var NK_SIDE_NATIVE = -1;   /* cat_side の え（はんてん なし）が のぞく がわ: -1 = ものの ひだりがわ（みぎ はしが ものの うしろ） */
+  var NK_SC = [
+    { id: 'room', big: ['sofa', 'plant', 'box', 'toybox', 'basket', 'table'], small: ['bear', 'ball'] },
+    { id: 'park', big: ['tree', 'bush', 'slide', 'bench', 'rock'], small: ['flowers', 'mushroom', 'bucket'] }
+  ];
+  /* レイアウトわく [x%, y%(ものの した)]。たて: 3れつ ぐらい / よこ: 5れつ ぐらい */
+  var NK_LP = [
+    [[30, 36], [70, 38], [18, 54], [50, 52], [82, 55], [32, 70], [68, 72], [22, 90], [56, 92], [84, 90]],
+    [[50, 34], [20, 40], [80, 42], [36, 56], [68, 58], [18, 72], [82, 74], [50, 76], [30, 92], [72, 92]],
+    [[24, 36], [76, 36], [50, 47], [18, 60], [82, 61], [50, 70], [28, 83], [74, 84], [50, 94]]
+  ];
+  var NK_LL = [
+    [[14, 54], [38, 52], [62, 54], [86, 52], [26, 76], [50, 74], [74, 76], [12, 96], [38, 96], [64, 96], [88, 96]],
+    [[10, 56], [30, 54], [50, 56], [70, 54], [90, 56], [20, 78], [40, 76], [60, 78], [80, 76], [30, 97], [70, 97]],
+    [[16, 54], [50, 52], [84, 54], [10, 76], [34, 74], [66, 74], [90, 76], [22, 96], [50, 97], [78, 96]]
+  ];
+  var nk = { spec: null, D: null, round: 0, found: 0, busy: false, hintT: 0 };
+  function nkClamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function nkDims() {
+    var W = nkStage.clientWidth, H = nkStage.clientHeight, land = W > H * 1.15;
+    var u = land ? Math.min(W / 5.2, H / 2.8) : Math.min(W / 3.2, H / 5);
+    return { W: W, H: H, land: land, u: u };
+  }
+  function nkDepth(y) { return nkClamp((y - 34) / 60, 0, 1); }
+  function nkTypes(r) {
+    if (r === 0) return shuffle(['open', 'open', 'top']);
+    if (r === 1) return shuffle(['open', pick(['top', 'side']), pick(['top', 'side'])]);
+    var pool = ['open', 'top', 'side', 'open', 'top', 'side', 'tail'], out = [], tails = 0;
+    while (out.length < 3) {
+      var t = pick(pool);
+      if (t === 'tail') { if (tails) continue; tails++; }
+      out.push(t);
+    }
+    return out;
+  }
+  function nkPR(D, p) {
+    var w = p.wu * D.u, h = w * (NK_PH[p.key] || 0.9), cx = p.x / 100 * D.W, b = p.y / 100 * D.H;
+    return { l: cx - w / 2, r: cx + w / 2, t: b - h, b: b, w: w, h: h, cx: cx };
+  }
+  /* ねこの みえている ぶぶん（px の めやす） */
+  function nkVis(D, p, c) {
+    var h = nkPR(D, p), cw = c.cw * D.u, ch = cw * NK_CH[c.key];
+    if (c.hide === 'open') { var ox = c.ox / 100 * D.W, ob = c.oy / 100 * D.H; return { l: ox - cw / 2, r: ox + cw / 2, t: ob - ch, b: ob }; }
+    if (c.hide === 'side') {
+      var ov = 0.14 * cw, bb = h.b - c.v * h.h;
+      return c.dir < 0 ? { l: h.l - cw + ov, r: h.l, t: bb - ch, b: bb } : { l: h.r, r: h.r - ov + cw, t: bb - ch, b: bb };
+    }
+    var cx = h.cx + c.off * h.w, bt = h.t + (c.hide === 'tail' ? 0.12 : 0.15) * h.h;
+    return { l: cx - cw / 2, r: cx + cw / 2, t: bt - ch, b: h.t };
+  }
+  function nkInter(a, b) { return Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t)); }
+  function nkOk(D, sp) {
+    var short = Math.min(D.W, D.H), rs = [];
+    for (var i = 0; i < sp.cats.length; i++) {
+      var c = sp.cats[i], hp = sp.props[c.host], R = nkVis(D, hp, c), cx = (R.l + R.r) / 2;
+      if (R.l < 4 || R.r > D.W - 4 || R.b > D.H - 2) return false;
+      var lim = (Math.abs(cx - D.W / 2) < 110 || R.l < 84) ? 66 : 6;
+      if (R.t < lim) return false;
+      if (Math.max(R.r - R.l, R.b - R.t) < 0.12 * short) return false;
+      var area = (R.r - R.l) * (R.b - R.t), hz = c.hide === 'open' ? hp.z + 1 : hp.z;
+      for (var j = 0; j < sp.props.length; j++) {
+        var q = sp.props[j];
+        if (j === c.host || q.z <= hz) continue;
+        if (nkInter(R, nkPR(D, q)) > 0.25 * area) return false;
+      }
+      rs.push(R);
+    }
+    for (var a = 0; a < rs.length; a++) for (var b = a + 1; b < rs.length; b++) {
+      var dx = Math.abs((rs[a].l + rs[a].r) / 2 - (rs[b].l + rs[b].r) / 2), dy = Math.abs((rs[a].t + rs[a].b) / 2 - (rs[b].t + rs[b].b) / 2);
+      if (Math.max(dx, dy) < 84) return false;
+    }
+    return true;
+  }
+  function nkTry(D, round, sc) {
+    var slots = shuffle(pick(D.land ? NK_LL : NK_LP));
+    var nSmall = Math.min(sc.small.length, 1 + Math.floor(Math.random() * sc.small.length));
+    var N = 6 + Math.floor(Math.random() * 3);
+    var nBig = Math.max(4, Math.min(sc.big.length, N - nSmall));
+    var keys = shuffle(shuffle(sc.big).slice(0, nBig).concat(shuffle(sc.small).slice(0, nSmall)));
+    var props = keys.map(function (k, i) {
+      var s = slots[i], y = s[1] + rand(-1.5, 1.5), dn = nkDepth(y);
+      var wu = NK_PW[k] * (0.72 + 0.28 * dn) * rand(0.95, 1.05), m = wu * D.u / 2 / D.W * 100 + 1;
+      var x = nkClamp(s[0] + rand(-2, 2), m, 100 - m);
+      return { key: k, x: x, y: y, wu: wu, dn: dn, z: Math.round(y * 10) * 10 + i };
+    });
+    var types = nkTypes(round), cats = [], used = {};
+    var hosts = shuffle(props.map(function (p, i) { return i; }));
+    var order = types.map(function (t, i) { return i; }).sort(function (a, b) { return (types[a] === 'open') - (types[b] === 'open'); });
+    for (var oi = 0; oi < order.length; oi++) {
+      var t = types[order[oi]], hi = -1;
+      for (var h = 0; h < hosts.length; h++) {
+        var cand = hosts[h];
+        if (used[cand] || (t !== 'open' && NK_SC.every(function (s) { return s.big.indexOf(props[cand].key) < 0; }))) continue;
+        hi = cand; break;
+      }
+      if (hi < 0) return null;
+      used[hi] = 1;
+      var hp = props[hi], key = t === 'top' ? 'cat_peek' : t === 'side' ? 'cat_side' : t === 'tail' ? 'cat_tail' : pick(['cat_sit', 'cat_sleep', 'cat_walk']);
+      var c = { hide: t, host: hi, key: key, cw: NK_CW[key] * (0.8 + 0.2 * hp.dn), off: rand(-0.22, 0.22), dir: Math.random() < 0.5 ? -1 : 1, v: rand(0.1, 0.3), found: false };
+      if (t === 'side') c.dir = hp.x < 50 ? (Math.random() < 0.8 ? 1 : -1) : (Math.random() < 0.8 ? -1 : 1);
+      if (t === 'open') {
+        var hw = hp.wu * D.u, gap = (hw / 2 + c.cw * D.u * 0.45) / D.W * 100;
+        if (hp.x + c.dir * gap > 94 || hp.x + c.dir * gap < 6) c.dir = -c.dir;
+        c.ox = hp.x + c.dir * gap; c.oy = Math.min(97, hp.y + 1.5);
+      }
+      cats[order[oi]] = c;
+    }
+    return { scene: sc.id, land: D.land, props: props, cats: cats };
+  }
+  function nkMake(D, round) {
+    var sc = NK_SC[round % 2], last = null;
+    for (var t = 0; t < 60; t++) {
+      var sp = nkTry(D, round, sc);
+      if (!sp) continue;
+      last = sp;
+      if (nkOk(D, sp)) return sp;
+    }
+    return last || nkTry(D, round, sc) || nkMake(D, round);
+  }
+  function nkSp(key, wpx, flip) {
+    var d = document.createElement('div');
+    d.className = 'nk-sp' + (flip ? ' flip' : '');
+    d.style.width = wpx + 'px';
+    if (NEKO_IMG[key]) {
+      var im = new Image(); im.alt = ''; im.decoding = 'async'; im.draggable = false;
+      im.addEventListener('load', nkPlaceHits); im.src = NEKO_IMG[key];
+      d.appendChild(im);
+    } else {
+      d.className += ' em'; d.style.height = Math.round(wpx * 0.95) + 'px'; d.style.fontSize = Math.round(wpx * 0.82) + 'px';
+      d.textContent = NK_EMO[key] || '🐱';
+    }
+    return d;
+  }
+  function nkDiv(cls) { var d = document.createElement('div'); d.className = cls; return d; }
+  function nkFinal(c) {   /* みつかった ねこが たつ ばしょ（% 。いちど きめたら ほぞん） */
+    if (c.final) return c.final;
+    var D = nk.D, sp = nk.spec, hp = sp.props[c.host], jw = NK_CW.cat_jump * (0.8 + 0.2 * hp.dn) * D.u, m = jw / 2 / D.W * 100 + 1, f;
+    if (c.hide === 'open') f = { x: c.ox, y: c.oy };
+    else if (c.hide === 'side') f = { x: hp.x + (c.dir < 0 ? -1 : 1) * (hp.wu * D.u / 2 + jw * 0.3) / D.W * 100, y: Math.min(97, hp.y + 2) };
+    else f = { x: hp.x + c.off * hp.wu * D.u / D.W * 100, y: Math.min(97, hp.y + 3) };
+    f.x = nkClamp(f.x, m, 100 - m); c.final = f; c.jw = jw;
+    return f;
+  }
+  function nkMountFound(c) {   /* いまの え を cat_jump に かえて、ものの まえに おく */
+    var D = nk.D, sp = nk.spec, hp = sp.props[c.host], f = nkFinal(c), jw = NK_CW.cat_jump * (0.8 + 0.2 * hp.dn) * D.u;
+    if (c.el && c.el.parentNode) c.el.parentNode.removeChild(c.el);
+    var o = nkDiv('nk-o'); o.style.left = 'calc(' + f.x + '% - ' + (jw / 2) + 'px)'; o.style.bottom = (100 - f.y) + '%'; o.style.width = jw + 'px';
+    o.style.zIndex = hp.z + 5; o.setAttribute('data-nk-cat-el', String(sp.cats.indexOf(c)));
+    o.appendChild(nkSp('cat_jump', jw));
+    nkWorld.appendChild(o); c.el = o;
+  }
+  function nkRender() {
+    var D = nk.D = nkDims(), sp = nk.spec;
+    nkBg.className = 'nk-bg ' + sp.scene; nkStage.setAttribute('data-neko-scene', sp.scene);
+    nkStage.style.setProperty('--u', D.u + 'px');
+    nkBg.innerHTML = sp.scene === 'room' ? '<div class="nk-win"></div>' : '<span class="nk-sun">☀️</span><span class="nk-cloud">☁️</span>';
+    nkWorld.innerHTML = ''; nkHits.innerHTML = '';
+    sp.props.forEach(function (p) {
+      var w = p.wu * D.u, g = nkDiv('nk-g');
+      g.style.left = 'calc(' + p.x + '% - ' + (w / 2) + 'px)'; g.style.bottom = (100 - p.y) + '%'; g.style.width = w + 'px'; g.style.zIndex = p.z;
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'nk-prop'; b.setAttribute('data-neko-prop', p.key); b.setAttribute('aria-label', NK_NAME[p.key]);
+      b.appendChild(nkSp(p.key, w));
+      onTap(b, function () { nkPropTap(p, b); });
+      g.appendChild(b); nkWorld.appendChild(g); p.g = g; p.btn = b;
+    });
+    sp.cats.forEach(function (c, i) {
+      var hp = sp.props[c.host], cw = c.cw * D.u;
+      c.el = null;
+      if (c.found) nkMountFound(c);
+      else if (c.hide === 'open') {
+        var o = nkDiv('nk-o'); o.style.left = 'calc(' + c.ox + '% - ' + (cw / 2) + 'px)'; o.style.bottom = (100 - c.oy) + '%'; o.style.width = cw + 'px'; o.style.zIndex = hp.z + 1;
+        o.appendChild(nkSp(c.key, cw)); nkWorld.appendChild(o); c.el = o;
+      } else {
+        var e = nkDiv('nk-cat'); e.style.width = cw + 'px';
+        if (c.hide === 'side') {
+          var ov = 0.14 * cw; e.style.bottom = (c.v * 100) + '%';
+          if (c.dir < 0) { e.style.right = '100%'; e.style.marginRight = (-ov) + 'px'; } else { e.style.left = '100%'; e.style.marginLeft = (-ov) + 'px'; }
+          e.appendChild(nkSp(c.key, cw, c.dir !== NK_SIDE_NATIVE));
+        } else {
+          e.style.bottom = (c.hide === 'tail' ? 88 : 85) + '%'; e.style.left = (50 + c.off * 100) + '%'; e.style.marginLeft = (-cw / 2) + 'px';
+          e.appendChild(nkSp(c.key, cw));
+        }
+        hp.g.insertBefore(e, hp.btn); c.el = e;
+      }
+      c.el.setAttribute('data-nk-cat-el', String(i));
+      var hb = document.createElement('button');
+      hb.type = 'button'; hb.className = 'nk-hit'; hb.setAttribute('aria-label', 'ねこ');
+      hb.setAttribute('data-neko-cat', String(i)); hb.setAttribute('data-neko-hide', c.hide);
+      if (c.found) hb.setAttribute('data-found', '1');
+      onTap(hb, function () { nkFind(i); });
+      nkHits.appendChild(hb); c.hit = hb;
+    });
+    nkPlaceHits();
+    nkFaces(false);
+  }
+  /* ヒットりょういき: ねこの みえている ぶぶんを ちゅうしんに 80px いじょう（がめんの なかに おさめる） */
+  function nkPlaceHits() {
+    var sp = nk.spec; if (!sp) return;
+    var S = nkStage.getBoundingClientRect();
+    sp.cats.forEach(function (c) {
+      if (!c.hit || !c.el) return;
+      var r = c.el.getBoundingClientRect();
+      if (!r.width && !r.height) return;
+      var l = r.left - S.left, t = r.top - S.top, rr = l + r.width, bb = t + r.height;
+      if (!c.found && sp.props[c.host].btn) {
+        var hr = sp.props[c.host].btn.getBoundingClientRect();
+        if (c.hide === 'top' || c.hide === 'tail') bb = Math.min(bb, hr.top - S.top + 2);
+        else if (c.hide === 'side') { if (c.dir < 0) rr = Math.min(rr, hr.left - S.left + 2); else l = Math.max(l, hr.right - S.left - 2); }
+      }
+      var w = Math.max(80, rr - l), h = Math.max(80, bb - t), cx = (l + rr) / 2, cy = (t + bb) / 2;
+      c.hit.style.width = w + 'px'; c.hit.style.height = h + 'px';
+      c.hit.style.left = nkClamp(cx - w / 2, 0, Math.max(0, S.width - w)) + 'px';
+      c.hit.style.top = nkClamp(cy - h / 2, 0, Math.max(0, S.height - h)) + 'px';
+    });
+  }
+  function nkFaces(pop) {
+    if (!nkCount.children.length) {
+      for (var i = 0; i < 3; i++) {
+        var f = nkDiv('nk-face');
+        f.appendChild(NEKO_IMG.cat_peek ? nkSp('cat_peek', 38) : document.createTextNode('🐱'));
+        nkCount.appendChild(f);
+      }
+    }
+    [].forEach.call(nkCount.children, function (f, i) {
+      var on = i < nk.found, was = f.classList.contains('on');
+      f.classList.toggle('on', on);
+      if (on && !was && pop) f.animate([{ transform: 'scale(.6)' }, { transform: 'scale(1.35)', offset: 0.5 }, { transform: 'scale(1)' }], { duration: reduce ? 120 : 450, easing: 'ease-out' });
+    });
+    nkCount.setAttribute('aria-label', 'ねこ 3びき ' + nk.found + 'ひき みつけた');
+  }
+  function nkMeow(big) {
+    var v = big ? 1 : 0.5;
+    tone(540, 0.16, 'triangle', 0.17 * v, 840);
+    tone(840, 0.36, 'triangle', 0.16 * v, 470, 0.15);
+    tone(1680, 0.3, 'sine', 0.04 * v, 940, 0.15);
+  }
+  function nkPropTap(p, b) {
+    wiggle(b, 7);
+    var nm = NK_NAME[p.key];
+    say(nm); bigWord(nm, '#7B5CC9');
+    tone(440, 0.1, 'triangle', 0.1, 560);
+  }
+  function nkJumpAnim(el, dx, dy, big) {
+    var u = nk.D ? nk.D.u : 100, up = (big ? 0.5 : 0.3) * u;
+    return el.animate([
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.6)' },
+      { transform: 'translate(' + (dx * 0.5) + 'px,' + (dy * 0.5 - up) + 'px) scale(1.25)', offset: 0.45 },
+      { transform: 'translate(0,0) scale(1.1,.88)', offset: 0.75 },
+      { transform: 'translate(0,0) scale(1)' }
+    ], { duration: reduce ? 200 : 650, easing: 'ease-out' });
+  }
+  function nkFind(i) {
+    var sp = nk.spec; if (!sp) return;
+    var c = sp.cats[i];
+    if (c.found) {
+      if (c.el) nkJumpAnim(c.el, 0, 0, false);
+      nkMeow(0);
+      return;
+    }
+    if (nk.busy && nk.found >= 3) return;
+    var S = nkStage.getBoundingClientRect(), hr = c.hit.getBoundingClientRect(), x0 = hr.left + hr.width / 2, y0 = hr.top + hr.height / 2;
+    nkHintClear();
+    c.found = true; nk.found++;
+    nkFinal(c);
+    nkMountFound(c);
+    c.el.setAttribute('data-nk-cat-el', String(i));
+    c.hit.setAttribute('data-found', '1');
+    var r1 = c.el.getBoundingClientRect();
+    var an = nkJumpAnim(c.el, x0 - (r1.left + r1.width / 2), y0 - (r1.top + r1.height / 2), true);
+    an.onfinish = nkPlaceHits;
+    nkPlaceHits();
+    nkMeow(1);
+    say('みーつけた！'); bigWord('みーつけた！', '#FF8A3D');
+    burst(fxNk, r1.left + r1.width / 2 - S.left, r1.top + r1.height / 2 - S.top, { n: 8, emoji: ['✨', '⭐'] });
+    nkFaces(true);
+    if (nk.found >= 3) {
+      nk.busy = true; nkHintClear();
+      later(nkAllDone, 1100);
+    } else nkHintArm(NK_H1);
+  }
+  function nkAllDone() {
+    if (!nk.spec) return;
+    say('ぜんぶ みつけた！'); bigWord('ぜんぶ みつけた！', '#E8362E', 'clamp(40px, 10.5vw, 100px)');
+    arpeggio();
+    nk.spec.cats.forEach(function (c, i) { later(function () { if (c.el) nkJumpAnim(c.el, 0, 0, true); nkMeow(0); }, i * 260); });
+    var D = nk.D;
+    burst(fxNk, D.W / 2, D.H * 0.4, { n: 18, emoji: ['⭐', '🎉', '✨', '🐾'], far: 2 });
+    later(function () { nk.round++; nkStart(1); }, 3600);
+  }
+  function nkHintStop() { if (nk.hintT) { cancel(nk.hintT); nk.hintT = 0; } }
+  function nkHintClear() {
+    nkHintStop();
+    if (nk.spec) nk.spec.cats.forEach(function (c) {
+      if (c.hintAn) { try { c.hintAn.cancel(); } catch (e) {} c.hintAn = null; }
+      if (c.el) c.el.removeAttribute('data-hint');
+    });
+  }
+  function nkHintArm(ms) { nkHintStop(); nk.hintT = later(nkHint, ms); }
+  function nkHint() {
+    nk.hintT = 0;
+    var sp = nk.spec; if (!sp || nk.busy) return;
+    var left = sp.cats.filter(function (c) { return !c.found; });
+    if (!left.length) return;
+    var c = pick(left), el = c.el;
+    if (el) {
+      el.setAttribute('data-hint', '1');
+      c.hintAn = el.animate([
+        { transform: 'translateY(0) rotate(0)' }, { transform: 'translateY(-14px) rotate(-5deg)' }, { transform: 'translateY(0) rotate(0)' },
+        { transform: 'translateY(-14px) rotate(5deg)' }, { transform: 'translateY(0) rotate(0)' }, { transform: 'translateY(-14px) rotate(-5deg)' }, { transform: 'translateY(0) rotate(0)' }
+      ], { duration: reduce ? 500 : 1400, easing: 'ease-in-out' });
+      later(function () { if (el) el.removeAttribute('data-hint'); }, 1500);
+    }
+    tone(760, 0.14, 'triangle', 0.07, 980);
+    nkHintArm(NK_H2);
+  }
+  function nkStart(delay) {
+    nkHintClear(); nk.busy = false; nk.found = 0;
+    nk.D = nkDims();
+    nk.spec = nkMake(nk.D, nk.round);
+    fxNk.innerHTML = '';
+    nkRender();
+    nkWorld.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reduce ? 100 : 400, easing: 'ease-out' });
+    nkHintArm(NK_H1);
+    later(function () { say('ねこは どこかな？'); bigWord('どこかな？', '#7B5CC9'); }, delay ? 700 : 1700);
+  }
+  games.neko = {
+    el: nkStage,
+    enter: function () { nk.round = 0; nkStart(0); },
+    leave: function () {
+      nkHintClear(); nk.busy = true; nk.spec = null;
+      nkWorld.innerHTML = ''; nkHits.innerHTML = ''; fxNk.innerHTML = '';
+    },
+    resize: function () {
+      var D = nkDims(), o = nk.D;
+      if (!nk.spec || !o || (D.W === o.W && D.H === o.H)) return;
+      if (D.land !== o.land) { nkStart(1); } else nkRender();
+    }
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var ICO = {
@@ -5977,12 +6371,13 @@
     koro:  { ico: '🔴', lab: 'ころころボール', br: 'ころころ', c: '#C8F0B0', say: 'ころころボール！' },
     drive: { ico: '🚗', lab: 'ドライブ',       c: '#BFE6FF', say: 'ドライブ！' },
     piano: { ico: '🎹', lab: 'ピアノ',         c: '#FFD6E8', say: 'ピアノ！' },
-    pinball: { ico: '🎱', lab: 'ピンボール',     c: '#D9D0FF', say: 'ピンボール！' }
+    pinball: { ico: '🎱', lab: 'ピンボール',     c: '#D9D0FF', say: 'ピンボール！' },
+    neko:  { ico: '🐱', lab: 'ねこさがし',     c: '#FFD8B0', say: 'ねこさがし！' }
   };
   var HPAGES = [
     { title: 'あそぶ', ico: '🎈', img: 'pg-asobu', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
     { title: 'まなぶ', ico: '🔤', img: 'pg-manabu', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
-    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball'] }
+    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
   var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');

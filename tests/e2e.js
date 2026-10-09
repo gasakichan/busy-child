@@ -23,22 +23,25 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['function drFrame(ts) {', 'function drFrame(ts) { window.__drFrames = (window.__drFrames || 0) + 1;'],
   ['var dr = {', 'var dr = window.__dr = {'],
   ['function pbFrame(ts) {', 'function pbFrame(ts) { window.__pbFrames = (window.__pbFrames || 0) + 1;'],
-  ['var pb = {', 'var pb = window.__pb = {']];
+  ['var pb = {', 'var pb = window.__pb = {'],
+  ['var nk = {', 'var nk = window.__nk = {'],
+  ['games.neko = {', 'window.__nkStart = nkStart; games.neko = {'],
+  ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし'];
 const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
 async function gotoPage(p, n) {
   const cur = await p.evaluate(() => [0, 1, 2].find(i => !document.querySelector('#hm-p' + i).hidden));
   if (cur !== n) { await p.click('.hm-dot:nth-child(' + (n + 1) + ')'); await sleep(280); }
 }
 async function tapTile(p, lab) {
-  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール') ? 2 : PAGE2.has(lab) ? 1 : 0);
+  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし') ? 2 : PAGE2.has(lab) ? 1 : 0);
   await p.click('.hm-page:not([hidden]) .tile[aria-label="' + lab + '"]');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -148,9 +151,9 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const t3 = await tileInfo();
     ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')], ti = document.querySelector('#hm-title img'); return ims.length === 1 && ims.every(i => i.complete && i.naturalWidth > 0) && !!ti && ti.complete && ti.naturalWidth > 0; }), tag + ' page3 koro icon image + title image loaded (ドライブ falls back to the 🚗 emoji)');
     const t1b = tiles[0];
-    ok(t3.length === 4 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 4 tiles, same size as others ' + JSON.stringify(t3));
-    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy, tag + ' page3: first row columns 1-3, 4th tile row 2 column 1');
-    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱', tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱');
+    ok(t3.length === 5 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 5 tiles, same size as others ' + JSON.stringify(t3));
+    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy && t3[4].cx === tiles[1].cx && t3[4].cy === tiles[3].cy, tag + ' page3: first row columns 1-3, 4th/5th tiles row 2 columns 1-2');
+    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico').textContent)) === '🐱', tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし 🐱');
     ok((await p.locator('#hm-title').textContent()) === 'うごかす' && await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && (await says(p)).some(x => x.t === 'うごかす'), tag + ' page3 title, ▶ hidden, ◀ shown, speaks');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
@@ -166,7 +169,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
-    for (let i = 0; i < 22; i++) {
+    for (let i = 0; i < 23; i++) {
       await tapTile(p, LAB[i]); await sleep(i === 8 ? 600 : 500);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
@@ -1030,7 +1033,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 20 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (20 rows)');
+      ok(await p.locator('.st-row.zero').count() === 21 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (21 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -1722,10 +1725,147 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.context().close();
   });
 
+
+  /* ---------- ねこさがし ---------- */
+  const NK_TIMERS = `(function(){ window.__pend = new Map(); const st = window.setTimeout.bind(window), ct = window.clearTimeout.bind(window);
+    window.setTimeout = function(f, ms, ...a){ const id = st(function(){ window.__pend.delete(id); f(...a); }, ms, ...a); window.__pend.set(id, ms); return id; };
+    window.clearTimeout = function(id){ window.__pend.delete(id); return ct(id); }; })();`;
+  TV('neko', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
+    const tag = 'neko ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/neko-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true, init: NK_TIMERS });
+    const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    const pend = () => p.evaluate(() => [...window.__pend.values()].filter(m => m === 10000 || m === 8000).length);
+    const info = () => p.evaluate(() => {
+      const st = document.querySelector('#stage-neko').getBoundingClientRect();
+      const cats = [...document.querySelectorAll('[data-neko-cat]')].map(e => { const r = e.getBoundingClientRect(); return { i: +e.dataset.nekoCat, hide: e.dataset.nekoHide, found: e.dataset.found === '1', w: r.width, h: r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2, inside: r.left >= st.left - 1 && r.right <= st.right + 1 && r.top >= st.top - 1 && r.bottom <= st.bottom + 1 }; });
+      const props = [...document.querySelectorAll('[data-neko-prop]')].map(e => e.dataset.nekoProp);
+      return { cats, props, scene: document.querySelector('#stage-neko').dataset.nekoScene, faces: document.querySelectorAll('.nk-face.on').length, nfaces: document.querySelectorAll('.nk-face').length,
+        hs: document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-neko').scrollWidth > document.querySelector('#stage-neko').clientWidth,
+        sig: [...document.querySelectorAll('.nk-g')].map(g => g.querySelector('[data-neko-prop]').dataset.nekoProp + g.style.left + g.style.bottom).join('|') + '#' + [...document.querySelectorAll('[data-neko-cat]')].map(e => e.dataset.nekoHide).join() };
+    });
+    const tapCat = async i => { const c = (await info()).cats.find(x => x.i === i); await p.mouse.click(c.cx, c.cy); };
+    await tapTile(p, 'ねこさがし'); await sleep(500);
+    ok(await p.locator('#stage-neko').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens ねこさがし');
+    ok((await says(p)).some(x => x.t === 'ねこさがし！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks ねこさがし！, shared 🏠, no adult button');
+    let s0 = await info();
+    ok(s0.cats.length === 3 && s0.nfaces === 3 && s0.faces === 0, tag + ': 3 cats, 3 empty face slots');
+    ok(s0.cats.every(c => c.w >= 79.5 && c.h >= 79.5 && c.inside), tag + ': each cat hit area >= 80px and inside the screen ' + JSON.stringify(s0.cats.map(c => [Math.round(c.w), Math.round(c.h), c.inside])));
+    ok(s0.props.length >= 6 && s0.props.length <= 9 && new Set(s0.props).size === s0.props.length && s0.scene === 'room', tag + ': 6-9 props, first scene is the room (' + s0.props.length + ')');
+    ok(s0.cats.filter(c => c.hide === 'open').length === 2 && s0.cats.filter(c => c.hide === 'top').length === 1, tag + ': round 1 = open x2 + top x1 ' + s0.cats.map(c => c.hide));
+    ok(!s0.hs, tag + ': no horizontal scroll');
+    const small = await p.evaluate(() => [...document.querySelectorAll('.nk-prop')].every(b => { const a = getComputedStyle(b, '::after'); return parseFloat(a.width) >= 79.5 && parseFloat(a.height) >= 79.5; }));
+    ok(small, tag + ': props have >= 80px tap areas');
+    await sleep(1900); await shot('a');
+    /* tapping a prop: reacts, does not find a cat */
+    await clearSays(p);
+    const pk = await p.evaluate(() => { const hits = [...document.querySelectorAll('[data-neko-cat]')].map(e => e.getBoundingClientRect());
+      for (const e of document.querySelectorAll('[data-neko-prop]')) { const r = e.getBoundingClientRect(); for (const fy of [0.6, 0.4, 0.75, 0.5]) { const x = r.left + r.width / 2, y = r.top + r.height * fy;
+        if (!hits.some(h => x >= h.left && x <= h.right && y >= h.top && y <= h.bottom)) { const top = document.elementFromPoint(x, y); if (top && top.closest('[data-neko-prop]') === e) return { x, y, name: e.getAttribute('aria-label') }; } } } return null; });
+    ok(!!pk, tag + ': found a free spot on a prop to tap');
+    if (pk) {
+      await p.mouse.click(pk.x, pk.y); await sleep(250);
+      const sy = await says(p), s1 = await info();
+      ok(sy.length >= 1 && sy[sy.length - 1].t === pk.name && (await big()) === pk.name && s1.faces === 0 && !s1.cats.some(c => c.found), tag + ': prop tap says + shows its name (' + pk.name + '), no cat found');
+    }
+    /* find a cat */
+    await clearSays(p);
+    await tapCat(0); await sleep(300);
+    let s2 = await info(), sy2 = await says(p);
+    ok(s2.cats[0].found && s2.faces === 1 && sy2.some(x => x.t === 'みーつけた！') && (await big()) === 'みーつけた', tag + ': tapping a cat finds it: face filled, みーつけた！ said + shown');
+    ok(await p.evaluate(() => document.querySelector('[data-nk-cat-el="0"] img, [data-nk-cat-el="0"] .em').textContent.includes('😸') || !!document.querySelector('[data-nk-cat-el="0"] img')), tag + ': found cat switches to cat_jump sprite');
+    await sleep(700); await shot('b');
+    s2 = await info();
+    ok(s2.cats[0].w >= 79.5 && s2.cats[0].inside, tag + ': found cat keeps an 80px hit area, still on screen');
+    await tapCat(0); await sleep(200);
+    ok((await info()).faces === 1, tag + ': tapping a found cat again does not count twice');
+    ok((await pend()) >= 1, tag + ': hint timer armed (pending)');
+    await tapCat(1); await sleep(500);
+    ok((await info()).faces === 2, tag + ': 2 found');
+    await clearSays(p);
+    const sigBefore = (await info()).sig, sceneBefore = (await info()).scene;
+    await tapCat(2); await sleep(1500);
+    ok((await says(p)).some(x => x.t === 'ぜんぶ みつけた！') && /ぜんぶ/.test(await big()), tag + ': all three: ぜんぶ みつけた！ said + shown');
+    await shot('c');
+    ok((await info()).faces === 3, tag + ': 3 faces filled');
+    await sleep(3600);
+    const s3 = await info();
+    ok(s3.faces === 0 && s3.cats.length === 3 && s3.cats.every(c => !c.found) && s3.sig !== sigBefore && s3.scene !== sceneBefore, tag + ': next round has a fresh layout and the other scene (' + sceneBefore + ' -> ' + s3.scene + ')');
+    ok(s3.cats.filter(c => c.hide === 'open').length === 1 && s3.cats.filter(c => c.hide === 'top' || c.hide === 'side').length === 2, tag + ': round 2 = open x1 + top/side x2 ' + s3.cats.map(c => c.hide));
+    ok(s3.cats.every(c => c.w >= 79.5 && c.h >= 79.5 && c.inside) && !s3.hs, tag + ': round 2 hit areas ok, no hscroll');
+    await sleep(2000); await shot('d');
+    /* leave: no timers left */
+    await p.click('#homebtn'); await sleep(300);
+    ok(await p.locator('#home').isVisible() && (await pend()) === 0 && (await big()) === '' && await p.evaluate(() => !document.querySelector('[data-neko-cat]') && !document.querySelector('.nk-g') && document.querySelector('#fx-neko').children.length === 0), tag + ': leave() clears timers, cats, props and fx (pending hint/next timers: ' + (await pend()) + ')');
+    await clearSays(p);
+    await sleep(1500);
+    ok((await says(p)).length === 0, tag + ': nothing speaks after leaving');
+    await tapTile(p, 'ねこさがし'); await sleep(500);
+    const re = await info();
+    ok(re.faces === 0 && re.cats.length === 3 && re.scene === 'room' && re.cats.filter(c => c.hide === 'open').length === 2, tag + ': re-entering restarts at round 1 (room)');
+    await p.click('#homebtn'); await sleep(200);
+    ok(p.errs.length === 0, tag + ' no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  /* ---------- ねこさがし: レイアウトの総当たり ---------- */
+  TV('neko-gen', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
+    const tag = 'neko-gen ' + vp.width + 'x' + vp.height;
+    const p = await newPage(br, vp, { deny: true });
+    await tapTile(p, 'ねこさがし'); await sleep(500);
+    const res = await p.evaluate(async () => {
+      const q = window.__nk, out = { n: 0, bad: [], hides: {}, rounds: 0 };
+      const st = document.querySelector('#stage-neko').getBoundingClientRect();
+      for (let r = 0; r < 14; r++) {
+        q.round = r; window.__nkStart(1);
+        await new Promise(res => setTimeout(res, 60));
+        const cats = [...document.querySelectorAll('[data-neko-cat]')];
+        out.n++;
+        const rs = cats.map(e => e.getBoundingClientRect());
+        if (cats.length !== 3) out.bad.push('r' + r + ' cats=' + cats.length);
+        rs.forEach((b, i) => { if (b.width < 79.5 || b.height < 79.5 || b.left < st.left - 1 || b.right > st.right + 1 || b.top < st.top - 1 || b.bottom > st.bottom + 1) out.bad.push('r' + r + ' cat' + i + ' hit ' + Math.round(b.width) + 'x' + Math.round(b.height)); });
+        cats.forEach(e => { out.hides[e.dataset.nekoHide] = (out.hides[e.dataset.nekoHide] || 0) + 1; });
+        const hs = cats.map(e => e.dataset.nekoHide);
+        if (hs.filter(h => h === 'tail').length > 1) out.bad.push('r' + r + ' two tails');
+        if (r === 0 && !(hs.filter(h => h === 'open').length === 2 && hs.filter(h => h === 'top').length === 1)) out.bad.push('r0 mix ' + hs);
+        if (r === 1 && !(hs.filter(h => h === 'open').length === 1 && hs.filter(h => h === 'top' || h === 'side').length === 2)) out.bad.push('r1 mix ' + hs);
+        const np = document.querySelectorAll('[data-neko-prop]').length;
+        if (np < 5 || np > 9) out.bad.push('r' + r + ' props=' + np);
+        // each cat's visible spot sits on screen and the prop sprites stay inside the stage horizontally
+        document.querySelectorAll('.nk-g').forEach(g => { const b = g.getBoundingClientRect(); if (b.left < st.left - 2 || b.right > st.right + 2) out.bad.push('r' + r + ' prop x-out'); });
+        if (document.documentElement.scrollWidth > innerWidth + 1) out.bad.push('r' + r + ' hscroll');
+      }
+      return out;
+    });
+    ok(res.n === 14 && res.bad.length === 0, tag + ': 14 generated rounds valid ' + JSON.stringify(res.bad.slice(0, 6)) + ' hides ' + JSON.stringify(res.hides));
+    ok(p.errs.length === 0, tag + ' no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  /* ---------- ねこさがし: ヒント ---------- */
+  T('neko-hint', async (br) => {
+    const p = await newPage(br, { width: 390, height: 844 }, { deny: true, init: 'window.__nkH1 = 900; window.__nkH2 = 700;' });
+    await tapTile(p, 'ねこさがし'); await sleep(300);
+    const hinted = () => p.evaluate(() => [...document.querySelectorAll('[data-hint]')].map(e => +e.dataset.nkCatEl));
+    ok((await hinted()).length === 0, 'neko-hint: no hint right away');
+    let h = []; for (let k = 0; k < 20 && !h.length; k++) { await sleep(100); h = await hinted(); }
+    ok(h.length === 1, 'neko-hint: one unfound cat starts wiggling after the first delay ' + h);
+    ok(await p.evaluate(() => { const c = document.querySelector('[data-hint]'); return c.getAnimations().length > 0; }), 'neko-hint: the hinted cat is animating');
+    // find cat A, then the hint must reset and never point at found cats
+    const first = (await p.evaluate(() => [...document.querySelectorAll('[data-neko-cat]')].map(e => { const r = e.getBoundingClientRect(); return [+e.dataset.nekoCat, r.left + r.width / 2, r.top + r.height / 2]; })))[0];
+    await p.mouse.click(first[1], first[2]); await sleep(200);
+    ok((await hinted()).length === 0, 'neko-hint: finding a cat clears the hint and resets the timer');
+    let bad = 0, seen = 0;
+    for (let k = 0; k < 40; k++) { await sleep(100); const hh = await hinted(); if (hh.length) seen++; if (hh.includes(first[0])) bad++; }
+    ok(bad === 0 && seen > 0, 'neko-hint: later hints only point at unfound cats (seen ' + seen + ', on found ' + bad + ')');
+    await p.click('#homebtn'); await sleep(200);
+    ok(p.errs.length === 0, 'neko-hint no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
