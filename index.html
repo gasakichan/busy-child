@@ -6153,7 +6153,8 @@
     sp.cats.forEach(function (c, i) {
       var hp = sp.props[c.host], cw = c.cw * D.u;
       c.el = null;
-      if (c.found) nkMountFound(c);
+      if (c.gone) {}
+      else if (c.found) nkMountFound(c);
       else if (c.hide === 'open') {
         var o = nkDiv('nk-o'); o.style.left = 'calc(' + c.ox + '% - ' + (cw / 2) + 'px)'; o.style.bottom = (100 - c.oy) + '%'; o.style.width = cw + 'px'; o.style.zIndex = hp.z + 1;
         o.appendChild(nkSp(c.key, cw)); nkWorld.appendChild(o); c.el = o;
@@ -6169,11 +6170,12 @@
         }
         hp.g.insertBefore(e, hp.btn); c.el = e;
       }
-      c.el.setAttribute('data-nk-cat-el', String(i));
+      if (c.el) c.el.setAttribute('data-nk-cat-el', String(i));
       var hb = document.createElement('button');
       hb.type = 'button'; hb.className = 'nk-hit'; hb.setAttribute('aria-label', 'ねこ');
       hb.setAttribute('data-neko-cat', String(i)); hb.setAttribute('data-neko-hide', c.hide);
       if (c.found) hb.setAttribute('data-found', '1');
+      if (c.gone) hb.hidden = true;
       onTap(hb, function () { nkFind(i); });
       nkHits.appendChild(hb); c.hit = hb;
     });
@@ -6247,7 +6249,7 @@
     if (nk.busy && nk.found >= 3) return;
     var S = nkStage.getBoundingClientRect(), hr = c.hit.getBoundingClientRect(), x0 = hr.left + hr.width / 2, y0 = hr.top + hr.height / 2;
     nkHintClear();
-    c.found = true; nk.found++;
+    c.found = true; c.slot = nk.found; nk.found++;
     nkFinal(c);
     nkMountFound(c);
     c.el.setAttribute('data-nk-cat-el', String(i));
@@ -6260,16 +6262,27 @@
     say('みーつけた！'); bigWord('みーつけた！', '#FF8A3D');
     burst(fxNk, r1.left + r1.width / 2 - S.left, r1.top + r1.height / 2 - S.top, { n: 8, emoji: ['✨', '⭐'] });
     nkFaces(true);
+    later(function () { nkVanish(c); }, reduce ? 300 : 1000);
     if (nk.found >= 3) {
       nk.busy = true; nkHintClear();
-      later(nkAllDone, 1100);
+      later(nkAllDone, reduce ? 900 : 1700);
     } else nkHintArm(NK_H1);
+  }
+  function nkVanish(c) {   /* みつけた ねこは うえの かおの わくへ とんで きえる */
+    var el = c.el; if (!el || c.gone) return;
+    c.gone = true; c.el = null; if (c.hit) c.hit.hidden = true;
+    var slot = nkCount.children[c.slot], r = el.getBoundingClientRect(), dx = 0, dy = -r.height;
+    if (slot) { var q = slot.getBoundingClientRect(); dx = q.left + q.width / 2 - (r.left + r.width / 2); dy = q.top + q.height / 2 - (r.top + r.height / 2); }
+    el.style.pointerEvents = 'none';
+    var an = el.animate([{ transform: 'none', opacity: 1 }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.2)', opacity: 0.2 }],
+      { duration: reduce ? 150 : 550, easing: 'ease-in', fill: 'forwards' });
+    an.onfinish = function () { if (el.parentNode) el.parentNode.removeChild(el); if (slot) nkJumpAnim(slot, 0, 0, false); };
   }
   function nkAllDone() {
     if (!nk.spec) return;
     say('ぜんぶ みつけた！'); bigWord('ぜんぶ みつけた！', '#E8362E', 'clamp(40px, 10.5vw, 100px)');
     arpeggio();
-    nk.spec.cats.forEach(function (c, i) { later(function () { if (c.el) nkJumpAnim(c.el, 0, 0, true); nkMeow(0); }, i * 260); });
+    [].forEach.call(nkCount.children, function (f, i) { later(function () { nkJumpAnim(f, 0, 0, true); nkMeow(0); }, i * 260); });
     var D = nk.D;
     burst(fxNk, D.W / 2, D.H * 0.4, { n: 18, emoji: ['⭐', '🎉', '✨', '🐾'], far: 2 });
     later(function () { nk.round++; nkStart(1); }, 3600);
