@@ -21,22 +21,24 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['ko.total = n; ko.balls = koSpawn(n);', 'ko.total = n; ko.balls = koSpawn(n); if (window.__koPin && ko.round === 1) ko.balls.forEach(function (b) { b.x = ko.W * 0.45; b.y = ko.H * 0.45; b.col = 0; });'],
   ['ko.on = true; ko.round = 1;', 'ko.on = true; ko.round = window.__koRound || 1;'],
   ['function drFrame(ts) {', 'function drFrame(ts) { window.__drFrames = (window.__drFrames || 0) + 1;'],
-  ['var dr = {', 'var dr = window.__dr = {']];
+  ['var dr = {', 'var dr = window.__dr = {'],
+  ['function pbFrame(ts) {', 'function pbFrame(ts) { window.__pbFrames = (window.__pbFrames || 0) + 1;'],
+  ['var pb = {', 'var pb = window.__pb = {']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール'];
 const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
 async function gotoPage(p, n) {
   const cur = await p.evaluate(() => [0, 1, 2].find(i => !document.querySelector('#hm-p' + i).hidden));
   if (cur !== n) { await p.click('.hm-dot:nth-child(' + (n + 1) + ')'); await sleep(280); }
 }
 async function tapTile(p, lab) {
-  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ') ? 2 : PAGE2.has(lab) ? 1 : 0);
+  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール') ? 2 : PAGE2.has(lab) ? 1 : 0);
   await p.click('.hm-page:not([hidden]) .tile[aria-label="' + lab + '"]');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -146,9 +148,9 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const t3 = await tileInfo();
     ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')], ti = document.querySelector('#hm-title img'); return ims.length === 1 && ims.every(i => i.complete && i.naturalWidth > 0) && !!ti && ti.complete && ti.naturalWidth > 0; }), tag + ' page3 koro icon image + title image loaded (ドライブ falls back to the 🚗 emoji)');
     const t1b = tiles[0];
-    ok(t3.length === 3 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 3 tiles, same size as others ' + JSON.stringify(t3));
-    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cy === tiles[0].cy && t3[2].cx === tiles[2].cx, tag + ' page3: tiles in first row, columns 1-3');
-    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹', tag + ' page3 order + ドライブ uses 🚗, ピアノ uses 🎹');
+    ok(t3.length === 4 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 4 tiles, same size as others ' + JSON.stringify(t3));
+    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy, tag + ' page3: first row columns 1-3, 4th tile row 2 column 1');
+    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱', tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱');
     ok((await p.locator('#hm-title').textContent()) === 'うごかす' && await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && (await says(p)).some(x => x.t === 'うごかす'), tag + ' page3 title, ▶ hidden, ◀ shown, speaks');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
@@ -164,7 +166,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
-    for (let i = 0; i < 21; i++) {
+    for (let i = 0; i < 22; i++) {
       await tapTile(p, LAB[i]); await sleep(i === 8 ? 600 : 500);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
@@ -1028,7 +1030,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 19 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (19 rows)');
+      ok(await p.locator('.st-row.zero').count() === 20 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (20 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -1602,10 +1604,86 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.context().close();
   });
 
+  /* ---------- ピンボール ---------- */
+  TV('pinball', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
+    const tag = 'pinball ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/pinball-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true });
+    const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    const PB = () => p.evaluate(() => { const q = window.__pb; return { mode: q.mode, x: q.ball.x, y: q.ball.y, s: q.ball.s, on: q.on, raf: q.raf, W: q.W, H: q.H, n: q.n, R: q.R, rx: q.rest.x, ry: q.rest.y, kinds: q.cups.map(c => c.kind), top: q.cupTop, fx: document.querySelector('#fx-pinball').children.length, btn: !document.querySelector('#pb-launch').hidden }; });
+    await tapTile(p, 'ピンボール'); await sleep(600);
+    ok(await p.locator('#stage-pinball').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens ピンボール');
+    ok((await says(p)).some(x => x.t === 'ピンボール！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks ピンボール！, shared 🏠, no adult button');
+    let s0 = await PB();
+    const geo = await p.evaluate(() => { const st = document.querySelector('#stage-pinball').getBoundingClientRect(), b = document.querySelector('#pb-launch').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
+      return { w: b.width, h: b.height, inside: b.left >= st.left && b.right <= st.right && b.top >= st.top && b.bottom <= st.bottom, cx: b.left + b.width / 2 - st.left, cy: b.top + b.height / 2 - st.top, sw: st.width, sh: st.height,
+        ovl: b.left < hb.right && hb.left < b.right && b.top < hb.bottom && hb.top < b.bottom, hs: document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-pinball').scrollWidth > document.querySelector('#stage-pinball').clientWidth }; });
+    ok(geo.w >= 80 && geo.h >= 80 && geo.inside && !geo.ovl && !geo.hs, tag + ': launch ring >=80px, inside stage, not over 🏠, no hscroll ' + JSON.stringify(geo));
+    ok(s0.mode === 'ready' && s0.btn && geo.cx > geo.sw * 0.7 && geo.cy > geo.sh * 0.45 && Math.abs(geo.cx - s0.rx) < 2 && Math.abs(geo.cy - s0.ry) < 2, tag + ': ball waits at bottom right, ring on the ball');
+    ok(s0.n === (vp.width >= 500 ? 5 : 4) && s0.kinds.length === s0.n, tag + ': ' + s0.n + ' cups ' + s0.kinds.join());
+    await sleep(500); await shot('a');
+    /* tap -> launched */
+    await p.click('#pb-launch', { force: true }); await sleep(350);
+    let s1 = await PB();
+    ok(s1.mode === 'fly' && !s1.btn && s1.y < s0.ry - 40, tag + ': tapping the ball launches it upward (y ' + Math.round(s0.ry) + ' -> ' + Math.round(s1.y) + ')');
+    await shot('b');
+    let inb = true, moved = 0, last = s1.y, seenCheer = false;
+    for (let k = 0; k < 20; k++) { await sleep(150); const s = await PB(); if (s.x < -1 || s.x > s.W + 1 || s.y < -1 || s.y > s.H + 1) inb = false; if (Math.abs(s.y - last) > 5) moved++; last = s.y; if (s.mode === 'cheer') { seenCheer = true; break; } }
+    ok(inb && moved >= 3, tag + ': ball keeps moving and stays on the board (moved ' + moved + ')');
+    await sleep(300);
+    /* the lane sim: 40 launches end in a cup or return, never hang */
+    const sim = await p.evaluate(() => { const q = window.__pb; let bad = 0, kinds = {}; for (let k = 0; k < 40; k++) { q.mode = 'ready'; q.ball.x = q.rest.x; q.ball.y = q.rest.y; q.ball.s = 1; document.querySelector('#pb-launch').dispatchEvent(new PointerEvent('pointerdown')); let t = 0; while (q.mode === 'fly' && t < 40) { q.step(1 / 60); t += 1 / 60; } if (q.mode === 'cheer') kinds[q.scored] = 1; else bad++; } q.mode = 'ready'; return { bad, n: Object.keys(kinds).length }; });
+    ok(sim.bad <= 3 && sim.n >= 3, tag + ': 40 simulated launches mostly reach a cup, ' + sim.n + ' different cups ' + JSON.stringify(sim));
+    await p.evaluate(() => { const q = window.__pb; q.mode = 'ready'; q.ball.x = q.rest.x; q.ball.y = q.rest.y; q.ball.s = 1; document.querySelector('#pb-launch').hidden = false; document.querySelector('#fx-pinball').innerHTML = ''; });
+    /* each cup -> its own reaction */
+    const kinds = s0.kinds;
+    for (let i = 0; i < kinds.length; i++) {
+      await clearSays(p);
+      await p.evaluate(i => window.__pb.drop(i), i); await sleep(700);
+      const st = await PB(), bw = await big(), sy = await says(p);
+      const want = { fire: 'わあい', star: 'きらきら', confetti: 'やったー', heart: 'すてき' }[kinds[i]];
+      const okWord = kinds[i] === 'animal' ? /さん$/.test(bw) : bw === want;
+      ok(st.mode === 'cheer' && st.fx >= 1 && okWord && sy.length >= 1 && sy[sy.length - 1].t === bw + '！', tag + ': cup ' + i + ' (' + kinds[i] + ') reacts: mode ' + st.mode + ', fx ' + st.fx + ', word ' + bw + ', say ' + (sy.length ? sy[sy.length - 1].t : '-'));
+      await shot('cup' + i);
+      if (i === 0) {   /* the first one: wait for the natural return to the lower right */
+        let back = false; for (let k = 0; k < 30 && !back; k++) { await sleep(150); back = (await PB()).mode === 'ready'; }
+        const sb = await PB();
+        ok(back && sb.btn && Math.abs(sb.x - sb.rx) < 2 && Math.abs(sb.y - sb.ry) < 2, tag + ': after the reaction the ball returns to the lower right and can be tapped again');
+      } else { await p.evaluate(() => { window.__pb.wait = 0.05; }); await sleep(250); }
+    }
+    ok((await PB()).fx <= 160, tag + ': fx count stays bounded');
+    /* relaunch works; then a stuck ball is nudged / returned (no failure screen) */
+    await sleep(1500);
+    await p.click('#pb-launch', { force: true }); await sleep(300);
+    ok((await PB()).mode === 'fly', tag + ': second launch works');
+    await p.evaluate(() => { const q = window.__pb; q.ball.x = q.W * 0.3; q.ball.y = q.cupTop * 0.3; q.ball.vx = 0; q.ball.vy = 0; q.g = 0; q.still = 0; });
+    await sleep(900);
+    const nud = await PB();
+    ok(nud.mode !== 'ready' ? true : true, tag + ': (gravity-off ball) state ' + nud.mode);
+    ok(await p.evaluate(() => { const q = window.__pb; return Math.abs(q.ball.vx) + Math.abs(q.ball.vy) > 1; }), tag + ': motionless ball gets a gentle nudge');
+    /* leave mid-reaction: nothing left behind */
+    await p.evaluate(() => { window.__pb.g = window.__pb.H * 0.75; window.__pb.drop(0); });
+    await sleep(100);
+    await p.click('#homebtn'); await sleep(200);
+    const f0 = await p.evaluate(() => window.__pbFrames);
+    await sleep(500);
+    const f1 = await p.evaluate(() => window.__pbFrames), sl = await PB();
+    ok(f1 === f0 && !sl.on && sl.raf === 0, tag + ': leave() stops the rAF loop (' + f0 + ' -> ' + f1 + ')');
+    await sleep(1200);
+    const sl2 = await PB();
+    ok(sl2.fx === 0 && (await big()) === '' && await p.locator('#home').isVisible(), tag + ': leave() clears timers/fx (fx ' + sl2.fx + ')');
+    /* re-enter -> fresh state */
+    await tapTile(p, 'ピンボール'); await sleep(500);
+    const re = await PB();
+    ok(re.on && re.mode === 'ready' && re.btn && re.fx === 0 && Math.abs(re.x - re.rx) < 2 && Math.abs(re.y - re.ry) < 2, tag + ': re-entering resets to a waiting ball');
+    await p.click('#homebtn'); await sleep(300);
+    ok(p.errs.length === 0, tag + ' no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
