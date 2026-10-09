@@ -5495,7 +5495,7 @@
     pb.cups = [];
     for (i = 0; i < n; i++) {
       pb.cups.push({ kind: kinds[i], x0: i * cw, x1: (i + 1) * cw, cx: (i + 0.5) * cw, flash: 0 });
-      if (i > 0) { pb.segs.push({ x1: i * cw, y1: top, x2: i * cw, y2: H }); pb.pegs.push({ x: i * cw, y: top, r: 4 }); }
+      if (i > 0) { pb.segs.push({ x1: i * cw, y1: top, x2: i * cw, y2: H }); pb.pegs.push({ x: i * cw, y: top, r: 4, d: true }); }
     }
     pb.rest.x = W - 52; pb.rest.y = top - R - 18;
     pbBtn.style.left = pb.rest.x + 'px'; pbBtn.style.top = pb.rest.y + 'px';
@@ -5556,8 +5556,10 @@
     if (b.x > W - R) { b.x = W - R; if (b.vx > 0) b.vx = -b.vx * 0.7; }
     if (b.y < R) { b.y = R; if (b.vy < 0) b.vy = -b.vy * 0.6; }
     if (b.y > H - R) { b.y = H - R; if (b.vy > 0) b.vy = -b.vy * 0.3; }
-    for (i = 0; i < pb.bumps.length; i++) { var m = pb.bumps[i]; if (pbHit(b, m.x, m.y, m.x, m.y, R + m.r, pb.tFly > 6 ? 0.6 : 1)) pbBumped(i); }
-    for (i = 0; i < pb.pegs.length; i++) { var q = pb.pegs[i]; pbHit(b, q.x, q.y, q.x, q.y, R + q.r, 0.6); }
+    var ghost = pb.tFly > 6;   /* ながびいたら バンパーや ピンを すりぬけて、めあての カップへ */
+    if (ghost) b.vx += Math.max(-1, Math.min(1, (pb.tx - b.x) / (W * 0.2))) * W * 6 * h;
+    for (i = 0; !ghost && i < pb.bumps.length; i++) { var m = pb.bumps[i]; if (pbHit(b, m.x, m.y, m.x, m.y, R + m.r, pb.tFly > 6 ? 0.6 : 1)) pbBumped(i); }
+    for (i = 0; i < pb.pegs.length; i++) { var q = pb.pegs[i]; if (ghost && !q.d) continue; pbHit(b, q.x, q.y, q.x, q.y, R + q.r, 0.6); }
     for (i = 0; i < pb.segs.length; i++) { var s = pb.segs[i]; pbHit(b, s.x1, s.y1, s.x2, s.y2, R + 4, 0.7); }
   }
   function pbStep(dt) {
