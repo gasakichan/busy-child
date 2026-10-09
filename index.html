@@ -5969,7 +5969,7 @@
   /* ====== ねこさがし ====== */
   /* え: キー → 'assets/neko/<key>.webp'（とうめい WebP・がいせつ四角でトリミングずみ）。キーが あれば <img>（はば指定・たかさ auto）、なければ えもじ。
      キー: cat_sit cat_sleep cat_peek cat_side cat_tail cat_walk cat_jump / sofa plant box toybox basket table bear ball / tree bush slide bench rock flowers mushroom bucket */
-  var NEKO_IMG = {};
+  var NEKO_IMG = { cat_sit: 'assets/neko/cat_sit.webp', cat_sleep: 'assets/neko/cat_sleep.webp', cat_peek: 'assets/neko/cat_peek.webp', cat_side: 'assets/neko/cat_side.webp', cat_tail: 'assets/neko/cat_tail.webp', cat_walk: 'assets/neko/cat_walk.webp', cat_jump: 'assets/neko/cat_jump.webp', sofa: 'assets/neko/sofa.webp', plant: 'assets/neko/plant.webp', box: 'assets/neko/box.webp', toybox: 'assets/neko/toybox.webp', basket: 'assets/neko/basket.webp', table: 'assets/neko/table.webp', bear: 'assets/neko/bear.webp', ball: 'assets/neko/ball.webp', tree: 'assets/neko/tree.webp', bush: 'assets/neko/bush.webp', slide: 'assets/neko/slide.webp', bench: 'assets/neko/bench.webp', rock: 'assets/neko/rock.webp', flowers: 'assets/neko/flowers.webp', mushroom: 'assets/neko/mushroom.webp', bucket: 'assets/neko/bucket.webp' };
   var nkStage = $('#stage-neko'), nkBg = $('#nk-bg'), nkWorld = $('#nk-world'), nkHits = $('#nk-hits'), nkCount = $('#nk-count'), fxNk = $('#fx-neko');
   var NK_H1 = 10000, NK_H2 = 8000;   /* ヒント: さいしょ 10びょう、そのあと 8びょうごと */
   var NK_EMO = { cat_sit: '🐱', cat_sleep: '😺', cat_peek: '😺', cat_side: '😸', cat_tail: '🐈', cat_walk: '🐈', cat_jump: '😸',
@@ -5980,9 +5980,9 @@
   /* ひょうじの おおきさ: 1 = u（ばめんの たんい。nkDims 参照）。奥ほど ちいさく（0.72〜1.0 ばい） */
   var NK_PW = { sofa: 1.25, plant: 0.62, box: 0.85, toybox: 0.9, basket: 0.75, table: 1.2, bear: 0.55, ball: 0.4,
     tree: 1.1, bush: 1.0, slide: 1.3, bench: 1.15, rock: 0.8, flowers: 0.55, mushroom: 0.5, bucket: 0.5 };
-  var NK_PH = { sofa: 0.7, plant: 1.2, box: 0.85, toybox: 0.8, basket: 0.85, table: 0.75, bear: 1.1, ball: 1, tree: 1.3, bush: 0.8, slide: 1, bench: 0.75, rock: 0.75, flowers: 1, mushroom: 1, bucket: 1 };   /* たかさ/はば（ばしょ けいさんの めやす） */
-  var NK_CW = { cat_sit: 0.7, cat_sleep: 0.85, cat_walk: 0.9, cat_peek: 0.85, cat_side: 0.6, cat_tail: 0.5, cat_jump: 0.95 };
-  var NK_CH = { cat_sit: 1.1, cat_sleep: 0.55, cat_walk: 0.65, cat_peek: 0.75, cat_side: 1, cat_tail: 1.3, cat_jump: 1.05 };
+  var NK_PH = { sofa: 0.64, plant: 1.16, box: 0.82, toybox: 0.7, basket: 0.75, table: 0.77, bear: 1.18, ball: 0.98, tree: 1.02, bush: 0.73, slide: 0.73, bench: 0.57, rock: 0.66, flowers: 0.76, mushroom: 0.95, bucket: 0.67 };   /* たかさ/はば（ばしょ けいさんの めやす） */
+  var NK_CW = { cat_sit: 0.7, cat_sleep: 0.85, cat_walk: 0.9, cat_peek: 0.85, cat_side: 0.45, cat_tail: 0.5, cat_jump: 0.8 };
+  var NK_CH = { cat_sit: 1.32, cat_sleep: 0.88, cat_walk: 0.87, cat_peek: 0.88, cat_side: 1.98, cat_tail: 1.83, cat_jump: 1.32 };
   var NK_SIDE_NATIVE = -1;   /* cat_side の え（はんてん なし）が のぞく がわ: -1 = ものの ひだりがわ（みぎ はしが ものの うしろ） */
   var NK_SC = [
     { id: 'room', big: ['sofa', 'plant', 'box', 'toybox', 'basket', 'table'], small: ['bear', 'ball'] },
@@ -6345,6 +6345,7 @@
     sticker: 'assets/ico/sticker.webp',
     yubi: 'assets/ico/yubi.webp',
     koro: 'assets/ico/koro.webp',
+    neko: 'assets/ico/neko.webp',
     'pg-asobu': 'assets/ico/pg-asobu.webp',
     'pg-manabu': 'assets/ico/pg-manabu.webp',
     'pg-ugokasu': 'assets/ico/pg-ugokasu.webp'
