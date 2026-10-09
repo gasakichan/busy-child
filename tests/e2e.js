@@ -25,7 +25,8 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['function pbFrame(ts) {', 'function pbFrame(ts) { window.__pbFrames = (window.__pbFrames || 0) + 1;'],
   ['var pb = {', 'var pb = window.__pb = {'],
   ['var nk = {', 'var nk = window.__nk = {'],
-  ['games.neko = {', 'window.__nkStart = nkStart; games.neko = {'],
+  ['games.neko = {', 'window.__nkStart = nkStart; window.__nkMake = nkMake; window.__nkPR = nkPR; window.__nkCatR = nkCatR; games.neko = {'],
+  ['var NK_SOLID = {', 'var NK_SOLID = window.__nkSolid = {'],
   ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
@@ -1730,6 +1731,62 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   const NK_TIMERS = `(function(){ window.__pend = new Map(); const st = window.setTimeout.bind(window), ct = window.clearTimeout.bind(window);
     window.setTimeout = function(f, ms, ...a){ const id = st(function(){ window.__pend.delete(id); f(...a); }, ms, ...a); window.__pend.set(id, ms); return id; };
     window.clearTimeout = function(id){ window.__pend.delete(id); return ct(id); }; })();`;
+  /* ねこさがし: ページの なかで、きれめ・みえかた・ゆかを しらべる（NK_SOLID と えの ひょうじ ばしょ から）。わるい ところの せつめいを かえす */
+  const nkGeo = () => {
+    const solid = window.__nkSolid, rows = {}; for (const k in solid) rows[k] = solid[k].split('|');
+    const cell = (key, u, v) => !(u < 0 || v < 0 || u >= 1 || v >= 1) && rows[key][(v * 16) | 0][(u * 16) | 0] === '1';
+    const st = document.querySelector('#stage-neko').getBoundingClientRect(), short = Math.min(st.width, st.height), bad = [];
+    const props = [...document.querySelectorAll('.nk-g')].map(g => { const img = g.querySelector('.nk-prop .nk-sp img'), r = img.getBoundingClientRect(); return { key: g.querySelector('[data-neko-prop]').dataset.nekoProp, z: +g.style.zIndex, r, ok: img.complete && r.height > 0 }; });
+    const inP = (q, x, y) => x >= q.r.left && x < q.r.right && y >= q.r.top && y < q.r.bottom && cell(q.key, (x - q.r.left) / q.r.width, (y - q.r.top) / q.r.height);
+    if (props.length < 12 || props.length > 16) bad.push('props=' + props.length);
+    if (props.some(q => !q.ok)) bad.push('prop image not ready');
+    for (let a = 0; a < props.length; a++) for (let b = a + 1; b < props.length; b++) {
+      const A = props[a].r, B = props[b].r, ix = Math.max(0, Math.min(A.right, B.right) - Math.max(A.left, B.left)) * Math.max(0, Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top));
+      if (ix > 0.45 * Math.min(A.width * A.height, B.width * B.height)) bad.push('props ' + props[a].key + '/' + props[b].key + ' overlap too much');
+    }
+    props.forEach(q => { if (q.r.left < st.left - 2 || q.r.right > st.right + 2 || q.r.bottom > st.bottom + 2) bad.push(q.key + ' outside'); });
+    const bg = document.querySelector('#nk-bg');
+    if (bg.classList.contains('room')) {
+      const fl = parseFloat(getComputedStyle(bg).getPropertyValue('--fl')) / 100 * st.height + st.top;
+      props.forEach(q => { if (q.r.bottom <= fl + 2) bad.push('room prop ' + q.key + ' above the floor line'); });
+    }
+    const MIN = { open: 0.6, top: 0.4, tail: 0.3, side: 0.35, behind: 0.2 }, centers = [], info = [];
+    document.querySelectorAll('[data-neko-cat]').forEach(hb => {
+      const i = +hb.dataset.nekoCat, hide = hb.dataset.nekoHide, el = document.querySelector('[data-nk-cat-el="' + i + '"]'), hr = hb.getBoundingClientRect();
+      if (hb.hidden || !el) return;
+      if (hr.width < 79.5 || hr.height < 79.5 || hr.left < st.left - 1 || hr.right > st.right + 1 || hr.top < st.top - 1 || hr.bottom > st.bottom + 1) bad.push('cat' + i + ' hit ' + Math.round(hr.width) + 'x' + Math.round(hr.height));
+      const img = el.querySelector('img'), R = img.getBoundingClientRect(), host = hide === 'open' ? null : props[+el.dataset.nkHost];
+      if (host && el.parentNode !== document.querySelectorAll('.nk-g')[+el.dataset.nkHost]) bad.push('cat' + i + ' not in host');
+      if (R.left < st.left || R.right > st.right || R.bottom > st.bottom) bad.push('cat' + i + ' sprite outside the screen');
+      if (host) {
+        const pts = [], w = R.width, h = R.height;
+        if (hide === 'top' || hide === 'tail') { const a = hide === 'top' ? 0.16 : 0.14, z = hide === 'top' ? 0.83 : 0.66; for (let k = 0; k < 9; k++) pts.push([R.left + w * (a + (z - a) * k / 8), R.bottom - 1]); }
+        else if (hide === 'side') { const left = (R.left + R.right) / 2 < (host.r.left + host.r.right) / 2, x = left ? R.right - 1 : R.left + 1; for (let k = 0; k < 12; k++) pts.push([x, R.top + h * (0.02 + 0.96 * k / 11)]); }
+        const miss = pts.filter(([x, y]) => !inP(host, x, y)).length;
+        if (miss) bad.push('cat' + i + ' (' + hide + ') cut edge shows outside ' + host.key + ' (' + miss + '/' + pts.length + ')');
+      }
+      // visible fraction: sample the sprite's ellipse, drop points covered by the host (when hidden) or by props drawn above
+      const hz = host ? host.z : +el.style.zIndex;
+      let tot = 0, vis = 0, hv = 0, l = 1e9, r = -1e9, t = 1e9, b = -1e9;
+      for (let j = 0; j < 10; j++) for (let k = 0; k < 10; k++) {
+        const fx = (k + 0.5) / 10, fy = (j + 0.5) / 10; if ((fx - 0.5) ** 2 + (fy - 0.5) ** 2 > 0.25) continue;
+        const x = R.left + fx * R.width, y = R.top + fy * R.height; tot++;
+        if (host && inP(host, x, y)) continue;
+        hv++;
+        if (props.some(q => q !== host && q.z > hz && inP(q, x, y))) continue;
+        vis++; l = Math.min(l, x); r = Math.max(r, x); t = Math.min(t, y); b = Math.max(b, y);
+      }
+      const frac = vis / tot;
+      if (frac < MIN[hide] - 0.06) bad.push('cat' + i + ' (' + hide + ') visible ' + frac.toFixed(2));
+      if (hide === 'behind' && (hv / tot < 0.2 || hv / tot > 0.72)) bad.push('cat' + i + ' behind sticks out ' + (hv / tot).toFixed(2));
+      if (Math.max(r - l, b - t) < 0.08 * short - R.width / 10 - 2) bad.push('cat' + i + ' (' + hide + ') visible part too small ' + Math.round(Math.max(r - l, b - t)));
+      centers.push([(hr.left + hr.right) / 2, (hr.top + hr.bottom) / 2]); info.push({ i, hide, frac: +frac.toFixed(2) });
+    });
+    for (let a = 0; a < centers.length; a++) for (let b = a + 1; b < centers.length; b++) if (Math.max(Math.abs(centers[a][0] - centers[b][0]), Math.abs(centers[a][1] - centers[b][1])) < 60) bad.push('cats ' + a + '/' + b + ' too close');
+    return { bad, n: props.length, info };
+  };
+  const nkReady = p => p.evaluate(async () => { for (let k = 0; k < 40; k++) { if ([...document.images].every(i => i.complete)) break; await new Promise(r => setTimeout(r, 25)); } });
+
   TV('neko', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
     const tag = 'neko ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/neko-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
     const p = await newPage(br, vp, { deny: true, init: NK_TIMERS });
@@ -1750,8 +1807,10 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let s0 = await info();
     ok(s0.cats.length === 3 && s0.nfaces === 3 && s0.faces === 0, tag + ': 3 cats, 3 empty face slots');
     ok(s0.cats.every(c => c.w >= 79.5 && c.h >= 79.5 && c.inside), tag + ': each cat hit area >= 80px and inside the screen ' + JSON.stringify(s0.cats.map(c => [Math.round(c.w), Math.round(c.h), c.inside])));
-    ok(s0.props.length >= 6 && s0.props.length <= 9 && new Set(s0.props).size === s0.props.length && s0.scene === 'room', tag + ': 6-9 props, first scene is the room (' + s0.props.length + ')');
-    ok(s0.cats.filter(c => c.hide === 'open').length === 2 && s0.cats.filter(c => c.hide === 'top').length === 1, tag + ': round 1 = open x2 + top x1 ' + s0.cats.map(c => c.hide));
+    ok(s0.props.length >= 12 && s0.props.length <= 16 && s0.scene === 'room' && !s0.props.some(k => ['tree', 'bush', 'slide', 'bench', 'rock', 'flowers', 'mushroom', 'bucket'].includes(k)), tag + ': 12-16 props, first scene is the room with room props only (' + s0.props.length + ')');
+    await nkReady(p);
+    { const g = await p.evaluate(nkGeo); ok(g.bad.length === 0, tag + ': round 1 geometry (cut edges hidden, visible share, floor, overlaps) ' + JSON.stringify(g.bad.slice(0, 5)) + ' ' + JSON.stringify(g.info)); }
+    ok(['open', 'behind', 'top'].every(h => s0.cats.filter(c => c.hide === h).length === 1), tag + ': round 1 = open x1 + behind x1 + top x1 ' + s0.cats.map(c => c.hide));
     ok(!s0.hs, tag + ': no horizontal scroll');
     const small = await p.evaluate(() => [...document.querySelectorAll('.nk-prop')].every(b => { const a = getComputedStyle(b, '::after'); return parseFloat(a.width) >= 79.5 && parseFloat(a.height) >= 79.5; }));
     ok(small, tag + ': props have >= 80px tap areas');
@@ -1789,7 +1848,9 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await sleep(3600);
     const s3 = await info();
     ok(s3.faces === 0 && s3.cats.length === 3 && s3.cats.every(c => !c.found) && s3.sig !== sigBefore && s3.scene !== sceneBefore, tag + ': next round has a fresh layout and the other scene (' + sceneBefore + ' -> ' + s3.scene + ')');
-    ok(s3.cats.filter(c => c.hide === 'open').length === 1 && s3.cats.filter(c => c.hide === 'top' || c.hide === 'side').length === 2, tag + ': round 2 = open x1 + top/side x2 ' + s3.cats.map(c => c.hide));
+    ok(s3.cats.filter(c => c.hide === 'open').length <= 1 && s3.cats.filter(c => c.hide === 'tail').length <= 1 && s3.cats.every(c => ['open', 'behind', 'top', 'side', 'tail'].includes(c.hide)), tag + ': round 2 = open 0-1, tail <= 1, rest behind/top/side ' + s3.cats.map(c => c.hide));
+    await nkReady(p);
+    { const g = await p.evaluate(nkGeo); ok(g.bad.length === 0 && s3.props.length >= 12 && s3.props.length <= 16, tag + ': round 2 geometry (park) ' + JSON.stringify(g.bad.slice(0, 5)) + ' ' + JSON.stringify(g.info)); }
     ok(s3.cats.every(c => c.w >= 79.5 && c.h >= 79.5 && c.inside) && !s3.hs, tag + ': round 2 hit areas ok, no hscroll');
     await sleep(2000); await shot('d');
     /* leave: no timers left */
@@ -1800,7 +1861,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok((await says(p)).length === 0, tag + ': nothing speaks after leaving');
     await tapTile(p, 'ねこさがし'); await sleep(500);
     const re = await info();
-    ok(re.faces === 0 && re.cats.length === 3 && re.scene === 'room' && re.cats.filter(c => c.hide === 'open').length === 2, tag + ': re-entering restarts at round 1 (room)');
+    ok(re.faces === 0 && re.cats.length === 3 && re.scene === 'room' && re.cats.filter(c => c.hide === 'open').length === 1 && re.cats.filter(c => c.hide === 'behind').length === 1, tag + ': re-entering restarts at round 1 (room)');
     await p.click('#homebtn'); await sleep(200);
     ok(p.errs.length === 0, tag + ' no console errors ' + p.errs.join(' | '));
     await p.context().close();
@@ -1811,31 +1872,28 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const tag = 'neko-gen ' + vp.width + 'x' + vp.height;
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, 'ねこさがし'); await sleep(500);
-    const res = await p.evaluate(async () => {
-      const q = window.__nk, out = { n: 0, bad: [], hides: {}, rounds: 0 };
-      const st = document.querySelector('#stage-neko').getBoundingClientRect();
+    const res = await p.evaluate(async (geoSrc) => {
+      const geo = (0, eval)('(' + geoSrc + ')'), q = window.__nk, out = { n: 0, bad: [], hides: {}, props: [] };
       for (let r = 0; r < 14; r++) {
         q.round = r; window.__nkStart(1);
-        await new Promise(res => setTimeout(res, 60));
+        for (let k = 0; k < 40; k++) { if ([...document.images].every(i => i.complete)) break; await new Promise(res => setTimeout(res, 25)); }
+        await new Promise(res => setTimeout(res, 30));
         const cats = [...document.querySelectorAll('[data-neko-cat]')];
         out.n++;
-        const rs = cats.map(e => e.getBoundingClientRect());
         if (cats.length !== 3) out.bad.push('r' + r + ' cats=' + cats.length);
-        rs.forEach((b, i) => { if (b.width < 79.5 || b.height < 79.5 || b.left < st.left - 1 || b.right > st.right + 1 || b.top < st.top - 1 || b.bottom > st.bottom + 1) out.bad.push('r' + r + ' cat' + i + ' hit ' + Math.round(b.width) + 'x' + Math.round(b.height)); });
         cats.forEach(e => { out.hides[e.dataset.nekoHide] = (out.hides[e.dataset.nekoHide] || 0) + 1; });
         const hs = cats.map(e => e.dataset.nekoHide);
         if (hs.filter(h => h === 'tail').length > 1) out.bad.push('r' + r + ' two tails');
-        if (r === 0 && !(hs.filter(h => h === 'open').length === 2 && hs.filter(h => h === 'top').length === 1)) out.bad.push('r0 mix ' + hs);
-        if (r === 1 && !(hs.filter(h => h === 'open').length === 1 && hs.filter(h => h === 'top' || h === 'side').length === 2)) out.bad.push('r1 mix ' + hs);
-        const np = document.querySelectorAll('[data-neko-prop]').length;
-        if (np < 5 || np > 9) out.bad.push('r' + r + ' props=' + np);
-        // each cat's visible spot sits on screen and the prop sprites stay inside the stage horizontally
-        document.querySelectorAll('.nk-g').forEach(g => { const b = g.getBoundingClientRect(); if (b.left < st.left - 2 || b.right > st.right + 2) out.bad.push('r' + r + ' prop x-out'); });
+        if (r === 0 && !['open', 'behind', 'top'].every(h => hs.filter(x => x === h).length === 1)) out.bad.push('r0 mix ' + hs);
+        if (r >= 1 && hs.filter(h => h === 'open').length > 1) out.bad.push('r' + r + ' open x' + hs.filter(h => h === 'open').length);
+        if (r >= 1 && hs.some(h => !['open', 'behind', 'top', 'side', 'tail'].includes(h))) out.bad.push('r' + r + ' bad hide ' + hs);
+        const g = geo(); g.bad.forEach(m => out.bad.push('r' + r + ' ' + m));
+        out.props.push(g.n);
         if (document.documentElement.scrollWidth > innerWidth + 1) out.bad.push('r' + r + ' hscroll');
       }
       return out;
-    });
-    ok(res.n === 14 && res.bad.length === 0, tag + ': 14 generated rounds valid ' + JSON.stringify(res.bad.slice(0, 6)) + ' hides ' + JSON.stringify(res.hides));
+    }, nkGeo.toString());
+    ok(res.n === 14 && res.bad.length === 0 && Math.min(...res.props) >= 12 && Math.max(...res.props) <= 16, tag + ': 14 generated rounds valid (12-16 props, cut edges inside the hiding prop, visible share, floor line) ' + JSON.stringify(res.bad.slice(0, 6)) + ' hides ' + JSON.stringify(res.hides));
     ok(p.errs.length === 0, tag + ' no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });

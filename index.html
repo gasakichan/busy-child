@@ -5978,130 +5978,241 @@
     tree: '🌳', bush: '🌿', slide: '🛝', bench: '🪑', rock: '🪨', flowers: '🌷', mushroom: '🍄', bucket: '🪣' };
   var NK_NAME = { sofa: 'そふぁ', plant: 'うえきばち', box: 'だんぼーる', toybox: 'おもちゃばこ', basket: 'かご', table: 'てーぶる', bear: 'くまさん', ball: 'ぼーる',
     tree: 'き', bush: 'くさむら', slide: 'すべりだい', bench: 'べんち', rock: 'いし', flowers: 'おはな', mushroom: 'きのこ', bucket: 'ばけつ' };
+/* ものの え の なかみ マップ（16x16、うえの ぎょう から。1 = ほぼ ぜんぶ ぬられている）。tools で assets/neko/*.webp の アルファ から つくった */
+  var NK_SOLID = {
+    sofa: '0000011111100000|0001111111111000|0011111111111100|0011111111111100|0011111111111100|0111111111111110|0111111111111110|1111111111111111|1111111111111111|1111111111111111|1111111111111111|0111111111111110|0111111111111110|0111111111111110|0010000000000100|0010000000000100',
+    plant: '0000000001000000|0000000111100000|0010001111100000|1111111111100000|0111111111111111|0011111111111110|0001111111111100|0111111111111000|0111111111111100|0110001100001100|0001111111100000|0001111111100000|0000111111100000|0000111111100000|0000111111000000|0000011110000000',
+    box: '0000111111111110|0001111111111111|0011111111111111|0111111111111111|0111111111111111|1111111111111111|1111111111111111|1111111111111111|1111111111111111|1111111111111111|1111111111111111|1111111111111111|1111111111111110|1111111111111110|1111111111111100|0111111111111000',
+    toybox: '0011111111111110|0111111111111110|0111111111111110|0111111111111111|1111111111111111|1111111111111111|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0010000000000100',
+    basket: '0000011000000000|0001111111111000|0111111111111110|1111111111111111|1111111111111111|0111111111111110|0111111111111110|0011111111111100|0011111111111100|0011111111111100|0011111111111100|0011111111111100|0011111111111100|0001111111111000|0001111111111000|0000001111000000',
+    table: '0000001111000000|0001111111111000|0011111111111100|0011111111111100|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|1111111111111111|1111111111111111|0011111111111100|0001111111111000|0001000000001000|0001000000001000',
+    bear: '0011000000001100|0111111111111110|0111111111111111|0111111111111110|0011111111111110|0111111111111110|0111111111111110|0011111111111100|0011111111111100|0001111111111000|0111111111111110|0111111111111110|0111111111111110|1111111111111110|0111111111111110|0011000000001100',
+    ball: '0000000111000000|0000111111110000|0001111111111000|0011111111111100|0111111111111110|0111111111111110|0111111111111110|1111111111111111|1111111111111111|1111111111111111|0111111111111110|0111111111111110|0011111111111100|0011111111111000|0000111111110000|0000001111000000',
+    tree: '0000000110000000|0000011111100000|0000111111111000|0011111111111100|0011111111111100|0111111111111110|0111111111111111|1111111111111111|0111111111111110|0111111111111110|0111111111111110|0011111111111000|0000111111100000|0000000111000000|0000001111000000|0000000010000000',
+    bush: '0000000110000000|0000011111100000|0000111111110000|0000111111111000|0011111111111100|0011111111111100|0011111111111100|0111111111111110|0111111111111110|0111111111111110|0111111111111110|1111111111111111|1111111111111111|0111111111111110|0011111111111100|0000010110100000',
+    slide: '0000000100010000|0000001110111000|0000001110111000|0000001111111000|0000011111111100|0000011111111100|0000111111111100|0000111111111100|0001111111111110|0001111111111110|0011111111111110|0111111111111110|0111111011100110|1111111001100011|1111110001000000|0001100000000000',
+    bench: '0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0011111111111110|0111111111111110|1111111111111111|1111111111111111|1111111111111111|0010000000000100|0010000000000100|0010000000000100|0000000000000000',
+    rock: '0000000110000000|0000011111100000|0000111111110000|0001111111111000|0001111111111100|0011111111111100|0011111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0111111111111110|1111111111111111|0111111111111110|0000001111000000',
+    flowers: '0000001000000000|0000001110000000|0000111110000000|0000111110011000|0000111111111100|0001111111111110|0111111111111110|0111111111111110|0111111111111100|0111111111111110|1111111111111111|0111111111111110|0111111111111110|0111111111111110|0111111111111110|0000100111010000',
+    mushroom: '0000000111000000|0000111111110000|0001111111111000|0011111111111100|0111111111111110|0111111111111110|0111111111111111|1111111111111111|0111111111111110|0111111111111110|0000111111110000|0000111111110000|0001111111111000|0111111111111110|0011111111111110|0000000110000000',
+    bucket: '0000011000000000|0000111100000000|0111111111000100|1111111111100111|1111111111100111|1111111111100110|0111111111000100|1111111111000100|1111111111001100|1111111111111100|0111111111111100|0111111111111100|0011111111111100|0011111111111100|0011111110011100|0000111000000000'
+  };
   /* ひょうじの おおきさ: 1 = u（ばめんの たんい。nkDims 参照）。奥ほど ちいさく（0.72〜1.0 ばい） */
   var NK_PW = { sofa: 1.25, plant: 0.62, box: 0.85, toybox: 0.9, basket: 0.75, table: 1.2, bear: 0.55, ball: 0.4,
     tree: 1.1, bush: 1.0, slide: 1.3, bench: 1.15, rock: 0.8, flowers: 0.55, mushroom: 0.5, bucket: 0.5 };
-  var NK_PH = { sofa: 0.64, plant: 1.16, box: 0.82, toybox: 0.7, basket: 0.75, table: 0.77, bear: 1.18, ball: 0.98, tree: 1.02, bush: 0.73, slide: 0.73, bench: 0.57, rock: 0.66, flowers: 0.76, mushroom: 0.95, bucket: 0.67 };   /* たかさ/はば（ばしょ けいさんの めやす） */
-  var NK_CW = { cat_sit: 0.7, cat_sleep: 0.85, cat_walk: 0.9, cat_peek: 0.85, cat_side: 0.45, cat_tail: 0.5, cat_jump: 0.8 };
-  var NK_CH = { cat_sit: 1.32, cat_sleep: 0.88, cat_walk: 0.87, cat_peek: 0.88, cat_side: 1.98, cat_tail: 1.83, cat_jump: 1.32 };
+  var NK_PH = { sofa: 0.641, plant: 1.162, box: 0.819, toybox: 0.695, basket: 0.75, table: 0.77, bear: 1.181, ball: 0.98, tree: 1.02, bush: 0.727, slide: 0.727, bench: 0.574, rock: 0.664, flowers: 0.764, mushroom: 0.954, bucket: 0.672 };   /* え の たかさ/はば（え の ほんとの ひりつ） */
+  /* ねこ の おおきさ（u × 、すこし ちいさめ）と、え の たかさ/はば */
+  var NK_CW = { cat_sit: 0.56, cat_sleep: 0.68, cat_walk: 0.72, cat_peek: 0.68, cat_side: 0.38, cat_tail: 0.4, cat_jump: 0.8 };
+  var NK_CH = { cat_sit: 1.32, cat_sleep: 0.875, cat_walk: 0.867, cat_peek: 0.875, cat_side: 1.983, cat_tail: 1.829, cat_jump: 1.32 };
   var NK_SIDE_NATIVE = -1;   /* cat_side の え（はんてん なし）が のぞく がわ: -1 = ものの ひだりがわ（みぎ はしが ものの うしろ） */
+  var NK_M = 0.04;           /* きれめ の よはく（え の おおきさに たいする わりあい。なかみマップ 0.6 セルぶん） */
   var NK_SC = [
-    { id: 'room', big: ['sofa', 'plant', 'box', 'toybox', 'basket', 'table'], small: ['bear', 'ball'] },
-    { id: 'park', big: ['tree', 'bush', 'slide', 'bench', 'rock'], small: ['flowers', 'mushroom', 'bucket'] }
+    { id: 'room', big: ['sofa', 'plant', 'box', 'toybox', 'basket', 'table'], max: { sofa: 1, table: 1, toybox: 2, box: 2, plant: 2, basket: 2, bear: 3, ball: 3 } },
+    { id: 'park', big: ['tree', 'bush', 'slide', 'bench', 'rock'], max: { tree: 1, slide: 1, bench: 1, bush: 3, rock: 2, flowers: 3, mushroom: 3, bucket: 3 } }
   ];
-  /* レイアウトわく [x%, y%(ものの した)]。たて: 3れつ ぐらい / よこ: 5れつ ぐらい */
-  var NK_LP = [
-    [[30, 36], [70, 38], [18, 54], [50, 52], [82, 55], [32, 70], [68, 72], [22, 90], [56, 92], [84, 90]],
-    [[50, 34], [20, 40], [80, 42], [36, 56], [68, 58], [18, 72], [82, 74], [50, 76], [30, 92], [72, 92]],
-    [[24, 36], [76, 36], [50, 47], [18, 60], [82, 61], [50, 70], [28, 83], [74, 84], [50, 94]]
-  ];
-  var NK_LL = [
-    [[14, 54], [38, 52], [62, 54], [86, 52], [26, 76], [50, 74], [74, 76], [12, 96], [38, 96], [64, 96], [88, 96]],
-    [[10, 56], [30, 54], [50, 56], [70, 54], [90, 56], [20, 78], [40, 76], [60, 78], [80, 76], [30, 97], [70, 97]],
-    [[16, 54], [50, 52], [84, 54], [10, 76], [34, 74], [66, 74], [90, 76], [22, 96], [50, 97], [78, 96]]
-  ];
+  var NK_SOLID_ROWS = {};
+  Object.keys(NK_SOLID).forEach(function (k) { NK_SOLID_ROWS[k] = NK_SOLID[k].split('|'); });
   var nk = { spec: null, D: null, round: 0, found: 0, busy: false, hintT: 0 };
   function nkClamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function nkDims() {
     var W = nkStage.clientWidth, H = nkStage.clientHeight, land = W > H * 1.15;
     var u = land ? Math.min(W / 4.7, H / 2.55) : Math.min(W / 2.65, H / 4.3);
-    return { W: W, H: H, land: land, u: u };
+    return { W: W, H: H, land: land, u: u, ps: land ? 0.78 : 0.9 };
   }
   function nkDepth(y) { return nkClamp((y - 34) / 60, 0, 1); }
   function nkTypes(r) {
-    if (r === 0) return shuffle(['open', 'open', 'top']);
-    if (r === 1) return shuffle(['open', pick(['top', 'side']), pick(['top', 'side'])]);
-    var pool = ['open', 'top', 'side', 'open', 'top', 'side', 'tail'], out = [], tails = 0;
+    if (r === 0) return shuffle(['open', 'behind', 'top']);
+    var out = Math.random() < 0.5 ? ['open'] : [], tails = 0;
     while (out.length < 3) {
-      var t = pick(pool);
+      var t = pick(['behind', 'top', 'side', 'tail']);
       if (t === 'tail') { if (tails) continue; tails++; }
       out.push(t);
     }
-    return out;
+    return shuffle(out);
   }
+  /* ものの え の ひょうじ ばしょ（px） */
   function nkPR(D, p) {
-    var w = p.wu * D.u, h = w * (NK_PH[p.key] || 0.9), cx = p.x / 100 * D.W, b = p.y / 100 * D.H;
+    var w = p.wu * D.u, h = w * NK_PH[p.key], cx = p.x / 100 * D.W, b = p.y / 100 * D.H;
     return { l: cx - w / 2, r: cx + w / 2, t: b - h, b: b, w: w, h: h, cx: cx };
   }
-  /* ねこの みえている ぶぶん（px の めやす） */
-  function nkVis(D, p, c) {
-    var h = nkPR(D, p), cw = c.cw * D.u, ch = cw * NK_CH[c.key];
+  /* なかみマップ: え の ひょうじ ばしょ R の なかの (x, y) が ぬられているか。m = まわりの よはく */
+  function nkSolid(key, u, v) {
+    var rows = NK_SOLID_ROWS[key];
+    if (!rows) return true;
+    if (u < 0 || v < 0 || u >= 1 || v >= 1) return false;
+    return rows[(v * 16) | 0].charAt((u * 16) | 0) === '1';
+  }
+  function nkPtSolid(R, key, x, y, m) {
+    var u = (x - R.l) / R.w, v = (y - R.t) / R.h;
+    return nkSolid(key, u, v) && (!m || (nkSolid(key, u - m, v) && nkSolid(key, u + m, v) && nkSolid(key, u, v - m) && nkSolid(key, u, v + m)));
+  }
+  /* ねこの え の ひょうじ ばしょ（px） */
+  function nkCatR(D, c, hr) {
+    var cw = c.cw * D.u, ch = cw * NK_CH[c.key];
     if (c.hide === 'open') { var ox = c.ox / 100 * D.W, ob = c.oy / 100 * D.H; return { l: ox - cw / 2, r: ox + cw / 2, t: ob - ch, b: ob }; }
     if (c.hide === 'side') {
-      var ov = 0.14 * cw, bb = h.b - c.v * h.h;
-      return c.dir < 0 ? { l: h.l - cw + ov, r: h.l, t: bb - ch, b: bb } : { l: h.r, r: h.r - ov + cw, t: bb - ch, b: bb };
+      var ov = c.ov * cw, bb = hr.b - c.v * hr.h;
+      return c.dir < 0 ? { l: hr.l + ov - cw, r: hr.l + ov, t: bb - ch, b: bb } : { l: hr.r - ov, r: hr.r - ov + cw, t: bb - ch, b: bb };
     }
-    var cx = h.cx + c.off * h.w, bt = h.t + (c.hide === 'tail' ? 0.12 : 0.15) * h.h;
-    return { l: cx - cw / 2, r: cx + cw / 2, t: bt - ch, b: h.t };
+    if (c.hide === 'behind') { var bx = hr.cx + c.rx * D.u, by = hr.b - c.ry * D.u; return { l: bx - cw / 2, r: bx + cw / 2, t: by - ch, b: by }; }
+    var cx = hr.cx + c.off * hr.w, cut = hr.t + c.d * hr.h;
+    return { l: cx - cw / 2, r: cx + cw / 2, t: cut - ch, b: cut };
   }
-  function nkInter(a, b) { return Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t)); }
-  function nkOk(D, sp) {
-    var short = Math.min(D.W, D.H), rs = [];
-    for (var i = 0; i < sp.cats.length; i++) {
-      var c = sp.cats[i], hp = sp.props[c.host], R = nkVis(D, hp, c), cx = (R.l + R.r) / 2;
-      if (R.l < 4 || R.r > D.W - 4 || R.b > D.H - 2) return false;
-      var lim = (Math.abs(cx - D.W / 2) < 110 || R.l < 84) ? 66 : 6;
-      if (R.t < lim) return false;
-      if (Math.max(R.r - R.l, R.b - R.t) < 0.12 * short) return false;
-      var area = (R.r - R.l) * (R.b - R.t), hz = c.hide === 'open' ? hp.z + 1 : hp.z;
-      for (var j = 0; j < sp.props.length; j++) {
-        var q = sp.props[j];
-        if (j === c.host || q.z <= hz) continue;
-        if (nkInter(R, nkPR(D, q)) > 0.25 * area) return false;
-      }
-      rs.push(R);
+  /* きれめ（のぞき・しっぽ: したの へん / よこむき: たての へん）の うえの てん */
+  function nkCuts(c, R) {
+    var pts = [], i, w = R.r - R.l, h = R.b - R.t;
+    if (c.hide === 'top' || c.hide === 'tail') {
+      var a = c.hide === 'top' ? 0.16 : 0.14, z = c.hide === 'top' ? 0.83 : 0.66;
+      for (i = 0; i < 7; i++) pts.push([R.l + w * (a + (z - a) * i / 6), R.b - 1]);
+    } else if (c.hide === 'side') {
+      var x = c.dir < 0 ? R.r - 1 : R.l + 1;
+      for (i = 0; i < 10; i++) pts.push([x, R.t + h * (0.02 + 0.96 * i / 9)]);
     }
-    for (var a = 0; a < rs.length; a++) for (var b = a + 1; b < rs.length; b++) {
-      var dx = Math.abs((rs[a].l + rs[a].r) / 2 - (rs[b].l + rs[b].r) / 2), dy = Math.abs((rs[a].t + rs[a].b) / 2 - (rs[b].t + rs[b].b) / 2);
-      if (Math.max(dx, dy) < 84) return false;
+    return pts;
+  }
+  /* ねこの みえている ぶぶん: R の なかの サンプルてん のうち、かくしやく・てまえの ものに かくれない もの */
+  function nkVisInfo(D, sp, c, R, rs) {
+    var hz = c.hide === 'open' ? c.z : sp.props[c.host].z, N = 8, tot = 0, hv = 0, vis = 0, l = 1e9, r = -1e9, t = 1e9, b = -1e9, sx = 0, sy = 0;
+    var cwp = (R.r - R.l) / N, chp = (R.b - R.t) / N;
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+      var fx = (i + 0.5) / N, fy = (j + 0.5) / N;
+      if ((fx - 0.5) * (fx - 0.5) + (fy - 0.5) * (fy - 0.5) > 0.25) continue;
+      var x = R.l + fx * (R.r - R.l), y = R.t + fy * (R.b - R.t);
+      tot++;
+      if (c.host >= 0 && nkPtSolid(rs[c.host], sp.props[c.host].key, x, y, 0)) continue;
+      hv++;
+      var occ = false;
+      for (var k = 0; k < rs.length; k++) {
+        var q = sp.props[k], Q = rs[k];
+        if (k === c.host || q.z <= hz || x < Q.l || x >= Q.r || y < Q.t || y >= Q.b) continue;
+        if (nkPtSolid(Q, q.key, x, y, 0)) { occ = true; break; }
+      }
+      if (occ) continue;
+      vis++; sx += x; sy += y;
+      if (x - cwp / 2 < l) l = x - cwp / 2; if (x + cwp / 2 > r) r = x + cwp / 2;
+      if (y - chp / 2 < t) t = y - chp / 2; if (y + chp / 2 > b) b = y + chp / 2;
+    }
+    if (!vis) return { frac: 0, hostFrac: 0, l: R.l, r: R.r, t: R.t, b: R.b, cx: (R.l + R.r) / 2, cy: (R.t + R.b) / 2 };
+    return { frac: vis / tot, hostFrac: hv / tot, l: l, r: r, t: t, b: b, cx: sx / vis, cy: sy / vis };
+  }
+  var NK_MINF = { open: 0.68, top: 0.45, tail: 0.36, side: 0.4, behind: 0.25 };
+  /* ねこ 1 ぴきの ばしょが よいか。よければ みえかたの じょうほうを かえす */
+  function nkCheckCat(D, sp, rs, c) {
+    var short = Math.min(D.W, D.H), hr = c.host >= 0 ? rs[c.host] : null, R = nkCatR(D, c, hr);
+    if (R.l < 4 || R.r > D.W - 4 || R.b > D.H - 2) return null;
+    if (hr) {
+      var pts = nkCuts(c, R), key = sp.props[c.host].key;
+      for (var i = 0; i < pts.length; i++) if (!nkPtSolid(hr, key, pts[i][0], pts[i][1], NK_M)) return null;
+    }
+    var info = nkVisInfo(D, sp, c, R, rs);
+    if (info.frac < NK_MINF[c.hide]) return null;
+    if (c.hide === 'behind' && (info.hostFrac < 0.3 || info.hostFrac > 0.58)) return null;
+    if (Math.max(info.r - info.l, info.b - info.t) < 0.08 * short) return null;
+    if (c.hide === 'side' && info.r - info.l < 0.05 * short) return null;
+    if (info.t < (info.r > 80 && info.l < D.W - 80 ? 62 : 4)) return null;
+    return info;
+  }
+  function nkFar(infos, info) {
+    for (var i = 0; i < infos.length; i++) if (infos[i] && Math.max(Math.abs(infos[i].cx - info.cx), Math.abs(infos[i].cy - info.cy)) < 100) return false;
+    return true;
+  }
+  function nkOk(D, sp) {
+    var rs = sp.props.map(function (p) { return nkPR(D, p); }), infos = [];
+    if (sp.props.length < 12 || sp.props.length > 16) return false;
+    for (var i = 0; i < sp.cats.length; i++) {
+      var info = nkCheckCat(D, sp, rs, sp.cats[i]);
+      if (!info || !nkFar(infos, info)) return false;
+      infos.push(info);
     }
     return true;
   }
+  /* ものを 12〜16こ、がめんぜんたいに ばらまく（ベスト・キャンディデート。すこし かさなる のは OK） */
+  function nkScatter(D, sc) {
+    var N = 12 + Math.floor(Math.random() * 5), pool = [];
+    Object.keys(sc.max).forEach(function (k) { for (var i = 0; i < sc.max[k]; i++) pool.push(k); });
+    var keys = shuffle(pool).slice(0, N);
+    if (keys.filter(function (k) { return sc.big.indexOf(k) >= 0; }).length < 4) return null;
+    keys.sort(function (a, b) { return NK_PW[b] - NK_PW[a]; });
+    var land = D.land, yMin = sc.id === 'room' ? (land ? 43 : 30) : (land ? 47 : 38), props = [], rs = [];
+    for (var n = 0; n < keys.length; n++) {
+      var k = keys[n], best = null, bs = -1;
+      for (var t = 0; t < 26; t++) {
+        var y = rand(yMin, 97), dn = nkDepth(y), wu = NK_PW[k] * D.ps * (0.72 + 0.28 * dn) * rand(0.95, 1.05), w = wu * D.u, h = w * NK_PH[k], b = y / 100 * D.H;
+        if (b - h < 62 || w + 4 > D.W) continue;
+        var mm = Math.max(w / 2, 40) + 2, cx = rand(mm, D.W - mm), R = { l: cx - w / 2, r: cx + w / 2, t: b - h, b: b, w: w, h: h, cx: cx }, sc2 = 3, bad = false;
+        for (var j = 0; j < rs.length; j++) {
+          var Q = rs[j], inter = nkInterA(R, Q);
+          if (inter > 0.4 * Math.min(R.w * R.h, Q.w * Q.h)) { bad = true; break; }
+          sc2 = Math.min(sc2, Math.max(Math.abs(cx - Q.cx) / ((w + Q.w) / 2), Math.abs((R.t + R.b) / 2 - (Q.t + Q.b) / 2) / ((h + Q.h) / 2)));
+        }
+        if (!bad && sc2 > bs) { bs = sc2; best = { key: k, x: cx / D.W * 100, y: y, wu: wu, dn: dn, R: R }; }
+      }
+      if (best) { best.z = Math.round(best.y * 10) * 10 + props.length; rs.push(best.R); delete best.R; props.push(best); }
+    }
+    return props.length >= 12 ? props : null;
+  }
+  function nkInterA(a, b) { return Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t)); }
+  function nkPlaceHidden(D, sp, rs, t, h, infos) {
+    var p = sp.props[h], tries = t === 'side' ? 40 : 24;
+    for (var k = 0; k < tries; k++) {
+      var key = t === 'top' ? 'cat_peek' : t === 'side' ? 'cat_side' : t === 'tail' ? 'cat_tail' : pick(['cat_sit', 'cat_sleep', 'cat_walk']);
+      var c = { hide: t, host: h, key: key, cw: NK_CW[key] * (0.8 + 0.2 * p.dn), found: false, flip: false, dn: p.dn };
+      if (t === 'top' || t === 'tail') { c.off = rand(-0.3, 0.3); c.d = rand(0.06, 0.4); }
+      else if (t === 'side') {
+        c.dir = p.x < 50 ? (Math.random() < 0.8 ? 1 : -1) : (Math.random() < 0.8 ? -1 : 1);
+        c.cw *= pick([1, 0.8, 0.65]); c.ov = rand(0.1, 0.4); c.v = rand(0, 0.45);
+      } else {
+        var s = Math.random() < 0.5 ? -1 : 1, hr = rs[h], cw = c.cw * D.u;
+        if (Math.random() < 0.65) { c.rx = s * (hr.w / 2 + cw * rand(-0.3, 0.2)) / D.u; c.ry = rand(0, 0.35) * hr.h / D.u; }
+        else { c.rx = rand(-0.45, 0.45) * hr.w / D.u; c.ry = rand(0.1, 0.55) * hr.h / D.u; }
+        c.flip = key === 'cat_walk' && c.rx < 0;
+        /* そらに うかない: あしもとが ものの なかみに かくれているか、ものの よこの じめん */
+        var gx = hr.cx + c.rx * D.u, gy = hr.b - c.ry * D.u;
+        if (c.ry * D.u > 0.04 * D.u && !nkPtSolid(hr, p.key, gx, gy - 3, 0)) continue;
+      }
+      var info = nkCheckCat(D, sp, rs, c);
+      if (info && nkFar(infos, info)) return { c: c, info: info };
+    }
+    return null;
+  }
+  function nkPlaceOpen(D, sp, rs, infos) {
+    var yMin = sp.scene === 'room' ? (D.land ? 45 : 32) : (D.land ? 49 : 40);
+    for (var k = 0; k < 50; k++) {
+      var key = pick(['cat_sit', 'cat_sleep', 'cat_walk']), oy = rand(yMin, 97), dn = nkDepth(oy), cw = NK_CW[key] * (0.8 + 0.2 * dn), m = cw * D.u / 2 / D.W * 100 + 1.5;
+      var c = { hide: 'open', host: -1, key: key, cw: cw, ox: rand(m, 100 - m), oy: oy, dn: dn, z: Math.round(oy * 10) * 10 + 50, found: false };
+      var info = nkCheckCat(D, sp, rs, c);
+      if (info && nkFar(infos, info)) return { c: c, info: info };
+    }
+    return null;
+  }
   function nkTry(D, round, sc) {
-    var slots = shuffle(pick(D.land ? NK_LL : NK_LP));
-    var nSmall = Math.min(sc.small.length, 1 + Math.floor(Math.random() * sc.small.length));
-    var N = 6 + Math.floor(Math.random() * 3);
-    var nBig = Math.max(4, Math.min(sc.big.length, N - nSmall));
-    var keys = shuffle(shuffle(sc.big).slice(0, nBig).concat(shuffle(sc.small).slice(0, nSmall)));
-    var props = keys.map(function (k, i) {
-      var s = slots[i], y = s[1] + rand(-1.5, 1.5), dn = nkDepth(y);
-      var wu = NK_PW[k] * (0.72 + 0.28 * dn) * rand(0.95, 1.05), m = wu * D.u / 2 / D.W * 100 + 1;
-      var x = nkClamp(s[0] + rand(-2, 2), m, 100 - m);
-      return { key: k, x: x, y: y, wu: wu, dn: dn, z: Math.round(y * 10) * 10 + i };
-    });
-    var types = nkTypes(round), cats = [], used = {};
-    var hosts = shuffle(props.map(function (p, i) { return i; }));
+    var props = nkScatter(D, sc); if (!props) return null;
+    var sp = { scene: sc.id, land: D.land, props: props, cats: [] }, rs = props.map(function (p) { return nkPR(D, p); });
+    var types = nkTypes(round), infos = [], used = {};
     var order = types.map(function (t, i) { return i; }).sort(function (a, b) { return (types[a] === 'open') - (types[b] === 'open'); });
     for (var oi = 0; oi < order.length; oi++) {
-      var t = types[order[oi]], hi = -1;
-      for (var h = 0; h < hosts.length; h++) {
-        var cand = hosts[h];
-        if (used[cand] || (t !== 'open' && NK_SC.every(function (s) { return s.big.indexOf(props[cand].key) < 0; }))) continue;
-        hi = cand; break;
+      var ti = order[oi], t = types[ti], res = null;
+      if (t === 'open') res = nkPlaceOpen(D, sp, rs, infos);
+      else {
+        var hosts = shuffle(props.map(function (p, i) { return i; })).filter(function (i) { return !used[i] && sc.big.indexOf(props[i].key) >= 0; });
+        for (var hi = 0; hi < hosts.length && !res; hi++) {
+          res = nkPlaceHidden(D, sp, rs, t, hosts[hi], infos);
+          if (!res && t === 'side' && round > 0) res = nkPlaceHidden(D, sp, rs, 'behind', hosts[hi], infos);
+        }
       }
-      if (hi < 0) return null;
-      used[hi] = 1;
-      var hp = props[hi], key = t === 'top' ? 'cat_peek' : t === 'side' ? 'cat_side' : t === 'tail' ? 'cat_tail' : pick(['cat_sit', 'cat_sleep', 'cat_walk']);
-      var c = { hide: t, host: hi, key: key, cw: NK_CW[key] * (0.8 + 0.2 * hp.dn), off: rand(-0.22, 0.22), dir: Math.random() < 0.5 ? -1 : 1, v: rand(0.1, 0.3), found: false };
-      if (t === 'side') c.dir = hp.x < 50 ? (Math.random() < 0.8 ? 1 : -1) : (Math.random() < 0.8 ? -1 : 1);
-      if (t === 'open') {
-        var hw = hp.wu * D.u, gap = (hw / 2 + c.cw * D.u * 0.45) / D.W * 100;
-        if (hp.x + c.dir * gap > 94 || hp.x + c.dir * gap < 6) c.dir = -c.dir;
-        c.ox = hp.x + c.dir * gap; c.oy = Math.min(97, hp.y + 1.5);
-      }
-      cats[order[oi]] = c;
+      if (!res) return null;
+      if (res.c.host >= 0) used[res.c.host] = 1;
+      sp.cats[ti] = res.c; infos.push(res.info);
     }
-    return { scene: sc.id, land: D.land, props: props, cats: cats };
+    return sp;
   }
   function nkMake(D, round) {
-    var sc = NK_SC[round % 2], last = null;
-    for (var t = 0; t < 60; t++) {
+    var sc = NK_SC[round % 2];
+    for (var t = 0; t < 400; t++) {
       var sp = nkTry(D, round, sc);
-      if (!sp) continue;
-      last = sp;
-      if (nkOk(D, sp)) return sp;
+      if (sp && nkOk(D, sp)) return sp;
     }
-    return last || nkTry(D, round, sc) || nkMake(D, round);
+    return nkMake(D, round);
   }
   function nkSp(key, wpx, flip) {
     var d = document.createElement('div');
@@ -6118,20 +6229,23 @@
     return d;
   }
   function nkDiv(cls) { var d = document.createElement('div'); d.className = cls; return d; }
+  function nkInfo(c) {   /* いまの ばめんでの みえている ぶぶん */
+    var D = nk.D, sp = nk.spec, rs = sp.props.map(function (p) { return nkPR(D, p); });
+    return nkVisInfo(D, sp, c, nkCatR(D, c, c.host >= 0 ? rs[c.host] : null), rs);
+  }
   function nkFinal(c) {   /* みつかった ねこが たつ ばしょ（% 。いちど きめたら ほぞん） */
     if (c.final) return c.final;
-    var D = nk.D, sp = nk.spec, hp = sp.props[c.host], jw = NK_CW.cat_jump * (0.8 + 0.2 * hp.dn) * D.u, m = jw / 2 / D.W * 100 + 1, f;
+    var D = nk.D, sp = nk.spec, jw = NK_CW.cat_jump * (0.8 + 0.2 * c.dn) * D.u, m = jw / 2 / D.W * 100 + 1, f;
     if (c.hide === 'open') f = { x: c.ox, y: c.oy };
-    else if (c.hide === 'side') f = { x: hp.x + (c.dir < 0 ? -1 : 1) * (hp.wu * D.u / 2 + jw * 0.3) / D.W * 100, y: Math.min(97, hp.y + 2) };
-    else f = { x: hp.x + c.off * hp.wu * D.u / D.W * 100, y: Math.min(97, hp.y + 3) };
+    else { var hp = sp.props[c.host]; f = { x: nkInfo(c).cx / D.W * 100, y: Math.min(97, hp.y + 2) }; }
     f.x = nkClamp(f.x, m, 100 - m); c.final = f; c.jw = jw;
     return f;
   }
   function nkMountFound(c) {   /* いまの え を cat_jump に かえて、ものの まえに おく */
-    var D = nk.D, sp = nk.spec, hp = sp.props[c.host], f = nkFinal(c), jw = NK_CW.cat_jump * (0.8 + 0.2 * hp.dn) * D.u;
+    var D = nk.D, sp = nk.spec, f = nkFinal(c), jw = NK_CW.cat_jump * (0.8 + 0.2 * c.dn) * D.u;
     if (c.el && c.el.parentNode) c.el.parentNode.removeChild(c.el);
     var o = nkDiv('nk-o'); o.style.left = 'calc(' + f.x + '% - ' + (jw / 2) + 'px)'; o.style.bottom = (100 - f.y) + '%'; o.style.width = jw + 'px';
-    o.style.zIndex = hp.z + 5; o.setAttribute('data-nk-cat-el', String(sp.cats.indexOf(c)));
+    o.style.zIndex = 20000; o.setAttribute('data-nk-cat-el', String(sp.cats.indexOf(c)));
     o.appendChild(nkSp('cat_jump', jw));
     nkWorld.appendChild(o); c.el = o;
   }
@@ -6151,26 +6265,29 @@
       g.appendChild(b); nkWorld.appendChild(g); p.g = g; p.btn = b;
     });
     sp.cats.forEach(function (c, i) {
-      var hp = sp.props[c.host], cw = c.cw * D.u;
+      var hp = c.host >= 0 ? sp.props[c.host] : null, cw = c.cw * D.u;
       c.el = null;
       if (c.gone) {}
       else if (c.found) nkMountFound(c);
       else if (c.hide === 'open') {
-        var o = nkDiv('nk-o'); o.style.left = 'calc(' + c.ox + '% - ' + (cw / 2) + 'px)'; o.style.bottom = (100 - c.oy) + '%'; o.style.width = cw + 'px'; o.style.zIndex = hp.z + 1;
+        var o = nkDiv('nk-o'); o.style.left = 'calc(' + c.ox + '% - ' + (cw / 2) + 'px)'; o.style.bottom = (100 - c.oy) + '%'; o.style.width = cw + 'px'; o.style.zIndex = c.z;
         o.appendChild(nkSp(c.key, cw)); nkWorld.appendChild(o); c.el = o;
       } else {
         var e = nkDiv('nk-cat'); e.style.width = cw + 'px';
         if (c.hide === 'side') {
-          var ov = 0.14 * cw; e.style.bottom = (c.v * 100) + '%';
+          var ov = c.ov * cw; e.style.bottom = (c.v * 100) + '%';
           if (c.dir < 0) { e.style.right = '100%'; e.style.marginRight = (-ov) + 'px'; } else { e.style.left = '100%'; e.style.marginLeft = (-ov) + 'px'; }
           e.appendChild(nkSp(c.key, cw, c.dir !== NK_SIDE_NATIVE));
+        } else if (c.hide === 'behind') {
+          e.style.left = (hp.wu * D.u / 2 + c.rx * D.u - cw / 2) + 'px'; e.style.bottom = (c.ry * D.u) + 'px';
+          e.appendChild(nkSp(c.key, cw, c.flip));
         } else {
-          e.style.bottom = (c.hide === 'tail' ? 88 : 85) + '%'; e.style.left = (50 + c.off * 100) + '%'; e.style.marginLeft = (-cw / 2) + 'px';
+          e.style.bottom = ((1 - c.d) * 100) + '%'; e.style.left = (50 + c.off * 100) + '%'; e.style.marginLeft = (-cw / 2) + 'px';
           e.appendChild(nkSp(c.key, cw));
         }
         hp.g.insertBefore(e, hp.btn); c.el = e;
       }
-      if (c.el) c.el.setAttribute('data-nk-cat-el', String(i));
+      if (c.el) { c.el.setAttribute('data-nk-cat-el', String(i)); if (c.host >= 0) c.el.setAttribute('data-nk-host', String(c.host)); }
       var hb = document.createElement('button');
       hb.type = 'button'; hb.className = 'nk-hit'; hb.setAttribute('aria-label', 'ねこ');
       hb.setAttribute('data-neko-cat', String(i)); hb.setAttribute('data-neko-hide', c.hide);
@@ -6188,14 +6305,12 @@
     var S = nkStage.getBoundingClientRect();
     sp.cats.forEach(function (c) {
       if (!c.hit || !c.el) return;
-      var r = c.el.getBoundingClientRect();
-      if (!r.width && !r.height) return;
-      var l = r.left - S.left, t = r.top - S.top, rr = l + r.width, bb = t + r.height;
-      if (!c.found && sp.props[c.host].btn) {
-        var hr = sp.props[c.host].btn.getBoundingClientRect();
-        if (c.hide === 'top' || c.hide === 'tail') bb = Math.min(bb, hr.top - S.top + 2);
-        else if (c.hide === 'side') { if (c.dir < 0) rr = Math.min(rr, hr.left - S.left + 2); else l = Math.max(l, hr.right - S.left - 2); }
-      }
+      var l, t, rr, bb;
+      if (c.found) {
+        var r = c.el.getBoundingClientRect();
+        if (!r.width && !r.height) return;
+        l = r.left - S.left; t = r.top - S.top; rr = l + r.width; bb = t + r.height;
+      } else { var q = nkInfo(c); l = q.l; t = q.t; rr = q.r; bb = q.b; }
       var w = Math.max(80, rr - l), h = Math.max(80, bb - t), cx = (l + rr) / 2, cy = (t + bb) / 2;
       c.hit.style.width = w + 'px'; c.hit.style.height = h + 'px';
       c.hit.style.left = nkClamp(cx - w / 2, 0, Math.max(0, S.width - w)) + 'px';
