@@ -6562,7 +6562,7 @@
     return out;
   }
   /* オート（ずっときく）: 簡易 VAD。s=状態, rms=短い窓のRMS, dt=その窓の秒数。戻り値 ''=なし 'start' 'end'(かくてい) 'drop'(みじかい) 'max'(さいちょうで きょうせい) */
-  var VC_AUTO = { PRE: 0.3, QUIET: 0.7, MAXLEN: 6, MINV: 0.3, TAIL: 0.5, KEEP: 0.15, CAL: 0.4, MULT: 3, THR_MIN: 0.02, THR_MAX: 0.12, FLOOR_MAX: 0.04, INTRO: 2.5, GAIN_MAX: 1.6 };
+  var VC_AUTO = { PRE: 0.3, QUIET: 0.7, MAXLEN: 6, MINV: 0.3, TAIL: 0.5, KEEP: 0.15, CAL: 0.4, MULT: 3, THR_MIN: 0.02, THR_MAX: 0.12, FLOOR_MAX: 0.04, INTRO: 2.5, GAIN_MAX: 1.6, SWITCH_SESSION: true, RETRY_MAX: 3 };
   function vcThr(f) { return Math.min(VC_AUTO.THR_MAX, Math.max(VC_AUTO.THR_MIN, f * VC_AUTO.MULT)); }
   function vcVadNew() { return { st: 'idle', floor: 0, thr: VC_AUTO.THR_MIN, cal: 0, calSum: 0, quiet: 0, len: 0 }; }
   function vcVadReset(s) { s.st = 'idle'; s.quiet = 0; s.len = 0; return s; }
@@ -6598,9 +6598,10 @@
   }
   /* vc:end */
   var vcStage = $('#stage-voice'), vcIco = $('#vc-ico'), vcMsg = $('#vc-msg'), vcGrid = $('#vc-grid'), vcAuto = $('#vc-auto'), vcAsk = $('#vc-ask'), vcSt = $('#vc-st'), vcBtns = {};
-  var vc = { auto: false, ph: '', voice: 'normal', deafUntil: 0, au: null, state: 'idle', gen: 0, buf: null, stream: null, rec: null, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '', dur: 0 };
+  var vc = { muted: false, sessT: 0, retry: 0, okAt: 0, auto: false, ph: '', voice: 'normal', deafUntil: 0, au: null, state: 'idle', gen: 0, buf: null, stream: null, rec: null, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '', dur: 0 };
   function vcStopPlay() {
     if (vc.endT) { cancel(vc.endT); vc.endT = 0; }
+    if (vc.sessT) { cancel(vc.sessT); vc.sessT = 0; }
     vc.srcs.forEach(function (s) { try { s.stop(); } catch (e) {} });
     vc.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
     vc.nodes = []; vc.srcs = []; vc.live = 0; vc.buf = null;   /* きろくは 1かい さいせいしたら すてる */
@@ -6608,7 +6609,15 @@
     if (vc.auto) {                      /* さいせい おわり: すこし まってから また きく（ハウリングよけ） */
       vc.deafUntil = performance.now() + VC_AUTO.TAIL * 1000;
       if (vc.ph === 'play') vcAutoPhase('listen');
+      if (VC_AUTO.SWITCH_SESSION && vc.sess === 'playback') vc.sessT = later(vcListenBack, VC_AUTO.TAIL * 1000 + 50);
     }
+  }
+  /* さいせい後の deaf が あけて また きく: audioSession を play-and-record に もどし、AudioContext を resume */
+  function vcListenBack() {
+    vc.sessT = 0;
+    if (!vc.auto || vc.live) return;
+    vcSession('play-and-record');
+    var c = ac; if (c && c.state !== 'running') { try { c.resume(); } catch (e) {} }
   }
   function vcVoice(id) { for (var i = 0; i < VC_VOICES.length; i++) if (VC_VOICES[i].id === id) return VC_VOICES[i]; return VC_VOICES[0]; }
   function vcSelect(id) {
@@ -6625,7 +6634,7 @@
   function vcPlay(v, btn) {
     var c = audio(), rec = vc.buf;
     if (!c || !rec || quiet()) { vc.buf = null; return; }
-    vcStopPlay(); vc.buf = rec; vcSession(vc.auto ? 'play-and-record' : 'playback'); vcUnlock();
+    vcStopPlay(); vc.buf = rec; vcSession(vc.auto && !VC_AUTO.SWITCH_SESSION ? 'play-and-record' : 'playback'); vcUnlock();
     var buf = v.rev ? vcReverse(c, rec) : rec, p = vcPlan(v, buf.duration), t0 = c.currentTime + 0.06, T = t0 + p.total;
     var nodes = vc.nodes, srcs = vc.srcs;
     function N(n) { nodes.push(n); return n; }
@@ -6709,7 +6718,7 @@
   }
   /* iOS: サイレントスイッチでも Web Audio を ならす ために、むおんの <audio> を ユーザーそうさの なかで ならし、audioSession を きりかえる */
   var vcSil = null;
-  function vcSession(t) { try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) {} }
+  function vcSession(t) { vc.sess = t; try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) {} }
   function vcUnlock() {
     try {
       if (!vcSil) {
@@ -6782,6 +6791,7 @@
   function vcAutoFeed(a) {
     var au = vc.au, c = ac;
     if (!vc.auto || vc.state !== 'auto' || !au || !c) return;
+    if (vc.muted) { au.skipped += a.length; if (au.n) vcAutoClear(); return; }   /* トラックが mute 中は VAD に いれない */
     if (performance.now() < vc.deafUntil) { au.skipped += a.length; if (au.n) vcAutoClear(); return; }
     var sr = c.sampleRate, ev = vcVad(au.vad, vcRms(a), a.length / sr);
     au.ch.push(a); au.n += a.length; au.fed += a.length;
@@ -6815,12 +6825,23 @@
   /* いちじ ていし（⏸）: マイクを とめる。声ボタンは つぎに つかう こえを えらぶだけ */
   function vcAutoOff() {
     vc.gen++;
+    if (vc.sessT) { cancel(vc.sessT); vc.sessT = 0; }
     vcRelease(); vcMicIdle();
+    if (VC_AUTO.SWITCH_SESSION) vcSession('playback');
     vcUi('⏸', 'off', 'ひとやすみ');
   }
   /* ユーザーそうさの どうき スタックの なかで よぶ（enter() / タップ）。await の まえに AudioContext を resume、むおん audio、audioSession */
-  function vcAutoOn() {
+  /* トラックが おわった（audioSession の きりかえ など）: じどうで とりなおす。しっぱいは「マイクを ゆるしてね」。れんぞくは 回数せいげん */
+  function vcReacquire() {
+    if (performance.now() - vc.okAt > 5000) vc.retry = 0;
+    if (++vc.retry > VC_AUTO.RETRY_MAX) { vcFail(); return; }
+    vcRelease();
+    vcAutoOn(true);
+  }
+  function vcAutoOn(again) {
+    if (!again) vc.retry = 0;
     var c = audio(), md = navigator.mediaDevices;
+    if (vc.sessT) { cancel(vc.sessT); vc.sessT = 0; }
     vcSession('play-and-record'); vcUnlock();
     vcShowAsk(false);
     if (!md || !md.getUserMedia || !c || !c.createMediaStreamSource) { vcFail(); return; }
@@ -6832,7 +6853,13 @@
     pr.then(function (stream) {
       if (g !== vc.gen) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
       vc.stream = stream;
-      stream.getTracks().forEach(function (t) { t.onended = function () { if (g === vc.gen && vc.auto) vcAutoOff(); }; });
+      vc.muted = false;
+      stream.getTracks().forEach(function (t) {
+        t.onended = function () { if (g === vc.gen && vc.auto) vcReacquire(); };
+        t.onmute = function () { if (g === vc.gen) vc.muted = true; };
+        t.onunmute = function () { if (g === vc.gen) { vc.muted = false; if (vc.au) vcAutoClear(); } };
+        if (t.muted) vc.muted = true;
+      });
       var src, sink;
       try {
         src = c.createMediaStreamSource(stream);
@@ -6843,7 +6870,7 @@
         vc.rec = { node: node, src: src, sink: sink };
         if (c.state !== 'running') { try { c.resume(); } catch (e) {} }
         vc.au = { vad: vcVadNew(), ch: [], n: 0, fed: 0, skipped: 0, count: 0 };
-        vc.state = 'auto';
+        vc.state = 'auto'; vc.okAt = performance.now();
         vc.deafUntil = performance.now() + VC_AUTO.INTRO * 1000;   /* はじめの よみあげを ひろわない */
         vcAutoPhase('listen');
         say('おはなし してね');

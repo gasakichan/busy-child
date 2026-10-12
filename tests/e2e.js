@@ -1937,6 +1937,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       return ctx.resume().then(() => d.stream);
     };
   })();`;
+  const ASMOCK = `(function(){ const h = window.__as = []; let t = 'auto'; Object.defineProperty(navigator, 'audioSession', { configurable: true, value: { get type() { return t; }, set type(v) { t = v; h.push(v); } } }); })();`;
   const AU = p => p.evaluate(() => { const v = window.__vc, a = v.au; return { auto: v.auto, state: v.state, ph: v.ph, voice: v.voice, last: v.last, plays: v.plays, live: v.live, buf: v.buf, dur: v.dur || 0, deaf: v.deafUntil === Infinity ? 'inf' : Math.round(v.deafUntil - performance.now()), n: a ? a.n : -1, chunks: a ? a.ch.length : -1, vad: a ? a.vad.st : '', count: a ? a.count : -1, skipped: a ? a.skipped : -1, tr: window.__fm ? window.__fm.tracks.filter(t => t.readyState === 'live').length : -1, ico: document.querySelector('#vc-ico').textContent, msg: document.querySelector('#vc-msg').textContent, pressed: document.querySelector('#vc-auto').getAttribute('aria-pressed') }; });
   const AUbuf = p => p.evaluate(() => { const v = window.__vc; if (!v.buf) return ''; return (v.buf.__id = v.buf.__id || Math.random()).toString(); });
   const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
@@ -1996,7 +1997,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   /* 入った瞬間から聞く: 声ボタンは最初から並ぶ → 自動録音 → 再生 → half-duplex → 声切替 → 全声 → OFF/ON → leave。縦 360x740 + 横 740x360 */
   T('voice-auto', async (br) => {
     const tag = 'voice-auto', shot = n => p.screenshot({ path: SP + '/voice-' + n + '.png' });
-    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, init: FAKEMIC });
+    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, init: FAKEMIC + ASMOCK });
     await p.evaluate(VCFAST);
     await tapTile(p, 'ボイスチェンジャー');
     ok(await p.locator('#stage-voice').isVisible() && await p.locator('#hm-p2').isHidden() && await p.locator('#vc-grid').isVisible() && (await p.locator('.vc-b').count()) >= 16, tag + ': entering shows the voice buttons straight away (no mic-only screen)');
@@ -2062,6 +2063,15 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await sleep(1000);
     s = await AU(p);
     ok(s.plays === p1 + 1 && s.ph === 'listen' && await AUbuf(p) === '', tag + ': played exactly once, then listening again, buffer discarded');
+    /* audioSession: 聞く=play-and-record → 再生=playback → 聞き直し=play-and-record */
+    const asq = await p.evaluate(() => window.__as.slice());
+    const cl = asq.filter((x, i) => i === 0 || x !== asq[i - 1]);
+    ok(cl.slice(0, 3).join() === 'play-and-record,playback,play-and-record' && await until(p, async () => (await p.evaluate(() => window.__as[window.__as.length - 1])) === 'play-and-record', 1500), tag + ': audioSession listen -> playback on play -> play-and-record again ' + cl.join());
+    /* マイクのトラックが終わったら じどうで とりなおして また きく */
+    const g0 = await p.evaluate(() => window.__gum);
+    await p.evaluate(() => window.__fm.tracks.forEach(t => { t.stop(); t.dispatchEvent(new Event('ended')); }));
+    ok(await until(p, async () => (await p.evaluate(() => window.__gum)) === g0 + 1 && (await AU(p)).state === 'auto' && (await AU(p)).tr === 1, 3000), tag + ': ended track -> mic re-acquired by itself, listening again');
+    await until(p, async () => (await AU(p)).ph === 'listen', 4000);
     /* 一時停止 OFF */
     await until(p, async () => (await AU(p)).ph === 'listen', 4000);
     await p.click('#vc-auto', { force: true });
@@ -2082,6 +2092,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     /* ON のまま leave */
     await p.evaluate(() => { window.__trs = window.__fm.tracks; });
     await p.click('#homebtn'); await sleep(200);
+    ok(await p.evaluate(() => window.__as[window.__as.length - 1]) === 'auto', tag + ': leave() puts audioSession back to auto');
     const lv = await p.evaluate(() => ({ live: window.__trs.filter(t => t.readyState === 'live').length, auto: window.__vc.auto, st: window.__vc.state, l2: window.__vc.live, buf: !!window.__vc.buf, hidden: document.querySelector('#stage-voice').hidden, au: !!window.__vc.au }));
     ok(lv.live === 0 && !lv.auto && lv.st === 'idle' && lv.l2 === 0 && !lv.buf && lv.hidden && !lv.au, tag + ': leave() stops the mic and clears everything ' + JSON.stringify(lv));
     await tapTile(p, 'ボイスチェンジャー');
