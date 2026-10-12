@@ -1084,18 +1084,33 @@
   /* ボイスチェンジャー */
   #stage-voice { background: linear-gradient(#E6D6FF, #FFE0F1); display: flex; flex-direction: column; gap: 10px; padding: var(--top) 12px 12px; }
   .vc-top { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
-  #stage-voice.has .vc-top { flex: 0 0 auto; flex-direction: row; gap: 14px; justify-content: flex-start; }
+  #stage-voice.has .vc-top { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; gap: 10px 14px; justify-content: flex-start; }
+  #stage-voice.has #vc-auto { flex: 1 1 100%; }
   #stage-voice.has .vc-bar { display: none; }
   #stage-voice.has .vc-msg { flex: 1 1 0; min-width: 0; text-align: left; }
   #vc-mic {
     position: relative; flex: 0 0 auto; border: 0; border-radius: 50%; padding: 0;
-    width: min(54vmin, 220px); height: min(54vmin, 220px);
-    background: #FF6B6B; color: #fff; font-size: min(28vmin, 110px); line-height: 1;
+    width: min(40vmin, 190px); height: min(40vmin, 190px);
+    background: #FF6B6B; color: #fff; font-size: min(21vmin, 90px); line-height: 1;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 8px 0 rgba(43,58,103,.22);
   }
   #stage-voice.has #vc-mic { width: clamp(92px, 20vmin, 120px); height: clamp(92px, 20vmin, 120px); font-size: clamp(46px, 10vmin, 60px); }
   #vc-mic:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(43,58,103,.22); }
+  #vc-mic.auto { background: #5BA8FF; }
+  #vc-mic.auto.ply { background: #3FBF8A; }
+  #vc-mic.auto.lis { animation: vc-breath 2.4s ease-in-out infinite; }
+  @keyframes vc-breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  #vc-auto {
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px;
+    min-width: min(100%, 250px); max-width: 100%; min-height: 84px; padding: 0 18px;
+    border: 0; border-radius: 42px; background: #fff; color: var(--ink);
+    font-size: clamp(18px, 5.4vmin, 30px); line-height: 1.1; white-space: nowrap;
+    box-shadow: 0 6px 0 var(--shadow);
+  }
+  #vc-auto .ico { font-size: 1.7em; line-height: 1; }
+  #vc-auto:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
+  #vc-auto.on { background: #8F6BF2; color: #fff; box-shadow: 0 0 0 5px #fff, 0 0 22px 8px rgba(143,107,242,.55), 0 6px 0 var(--shadow); }
   #vc-mic.rec { background: #FF3B3B; animation: vc-pulse .7s ease-in-out infinite; }
   #vc-mic.rec::after { content: ''; position: absolute; inset: -10px; border-radius: 50%; border: 6px solid #FF3B3B; opacity: .5; animation: vc-ring .7s ease-out infinite; }
   @keyframes vc-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
@@ -1116,15 +1131,19 @@
   .vc-b .ico { font-size: min(52cqh, 40cqw); line-height: 1; }
   .vc-b .lab { font-size: min(22cqh, 15cqw, 26px); line-height: 1.1; white-space: nowrap; }
   .vc-b:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
+  .vc-b { position: relative; }
+  .vc-b.sel { box-shadow: inset 0 0 0 5px #8F6BF2, 0 5px 0 var(--shadow); }
+  .vc-b.sel::after { content: '✓'; position: absolute; top: 4px; right: 8px; font-size: 20px; line-height: 1; font-weight: 700; color: #8F6BF2; }
   .vc-b.on { animation: vc-wob .35s ease-in-out infinite; box-shadow: 0 0 0 6px #fff, 0 0 26px 10px var(--c), 0 5px 0 var(--shadow); filter: brightness(1.08); z-index: 1; }
   @keyframes vc-wob { 0%, 100% { transform: rotate(-3deg) scale(1.04); } 50% { transform: rotate(3deg) scale(1.08); } }
   @media (min-aspect-ratio: 23/20) {
     #stage-voice { flex-direction: row; }
-    #stage-voice.has .vc-top { flex: 0 0 26%; flex-direction: column; justify-content: center; gap: 8px; }
+    #stage-voice.has .vc-top { flex: 0 0 26%; flex-direction: column; flex-wrap: nowrap; justify-content: center; gap: 8px; }
+    #stage-voice.has #vc-auto { flex: 0 0 auto; min-height: 80px; padding: 0 10px; gap: 6px; }
     #stage-voice.has .vc-msg { flex: 0 0 auto; text-align: center; }
     .vc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
   }
-  @media (prefers-reduced-motion: reduce) { #vc-mic.rec, #vc-mic.rec::after, .vc-b.on { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { #vc-mic.rec, #vc-mic.rec::after, #vc-mic.auto.lis, .vc-b.on { animation: none; } }
 </style>
 </head>
 <body>
@@ -1364,6 +1383,7 @@
       <button id="vc-mic" type="button" aria-label="ろくおん">🎤</button>
       <div class="vc-msg" id="vc-msg"></div>
       <div class="vc-bar" id="vc-bar" aria-hidden="true"><i></i></div>
+      <button id="vc-auto" type="button" aria-pressed="false" aria-label="ずっときく"><span class="ico">👂</span><span class="lab">ずっときく</span></button>
     </div>
     <div class="vc-grid" id="vc-grid" hidden></div>
     <div class="fx" id="fx-voice"></div>
@@ -6536,9 +6556,44 @@
     }
     return out;
   }
+  /* オート（ずっときく）: 簡易 VAD。s=状態, rms=短い窓のRMS, dt=その窓の秒数。戻り値 ''=なし 'start' 'end'(かくてい) 'drop'(みじかい) 'max'(さいちょうで きょうせい) */
+  var VC_AUTO = { PRE: 0.3, QUIET: 0.7, MAXLEN: 6, MINV: 0.3, TAIL: 0.5, KEEP: 0.15, CAL: 0.4, MULT: 3, THR_MIN: 0.02, THR_MAX: 0.12, FLOOR_MAX: 0.04, INTRO: 2.5, GAIN_MAX: 1.6 };
+  function vcThr(f) { return Math.min(VC_AUTO.THR_MAX, Math.max(VC_AUTO.THR_MIN, f * VC_AUTO.MULT)); }
+  function vcVadNew() { return { st: 'idle', floor: 0, thr: VC_AUTO.THR_MIN, cal: 0, calSum: 0, quiet: 0, len: 0 }; }
+  function vcVadReset(s) { s.st = 'idle'; s.quiet = 0; s.len = 0; return s; }
+  function vcVad(s, rms, dt) {
+    var A = VC_AUTO;
+    if (s.st === 'talk') {
+      s.len += dt;
+      if (rms >= s.thr * 0.6) s.quiet = 0; else s.quiet += dt;
+      if (s.quiet >= A.QUIET) { s.st = 'idle'; return (s.len - s.quiet >= A.MINV) ? 'end' : 'drop'; }
+      if (s.len >= A.MAXLEN) { s.st = 'idle'; return 'max'; }
+      return '';
+    }
+    var r = Math.min(rms, A.FLOOR_MAX);
+    if (s.cal < A.CAL) {                         /* さいしょの むおんで ノイズフロアを はかる */
+      s.cal += dt; s.calSum += r * dt; s.floor = s.calSum / s.cal; s.thr = vcThr(s.floor);
+      return '';
+    }
+    if (rms > s.thr) { s.st = 'talk'; s.len = dt; s.quiet = 0; return 'start'; }
+    s.floor += (r - s.floor) * Math.min(1, dt * 2);   /* ゆっくり ついてくる */
+    s.thr = vcThr(s.floor);
+    return '';
+  }
+  /* プリロール: いちばん ふるい かけらを すてても PRE びょう のこるなら すてる かずを かえす */
+  function vcRingDrop(lens, sr) {
+    var need = VC_AUTO.PRE * sr, tot = 0, n = 0, i;
+    for (i = 0; i < lens.length; i++) tot += lens[i];
+    while (n < lens.length && tot - lens[n] >= need) { tot -= lens[n]; n++; }
+    return n;
+  }
+  /* おわりの むおんを KEEP びょうだけ のこして きる。ぜんぶの サンプルすう total, quiet=むおんの びょう */
+  function vcKeep(total, sr, quiet) {
+    return Math.max(0, Math.min(total, total - Math.round(Math.max(0, quiet - VC_AUTO.KEEP) * sr)));
+  }
   /* vc:end */
-  var vcStage = $('#stage-voice'), vcMic = $('#vc-mic'), vcMsg = $('#vc-msg'), vcBar = $('#vc-bar'), vcGrid = $('#vc-grid');
-  var vc = { state: 'idle', gen: 0, buf: null, stream: null, rec: null, chunks: [], total: 0, recT: 0, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '' };
+  var vcStage = $('#stage-voice'), vcMic = $('#vc-mic'), vcMsg = $('#vc-msg'), vcBar = $('#vc-bar'), vcGrid = $('#vc-grid'), vcAuto = $('#vc-auto'), vcBtns = {};
+  var vc = { auto: false, ph: '', voice: 'normal', deafUntil: 0, au: null, state: 'idle', gen: 0, buf: null, stream: null, rec: null, chunks: [], total: 0, recT: 0, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '' };
   var VC_HINT = '🎤を おして おはなししてね';
   function vcSay(t, show, color) {
     vcMsg.textContent = vis(show || t);
@@ -6550,11 +6605,20 @@
     vc.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
     vc.nodes = []; vc.srcs = []; vc.live = 0;
     if (vc.btn) { vc.btn.classList.remove('on'); vc.btn = null; }
+    if (vc.auto) {                      /* さいせい おわり: すこし まってから また きく（ハウリングよけ） */
+      vc.deafUntil = performance.now() + VC_AUTO.TAIL * 1000;
+      if (vc.ph === 'play') vcAutoPhase('listen');
+    }
+  }
+  function vcVoice(id) { for (var i = 0; i < VC_VOICES.length; i++) if (VC_VOICES[i].id === id) return VC_VOICES[i]; return VC_VOICES[0]; }
+  function vcSelect(id) {
+    vc.voice = id;
+    for (var k in vcBtns) if (vcBtns.hasOwnProperty(k)) vcBtns[k].classList.toggle('sel', k === id);
   }
   function vcPlay(v, btn) {
     var c = audio();
     if (!c || !vc.buf || quiet()) return;
-    vcStopPlay(); vcSession('playback'); vcUnlock();
+    vcStopPlay(); vcSession(vc.auto ? 'play-and-record' : 'playback'); vcUnlock();
     var buf = vc.buf, p = vcPlan(v, buf.duration), t0 = c.currentTime + 0.06, T = t0 + p.total;
     var nodes = vc.nodes, srcs = vc.srcs;
     function N(n) { nodes.push(n); return n; }
@@ -6589,7 +6653,7 @@
       osc(v.ring, T).connect(rg.gain);
     }
     var comp = N(c.createDynamicsCompressor()), out = N(c.createGain());
-    out.gain.value = v.ring ? 1.6 : 1;
+    out.gain.value = Math.min(VC_AUTO.GAIN_MAX, v.ring ? 1.6 : 1);
     last.connect(out);
     if (v.echo) {                       /* ディレイ + フィードバック（くりかえしの たびに こもる） */
       var dl = N(c.createDelay(1)), fb = N(c.createGain()), lpf = bq('lowpass', v.echo.lp || 3500), wet = N(c.createGain());
@@ -6600,11 +6664,15 @@
     vc.live = nodes.length; vc.plays++; vc.last = v.id;
     if (btn) { vc.btn = btn; btn.classList.add('on'); }
     vc.endT = later(vcStopPlay, p.total * 1000 + 150);
+    if (vc.auto) { vc.deafUntil = Infinity; vcAutoPhase('play'); }   /* さいせいちゅうは マイクを ぜんぶ すてる */
   }
   function vcMicIdle() {
-    vc.state = 'idle';
-    vcMic.classList.remove('rec'); vcBar.classList.remove('on');
-    vcMic.setAttribute('aria-label', 'ろくおん');
+    vc.state = 'idle'; vc.auto = false; vc.ph = ''; vc.au = null; vc.deafUntil = 0;
+    vcMic.classList.remove('rec', 'auto', 'lis', 'ply'); vcBar.classList.remove('on');
+    vcMic.textContent = '🎤'; vcMic.setAttribute('aria-label', 'ろくおん');
+    vcAuto.classList.remove('on'); vcAuto.setAttribute('aria-pressed', 'false');
+    vcAuto.querySelector('.ico').textContent = '👂'; vcAuto.querySelector('.lab').textContent = 'ずっときく';
+    vcAuto.setAttribute('aria-label', 'ずっときく');
   }
   /* iOS: サイレントスイッチでも Web Audio を ならす ために、むおんの <audio> を ユーザーそうさの なかで ならし、audioSession を きりかえる */
   var vcSil = null;
@@ -6689,7 +6757,7 @@
     vcStage.classList.add('has'); vcGrid.hidden = false;
     vcMsg.textContent = 'こえを えらんでね';
     say('こえを えらんでね'); tone(880, 0.12, 'triangle', 0.12);
-    vcPlay(VC_VOICES[0], vcGrid.firstChild);
+    var v0 = vcVoice(vc.voice); vcPlay(v0, vcBtns[v0.id]);
   }
   function vcStartRec() {
     /* ユーザーそうさの どうき スタックの なかで（await の まえに）AudioContext を resume し、むおん audio を ならす */
@@ -6729,7 +6797,104 @@
       });
     }, function () { if (g === vc.gen) vcFail(); });
   }
+  /* ---- オート（ずっときく）---- */
+  var VC_PH = { listen: ['👂', 'きいてるよ'], talk: ['🎙️', 'ためてる…'], play: ['🔊', 'しゃべってるよ'] };
+  function vcAutoPhase(ph) {
+    if (!vc.auto) return;
+    vc.ph = ph;
+    vcMic.classList.add('auto');
+    vcMic.classList.toggle('rec', ph === 'talk'); vcMic.classList.toggle('lis', ph === 'listen'); vcMic.classList.toggle('ply', ph === 'play');
+    vcMic.textContent = VC_PH[ph][0]; vcMic.setAttribute('aria-label', VC_PH[ph][1]);
+    vcMsg.textContent = VC_PH[ph][1];
+  }
+  function vcRms(a) { var s = 0, n = a.length; for (var i = 0; i < n; i++) s += a[i] * a[i]; return n ? Math.sqrt(s / n) : 0; }
+  function vcAutoClear() { var au = vc.au; if (!au) return; au.ch = []; au.n = 0; vcVadReset(au.vad); }
+  /* マイクの かけら(Float32)が くるたびに よばれる。さいせい中・さいせい後の すこしの あいだは ぜんぶ すてる */
+  function vcAutoFeed(a) {
+    var au = vc.au, c = ac;
+    if (!vc.auto || vc.state !== 'auto' || !au || !c) return;
+    if (performance.now() < vc.deafUntil) { au.skipped += a.length; if (au.n) vcAutoClear(); return; }
+    var sr = c.sampleRate, ev = vcVad(au.vad, vcRms(a), a.length / sr);
+    au.ch.push(a); au.n += a.length; au.fed += a.length;
+    if (ev === 'start') { vcAutoPhase('talk'); return; }
+    if (ev === 'drop') { vcAutoClear(); vcAutoPhase('listen'); return; }
+    if (ev === 'end' || ev === 'max') { vcAutoCommit(ev === 'end' ? vcKeep(au.n, sr, au.vad.quiet) : au.n); return; }
+    if (au.vad.st === 'idle') {          /* プリロール（0.3びょう）だけ ためておく */
+      var k = vcRingDrop(au.ch.map(function (x) { return x.length; }), sr);
+      if (k) { au.n -= au.ch.splice(0, k).reduce(function (s, x) { return s + x.length; }, 0); }
+    }
+  }
+  /* はなしおわり: バッファを かくていしてから、えらんだ こえで さいせい（その あいだ マイクは すてる） */
+  function vcAutoCommit(keep) {
+    var au = vc.au, ch = au.ch, c = ac;
+    vc.deafUntil = performance.now() + VC_AUTO.TAIL * 1000;
+    vcAutoClear();
+    var buf = null;
+    if (c && keep >= c.sampleRate * 0.15) {
+      try {
+        buf = c.createBuffer(1, keep, c.sampleRate);
+        var d = buf.getChannelData(0), o = 0;
+        for (var i = 0; i < ch.length && o < keep; i++) { var part = o + ch[i].length > keep ? ch[i].subarray(0, keep - o) : ch[i]; d.set(part, o); o += part.length; }
+      } catch (e) { buf = null; }
+    }
+    if (!buf) { vcAutoPhase('listen'); return; }
+    vc.buf = buf; au.count++;
+    vcStage.classList.add('has'); vcGrid.hidden = false;
+    var v = vcVoice(vc.voice);
+    vcPlay(v, vcBtns[v.id]);
+    if (!vc.live) vcAutoPhase('listen');
+  }
+  function vcAutoOff() {
+    vc.gen++;
+    vcRelease(); vcMicIdle();
+    if (vc.buf) vcMsg.textContent = 'こえを えらんでね';
+    else { vcMsg.textContent = VC_HINT; vcStage.classList.remove('has'); vcGrid.hidden = true; }
+  }
+  function vcAutoOn() {
+    /* ユーザーそうさの なかで（await の まえに）AudioContext を resume、むおん audio、audioSession */
+    var c = audio(), md = navigator.mediaDevices;
+    vcSession('play-and-record'); vcUnlock();
+    if (!md || !md.getUserMedia || !c || !c.createMediaStreamSource) { vcFail(); return; }
+    var g = ++vc.gen;
+    vcStopPlay(); vc.auto = true; vc.state = 'ask';
+    vcAuto.classList.add('on'); vcAuto.setAttribute('aria-pressed', 'true');
+    vcAuto.querySelector('.ico').textContent = '⏹'; vcAuto.querySelector('.lab').textContent = 'とめる';
+    vcAuto.setAttribute('aria-label', 'とめる');
+    var pr;
+    try { pr = md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); } catch (e) { vcFail(); return; }
+    pr.then(function (stream) {
+      if (g !== vc.gen) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
+      vc.stream = stream;
+      stream.getTracks().forEach(function (t) { t.onended = function () { if (g === vc.gen && vc.auto) vcAutoOff(); }; });
+      var src, sink;
+      try {
+        src = c.createMediaStreamSource(stream);
+        sink = c.createGain(); sink.gain.value = 0; sink.connect(c.destination);
+      } catch (e) { vcFail(); return; }
+      vcTap(c, src, sink, vcAutoFeed).then(function (node) {
+        if (g !== vc.gen) { try { node.disconnect(); src.disconnect(); sink.disconnect(); } catch (e) {} return; }
+        vc.rec = { node: node, src: src, sink: sink };
+        if (c.state !== 'running') { try { c.resume(); } catch (e) {} }
+        vc.au = { vad: vcVadNew(), ch: [], n: 0, fed: 0, skipped: 0, count: 0 };
+        vc.state = 'auto';
+        vc.deafUntil = performance.now() + VC_AUTO.INTRO * 1000;   /* はじめの よみあげを ひろわない */
+        vcStage.classList.add('has'); vcGrid.hidden = false;
+        vcAutoPhase('listen');
+        say('ずっと きいてるよ'); bigWord('きいてるよ', '#8F6BF2', 'clamp(28px, 8.5vw, 80px)');
+      }, function () {
+        try { src.disconnect(); sink.disconnect(); } catch (e) {}
+        if (g === vc.gen) vcFail();
+      });
+    }, function () { if (g === vc.gen) vcFail(); });
+  }
+  onTap(vcAuto, function () {
+    if (vc.auto) { vcAutoOff(); return; }
+    if (vc.state !== 'idle') { vc.gen++; vcRelease(); vcMicIdle(); }   /* てうごの ろくおんは やめる */
+    hideWord();
+    vcAutoOn();
+  });
   onTap(vcMic, function () {
+    if (vc.auto) return;
     if (vc.state === 'rec') { vcStopRec(); return; }
     if (vc.state !== 'idle') return;
     vcStopPlay(); hideWord();
@@ -6741,23 +6906,26 @@
     b.setAttribute('aria-label', v.lab); b.dataset.voice = v.id;
     b.innerHTML = '<span class="ico">' + v.ico + '</span><span class="lab">' + v.lab + '</span>';
     onTap(b, function () {
-      if (!vc.buf) return;
+      if (!vc.buf && !vc.auto) return;
+      vcSelect(v.id);                  /* ゆうこうな こえ（オートは この こえで さいせい） */
+      if (!vc.buf) { bigWord(v.lab, '#8F6BF2', 'clamp(36px, 11vw, 100px)'); return; }
       if (quiet()) { wiggle(b, 6); return; }
       vcPlay(v, b);
       bigWord(v.lab, '#8F6BF2', 'clamp(36px, 11vw, 100px)');
-      vcMsg.textContent = v.lab;
+      if (!vc.auto) vcMsg.textContent = v.lab;
     });
+    vcBtns[v.id] = b;
     vcGrid.appendChild(b);
   });
   games.voice = {
     el: vcStage,
     enter: function () {
-      vc.buf = null; vc.gen++; vcMicIdle();
+      vc.buf = null; vc.gen++; vcMicIdle(); vcSelect('normal');
       vcStage.classList.remove('has'); vcGrid.hidden = true;
       vcMsg.textContent = VC_HINT;
     },
     leave: function () {
-      vc.gen++;
+      vc.gen++; vc.auto = false;
       vcRelease(); vcStopPlay(); vcMicIdle(); vcUnlockOff();
       vc.buf = null; vc.chunks = [];
       vcStage.classList.remove('has'); vcGrid.hidden = true;

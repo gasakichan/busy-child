@@ -27,7 +27,7 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['var nk = {', 'var nk = window.__nk = {'],
   ['games.neko = {', 'window.__nkStart = nkStart; window.__nkMake = nkMake; window.__nkPR = nkPR; window.__nkCatR = nkCatR; games.neko = {'],
   ['var vc = {', 'var vc = window.__vc = {'],
-  ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; games.voice = {'],
+  ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr }; games.voice = {'],
   ['var NK_SOLID = {', 'var NK_SOLID = window.__nkSolid = {'],
   ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
@@ -1935,6 +1935,37 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(byId.high.dur < byId.normal.dur && byId.low.dur > byId.normal.dur && byId.slow.dur > 2 * byId.normal.dur * 0.99 && byId.fast.dur < byId.normal.dur && byId.echo.tail > byId.normal.tail, 'voice: high shorter, low/slow longer, fast shorter, echo has a tail');
     const gOk = (g, d, sp) => g.length > 5 && g.every((x, i) => x.off >= 0 && x.off < d && x.off + x.len <= d + 1e-6 && (i === 0 || (x.at > g[i - 1].at && x.off > g[i - 1].off))) && Math.abs(g[g.length - 1].at * sp - g[g.length - 1].off) < 1e-6;
     ok(gOk(r.gr, 4, 0.5) && gOk(r.gr2, 4, 1.9) && r.gr.length > r.gr2.length, 'voice: grain schedules are monotonic and inside the recording (' + r.gr.length + '/' + r.gr2.length + ')');
+    /* オート: VAD の状態遷移（純粋関数） */
+    const a = await p.evaluate(() => {
+      const H = window.__vcA, A = H.A;
+      const sim = (parts, dt = 0.05) => {          // parts = [[rms, 秒], ...]
+        const s = H.vadNew(), ev = [], at = [];
+        parts.forEach(([r, sec]) => { const n = Math.round(sec / dt); for (let i = 0; i < n; i++) { const e = H.vad(s, r, dt); if (e) { ev.push(e); at.push(+(ev.length + ':' + s.len.toFixed(2)).split(':')[1]); } } });
+        return { ev, at, s };
+      };
+      const cal = [[0.003, 0.5]];
+      const o = { A: JSON.parse(JSON.stringify(A)) };
+      o.silent = sim([[0.003, 3]]); o.silentThr = o.silent.s.thr;
+      o.speech = sim(cal.concat([[0.2, 1], [0.003, 1.5]]));
+      o.blip = sim(cal.concat([[0.2, 0.1], [0.003, 1.5]]));
+      o.long = sim(cal.concat([[0.2, 6.2]]));
+      o.gap = sim(cal.concat([[0.2, 0.5], [0.003, 0.3], [0.2, 0.5], [0.003, 1.5]]));
+      o.noisy = sim([[0.03, 1], [0.05, 1], [0.15, 0.3]]);
+      o.noisyThr = H.vadNew(); { const s = H.vadNew(); for (let i = 0; i < 20; i++) H.vad(s, 0.03, 0.05); o.noisyThr = s.thr; }
+      o.hiThr = (() => { const s = H.vadNew(); for (let i = 0; i < 20; i++) H.vad(s, 0.5, 0.05); return s.thr; })();
+      o.ring = H.ring(new Array(20).fill(2048), 48000); o.ring2 = H.ring([100], 48000);
+      o.keep = [H.keep(48000, 48000, 0.7), H.keep(48000, 48000, 0), H.keep(1000, 48000, 0.7)];
+      return o;
+    });
+    ok(a.A.GAIN_MAX <= 1.6 && a.A.QUIET === 0.7 && a.A.MAXLEN === 6 && a.A.MINV === 0.3 && a.A.PRE === 0.3 && a.A.TAIL >= 0.5, 'voice-auto pure: tuning constants ' + JSON.stringify(a.A));
+    ok(a.silent.ev.length === 0 && a.silentThr === a.A.THR_MIN, 'voice-auto pure: silence never triggers, threshold has a floor (' + a.silentThr + ')');
+    ok(a.speech.ev.join() === 'start,end', 'voice-auto pure: speech -> start, end ' + a.speech.ev);
+    ok(a.blip.ev.join() === 'start,drop', 'voice-auto pure: blip shorter than 0.3s is dropped ' + a.blip.ev);
+    ok(a.long.ev.slice(0, 2).join() === 'start,max' && a.long.ev.length <= 3, 'voice-auto pure: forced end at 6s (then a new utterance may begin) ' + a.long.ev);
+    ok(a.gap.ev.join() === 'start,end', 'voice-auto pure: a 0.3s pause does not split speech ' + a.gap.ev);
+    ok(a.noisy.ev.join() === 'start' && a.noisyThr > a.A.THR_MIN && a.noisyThr <= a.A.THR_MAX && a.hiThr === a.A.THR_MAX, 'voice-auto pure: threshold calibrates to ambient noise (' + a.noisyThr.toFixed(3) + ', cap ' + a.hiThr + ') ' + a.noisy.ev);
+    ok(a.ring === 12 && a.ring2 === 0, 'voice-auto pure: pre-roll keeps >= 0.3s (' + a.ring + ')');
+    ok(a.keep[0] === 21600 && a.keep[1] === 48000 && a.keep[2] === 0, 'voice-auto pure: trailing silence trimmed to 0.15s ' + a.keep);
     await p.context().close();
   });
 
@@ -2011,6 +2042,137 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#vc-grid').isHidden() && (await st()).state === 'idle', tag + ': re-enter starts fresh');
     await p.click('#homebtn'); await sleep(150);
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  const FAKEMIC = `(function(){
+    navigator.mediaDevices.getUserMedia = function(c){
+      window.__gum++;
+      if (window.__denyCam) return Promise.reject(new DOMException('denied','NotAllowedError'));
+      const ctx = new AudioContext(), o = ctx.createOscillator(), g = ctx.createGain(), d = ctx.createMediaStreamDestination();
+      o.frequency.value = 300; g.gain.value = window.__fmInit || 0; o.connect(g); g.connect(d); o.start();
+      window.__fm = { ctx, set: v => { g.gain.value = v; }, tracks: d.stream.getAudioTracks() };
+      return ctx.resume().then(() => d.stream);
+    };
+  })();`;
+  const AU = p => p.evaluate(() => { const v = window.__vc, a = v.au; return { auto: v.auto, state: v.state, ph: v.ph, voice: v.voice, last: v.last, plays: v.plays, live: v.live, buf: v.buf, dur: v.buf ? v.buf.duration : 0, deaf: v.deafUntil === Infinity ? 'inf' : Math.round(v.deafUntil - performance.now()), n: a ? a.n : -1, chunks: a ? a.ch.length : -1, vad: a ? a.vad.st : '', count: a ? a.count : -1, skipped: a ? a.skipped : -1, tr: window.__fm ? window.__fm.tracks.filter(t => t.readyState === 'live').length : -1, mic: document.querySelector('#vc-mic').textContent, msg: document.querySelector('#vc-msg').textContent, pressed: document.querySelector('#vc-auto').getAttribute('aria-pressed') }; });
+  const AUbuf = p => p.evaluate(() => { const v = window.__vc; if (!v.buf) return ''; return (v.buf.__id = v.buf.__id || Math.random()).toString(); });
+  const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(50); } };
+
+  TV('voice-auto', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
+    const tag = 'voice-auto ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/voice-auto-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { voices: JAV, init: FAKEMIC });
+    const hs = () => p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-voice').scrollWidth > document.querySelector('#stage-voice').clientWidth);
+    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
+    await p.evaluate(() => { window.__vcA.A.INTRO = 0.3; });
+    const tb = await p.locator('#vc-auto').boundingBox();
+    ok(await p.locator('#vc-auto').isVisible() && tb.width >= 80 && tb.height >= 80 && !(await hs()), tag + ': toggle visible, ' + Math.round(tb.width) + 'x' + Math.round(tb.height) + ', no hscroll');
+    await shot('a');
+    await clearSays(p);
+    await p.click('#vc-auto', { force: true }); await sleep(900);
+    let s = await AU(p);
+    ok(s.auto && s.state === 'auto' && s.ph === 'listen' && s.tr === 1 && s.pressed === 'true' && s.mic === '👂' && s.msg === 'きいてるよ', tag + ': ON opens the mic and shows きいてるよ 👂 ' + JSON.stringify({ ...s, buf: 0 }));
+    ok((await says(p)).filter(x => x.t === 'ずっと きいてるよ').length === 1 && await p.locator('#vc-grid').isVisible(), tag + ': spoke once on ON, voices shown');
+    let ob = await p.locator('#vc-mic').boundingBox();
+    ok(ob.width >= 80 && !(await hs()), tag + ': status icon >= 80px, no hscroll');
+    /* 有効なボイスを先に選ぶ（録音前） */
+    await p.click('.vc-b[data-voice="robot"]', { force: true }); await sleep(150);
+    s = await AU(p);
+    ok(s.voice === 'robot' && s.plays === 0 && await p.locator('.vc-b.sel').count() === 1 && await p.locator('.vc-b.sel[data-voice="robot"]').count() === 1, tag + ': picking a voice before talking selects it (no playback yet)');
+    await shot('listen');
+    /* 発話 → ためてる */
+    await p.evaluate(() => window.__fm.set(0.3)); await sleep(700);
+    s = await AU(p);
+    ok(s.ph === 'talk' && s.msg === 'ためてる…' && await p.locator('#vc-mic.rec').count() === 1 && s.buf === null, tag + ': speech detected -> ためてる… pulse ' + s.ph);
+    await shot('talk');
+    await p.evaluate(() => window.__fm.set(0));
+    ok(await until(p, async () => (await AU(p)).ph === 'play', 2500), tag + ': ~0.7s of silence ends the utterance -> plays');
+    s = await AU(p); const buf1 = await AUbuf(p);
+    ok(s.count === 1 && s.last === 'robot' && s.live >= 3 && s.msg === 'しゃべってるよ' && s.mic === '🔊' && s.deaf === 'inf' && s.dur > 0.5 && s.dur < 2.6, tag + ': auto-played with the active voice, 🔊 (' + s.dur.toFixed(2) + 's, trimmed)');
+    ok(await p.locator('.vc-b.on[data-voice="robot"]').count() === 1, tag + ': playing button glows');
+    await shot('play');
+    /* ハウリング防止: 再生中は入力を捨てる */
+    const sk0 = s.skipped;
+    await p.evaluate(() => window.__fm.set(0.3)); await sleep(350);
+    s = await AU(p);
+    ok(s.ph === 'play' && s.n === 0 && s.chunks === 0 && s.vad === 'idle' && s.skipped > sk0 && await AUbuf(p) === buf1 && s.count === 1, tag + ': input is discarded during playback (skipped +' + (s.skipped - sk0) + ' samples)');
+    ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': playback ends -> listening again');
+    s = await AU(p);
+    ok(s.n === 0 && typeof s.deaf === 'number' && s.deaf > 0 && s.deaf <= 520, tag + ': ~0.5s deaf window after playback (' + s.deaf + 'ms left)');
+    await sleep(Math.max(0, s.deaf) + 300);
+    ok(await until(p, async () => (await AU(p)).ph === 'talk', 1500) && (await AUbuf(p)) === buf1, tag + ': resumes listening after the deaf window (still sounding -> ためてる)');
+    /* 有効なボイス切り替え: 次の自動再生に反映 */
+    await p.evaluate(() => window.__fm.set(0));
+    ok(await until(p, async () => (await AU(p)).count === 2, 3000), tag + ': second utterance committed');
+    s = await AU(p);
+    ok((await AUbuf(p)) !== buf1 && s.last === 'robot', tag + ': recent recording replaced, played in robot');
+    ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': second playback ended');
+    await sleep(700);
+    const p1 = (await AU(p)).plays;
+    await p.click('.vc-b[data-voice="high"]', { force: true }); await sleep(200);
+    s = await AU(p);
+    ok(s.voice === 'high' && s.last === 'high' && s.plays === p1 + 1 && s.ph === 'play' && s.deaf === 'inf' && await p.locator('.vc-b.sel[data-voice="high"]').count() === 1 && await p.locator('.vc-b.sel').count() === 1, tag + ': tapping a voice makes it active, replays the recent recording, mic stays deaf');
+    ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': voice-button playback ended');
+    await sleep(1000);
+    await p.evaluate(() => window.__fm.set(0.3)); await sleep(500); await p.evaluate(() => window.__fm.set(0));
+    ok(await until(p, async () => (await AU(p)).count === 3, 3000), tag + ': third utterance');
+    s = await AU(p);
+    ok(s.last === 'high', tag + ': auto playback uses the newly active voice');
+    ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': third playback ended');
+    ok(!(await hs()), tag + ': no hscroll');
+    /* OFF */
+    await p.click('#vc-auto', { force: true }); await sleep(400);
+    s = await AU(p);
+    ok(!s.auto && s.state === 'idle' && s.tr === 0 && s.pressed === 'false' && s.mic === '🎤' && s.dur > 0 && await p.locator('#vc-grid').isVisible(), tag + ': OFF stops the mic tracks, keeps the recording, back to 🎤 ' + JSON.stringify({ ...s, buf: 0 }));
+    await p.click('#vc-mic', { force: true }); await sleep(800); await p.click('#vc-mic', { force: true }); await sleep(700);
+    s = await AU(p);
+    ok(s.state === 'idle' && s.dur > 0.3 && s.last === 'high', tag + ': manual recording still works afterwards, plays the active voice');
+    await sleep(1200);
+    /* ON のまま leave */
+    await p.click('#vc-auto', { force: true }); await sleep(700);
+    ok((await AU(p)).tr === 1, tag + ': ON again');
+    await p.evaluate(() => { window.__trs = window.__fm.tracks; });
+    await p.click('#homebtn'); await sleep(300);
+    const lv = await p.evaluate(() => ({ live: window.__trs.filter(t => t.readyState === 'live').length, auto: window.__vc.auto, st: window.__vc.state, l2: window.__vc.live, buf: !!window.__vc.buf, hidden: document.querySelector('#stage-voice').hidden, au: !!window.__vc.au }));
+    ok(lv.live === 0 && !lv.auto && lv.st === 'idle' && lv.l2 === 0 && !lv.buf && lv.hidden && !lv.au, tag + ': leave() stops the auto mic and clears everything ' + JSON.stringify(lv));
+    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
+    ok(await p.locator('#vc-grid').isHidden() && (await p.locator('#vc-auto').getAttribute('aria-pressed')) === 'false' && await p.locator('.vc-b.sel').count() === 1, tag + ': re-enter starts fresh (voice back to ふつう)');
+    await p.click('#homebtn'); await sleep(150);
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  /* 音がずっと鳴っている部屋: 再生中は録音が増えない（half-duplex）・最長 6 秒・ON 直後は聞かない */
+  T('voice-auto-loud', async (br) => {
+    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, init: FAKEMIC + 'window.__fmInit = 0.3;' });
+    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
+    await p.click('#vc-auto', { force: true }); await sleep(1500);
+    let s = await AU(p);
+    ok(s.auto && s.ph === 'listen' && s.n === 0 && s.buf === null && s.skipped > 0, 'voice-auto-loud: first ~2.5s after ON is not recorded (own voice / intro) ' + JSON.stringify({ ph: s.ph, n: s.n, deaf: s.deaf }));
+    ok(await until(p, async () => (await AU(p)).ph === 'talk', 3000), 'voice-auto-loud: constant sound -> starts collecting after the intro');
+    ok(await until(p, async () => (await AU(p)).ph === 'play', 8000), 'voice-auto-loud: forced end at 6s -> plays');
+    s = await AU(p); const b1 = await AUbuf(p);
+    ok(s.dur > 5.5 && s.dur <= 6.6 && s.count === 1, 'voice-auto-loud: buffer is the max segment (' + s.dur.toFixed(2) + 's incl. pre-roll)');
+    let bad = 0, samples = 0;
+    while ((await AU(p)).ph === 'play' && samples < 60) { const q = await AU(p); samples++; if (q.n !== 0 || q.chunks !== 0 || q.count !== 1 || q.vad !== 'idle') bad++; await sleep(150); }
+    ok(samples >= 5 && bad === 0 && (await AUbuf(p)) === b1, 'voice-auto-loud: nothing recorded during playback although the mic keeps hearing sound (' + samples + ' samples, bad ' + bad + ')');
+    s = await AU(p);
+    ok(s.n === 0 && s.deaf !== 'inf', 'voice-auto-loud: still nothing in the buffer right after playback (deaf ' + s.deaf + 'ms)');
+    ok(await until(p, async () => (await AU(p)).ph === 'talk', 2500), 'voice-auto-loud: listens again after the deaf window');
+    await p.click('#homebtn'); await sleep(200);
+    ok(p.errs.length === 0, 'voice-auto-loud: no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  T('voice-auto-deny', async (br) => {
+    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, deny: true, init: FAKEMIC });
+    await tapTile(p, 'ボイスチェンジャー'); await sleep(400); await clearSays(p);
+    await p.click('#vc-auto', { force: true }); await sleep(500);
+    const sy = await says(p), big = await p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    const s = await AU(p);
+    ok(sy.length >= 1 && sy[sy.length - 1].t === 'まいくを ゆるしてね' && big === 'マイクを ゆるしてね' && !s.auto && s.state === 'idle' && s.pressed === 'false' && s.mic === '🎤', 'voice-auto-deny: gentle message, toggle returns to OFF ' + JSON.stringify([sy.map(x => x.t), big]));
+    await p.click('#vc-auto', { force: true }); await sleep(400);
+    ok((await AU(p)).state === 'idle' && p.errs.length === 0, 'voice-auto-deny: can retry without errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
