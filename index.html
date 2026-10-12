@@ -1555,7 +1555,7 @@
     if (!ac) {
       try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
     }
-    if (ac && ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+    if (ac && ac.state !== 'running' && ac.state !== 'closed') { try { ac.resume(); } catch (e) {} }
     return ac;
   }
   ['pointerdown', 'pointerup', 'touchend', 'click'].forEach(function (ev) {
@@ -6538,7 +6538,7 @@
   }
   /* vc:end */
   var vcStage = $('#stage-voice'), vcMic = $('#vc-mic'), vcMsg = $('#vc-msg'), vcBar = $('#vc-bar'), vcGrid = $('#vc-grid');
-  var vc = { state: 'idle', gen: 0, buf: null, stream: null, rec: null, chunks: [], recT: 0, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '' };
+  var vc = { state: 'idle', gen: 0, buf: null, stream: null, rec: null, chunks: [], total: 0, recT: 0, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '' };
   var VC_HINT = '🎤を おして おはなししてね';
   function vcSay(t, show, color) {
     vcMsg.textContent = vis(show || t);
@@ -6554,7 +6554,7 @@
   function vcPlay(v, btn) {
     var c = audio();
     if (!c || !vc.buf || quiet()) return;
-    vcStopPlay();
+    vcStopPlay(); vcSession('playback'); vcUnlock();
     var buf = vc.buf, p = vcPlan(v, buf.duration), t0 = c.currentTime + 0.06, T = t0 + p.total;
     var nodes = vc.nodes, srcs = vc.srcs;
     function N(n) { nodes.push(n); return n; }
@@ -6573,9 +6573,9 @@
     } else {
       var s = N(c.createBufferSource());
       s.buffer = buf; s.playbackRate.value = v.rate;
-      if (v.vib && s.detune) {
-        var lg = N(c.createGain()); lg.gain.value = v.vib.cents;
-        osc(v.vib.hz, T).connect(lg); lg.connect(s.detune);
+      if (v.vib) {                    /* ビブラート: Safari は detune が ないので playbackRate を ゆらす */
+        var lg = N(c.createGain()); lg.gain.value = v.rate * (Math.pow(2, v.vib.cents / 1200) - 1);
+        osc(v.vib.hz, T).connect(lg); lg.connect(s.playbackRate);
       }
       s.connect(head); s.start(t0); srcs.push(s);
     }
@@ -6606,11 +6606,61 @@
     vcMic.classList.remove('rec'); vcBar.classList.remove('on');
     vcMic.setAttribute('aria-label', 'ろくおん');
   }
+  /* iOS: サイレントスイッチでも Web Audio を ならす ために、むおんの <audio> を ユーザーそうさの なかで ならし、audioSession を きりかえる */
+  var vcSil = null;
+  function vcSession(t) { try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) {} }
+  function vcUnlock() {
+    try {
+      if (!vcSil) {
+        var sr = 8000, n = 800, u = new Uint8Array(44 + n), dv = new DataView(u.buffer);
+        var w = function (o, s) { for (var i = 0; i < s.length; i++) u[o + i] = s.charCodeAt(i); };
+        w(0, 'RIFF'); dv.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true);
+        dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr, true);
+        dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); w(36, 'data'); dv.setUint32(40, n, true);
+        for (var i = 0; i < n; i++) u[44 + i] = 128;
+        var s = ''; for (var j = 0; j < u.length; j++) s += String.fromCharCode(u[j]);
+        vcSil = new Audio('data:audio/wav;base64,' + btoa(s));
+        vcSil.loop = true; vcSil.setAttribute('playsinline', ''); vcSil.preload = 'auto';
+      }
+      if (vcSil.paused) { var pr = vcSil.play(); if (pr && pr.catch) pr.catch(function () {}); }
+    } catch (e) {}
+  }
+  function vcUnlockOff() { try { if (vcSil) vcSil.pause(); } catch (e) {} vcSession('auto'); }
+  /* マイク → PCM（Float32）。AudioWorklet、だめなら ScriptProcessor。MediaRecorder / decodeAudioData は つかわない */
+  var VC_WK = 'class P extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(2048);this.n=0}process(i){var c=i[0]&&i[0][0];if(c){for(var k=0;k<c.length;k++){this.b[this.n++]=c[k];if(this.n===2048){this.port.postMessage(this.b.slice(0));this.n=0}}}return true}}registerProcessor("vc-rec",P)';
+  function vcTap(c, src, sink, cb) {
+    var viaSP = function () {
+      var sp = c.createScriptProcessor(4096, 1, 1);
+      sp.onaudioprocess = function (e) { cb(new Float32Array(e.inputBuffer.getChannelData(0))); };
+      src.connect(sp); sp.connect(sink);
+      return sp;
+    };
+    return new Promise(function (res, rej) {
+      var fallback = function () { try { res(viaSP()); } catch (e) { rej(e); } };
+      if (!(c.audioWorklet && window.AudioWorkletNode)) { fallback(); return; }
+      try {
+        if (!c.__vcWk) c.__vcWk = c.audioWorklet.addModule(URL.createObjectURL(new Blob([VC_WK], { type: 'application/javascript' })));
+        c.__vcWk.then(function () {
+          try {
+            var n = new AudioWorkletNode(c, 'vc-rec', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+            n.port.onmessage = function (e) { cb(e.data); };
+            src.connect(n); n.connect(sink); res(n);
+          } catch (e) { fallback(); }
+        }, function () { c.__vcWk = null; fallback(); });
+      } catch (e) { fallback(); }
+    });
+  }
+  function vcStopTracks() {
+    if (vc.stream) { try { vc.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} vc.stream = null; }
+  }
   function vcRelease() {
     if (vc.recT) { cancel(vc.recT); vc.recT = 0; }
     var r = vc.rec; vc.rec = null;
-    if (r) { r.ondataavailable = null; r.onstop = null; try { if (r.state !== 'inactive') r.stop(); } catch (e) {} }
-    if (vc.stream) { try { vc.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} vc.stream = null; }
+    if (r) {
+      try { if (r.node.port) r.node.port.onmessage = null; r.node.onaudioprocess = null; } catch (e) {}
+      [r.node, r.src, r.sink].forEach(function (n) { try { n.disconnect(); } catch (e) {} });
+    }
+    vcStopTracks();
   }
   function vcFail() {
     vcRelease(); vcMicIdle();
@@ -6620,68 +6670,63 @@
     vcRelease(); vcMicIdle();
     vcSay('もういちど おはなししてね', null, '#8F6BF2');
   }
-  function vcDecode(blob, g) {
-    var c = audio();
-    var rd = function (cb) {
-      if (blob.arrayBuffer) { blob.arrayBuffer().then(cb, function () { if (g === vc.gen) vcRetry(); }); return; }
-      var fr = new FileReader(); fr.onload = function () { cb(fr.result); }; fr.onerror = function () { if (g === vc.gen) vcRetry(); }; fr.readAsArrayBuffer(blob);
-    };
-    rd(function (ab) {
-      if (g !== vc.gen) return;
-      var done = function (buf) {
-        if (g !== vc.gen) return;
-        if (!buf || buf.duration < 0.15) { vcRetry(); return; }
-        vc.buf = buf; vcMicIdle();
-        vcStage.classList.add('has'); vcGrid.hidden = false;
-        vcMsg.textContent = 'こえを えらんでね';
-        say('こえを えらんでね'); tone(880, 0.12, 'triangle', 0.12);
-        vcPlay(VC_VOICES[0], vcGrid.firstChild);
-      };
-      var fail = function () { if (g === vc.gen) vcRetry(); };
-      try {
-        var pr = c.decodeAudioData(ab, done, fail);
-        if (pr && pr.then) pr.then(done, fail);
-      } catch (e) { fail(); }
-    });
-  }
   function vcStopRec() {
     if (vc.state !== 'rec') return;
-    var r = vc.rec, g = vc.gen;
+    var c = audio(), chunks = vc.chunks, total = vc.total;
     vc.state = 'dec';
-    if (vc.recT) { cancel(vc.recT); vc.recT = 0; }
     vcMic.classList.remove('rec'); vcBar.classList.remove('on');
     tone(660, 0.1, 'triangle', 0.1);
-    if (!r) { vcRetry(); return; }
-    r.onstop = function () {
-      var chunks = vc.chunks, type = r.mimeType || 'audio/webm';
-      if (vc.stream) { try { vc.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} vc.stream = null; }
-      vc.rec = null;
-      if (g !== vc.gen) return;
-      if (!chunks.length) { vcRetry(); return; }
-      vcDecode(new Blob(chunks, { type: type }), g);
-    };
-    try { r.stop(); } catch (e) { vcRetry(); }
+    vcRelease();
+    vc.chunks = [];
+    if (!c || total < c.sampleRate * 0.15) { vcRetry(); return; }
+    var buf;
+    try {
+      buf = c.createBuffer(1, total, c.sampleRate);
+      var ch = buf.getChannelData(0), o = 0;
+      chunks.forEach(function (a) { ch.set(a, o); o += a.length; });
+    } catch (e) { vcRetry(); return; }
+    vc.buf = buf; vcMicIdle();
+    vcStage.classList.add('has'); vcGrid.hidden = false;
+    vcMsg.textContent = 'こえを えらんでね';
+    say('こえを えらんでね'); tone(880, 0.12, 'triangle', 0.12);
+    vcPlay(VC_VOICES[0], vcGrid.firstChild);
   }
   function vcStartRec() {
-    var md = navigator.mediaDevices;
-    if (!md || !md.getUserMedia || typeof MediaRecorder === 'undefined' || !audio()) { vcFail(); return; }
+    /* ユーザーそうさの どうき スタックの なかで（await の まえに）AudioContext を resume し、むおん audio を ならす */
+    var c = audio(), md = navigator.mediaDevices;
+    vcSession('play-and-record'); vcUnlock();
+    if (!md || !md.getUserMedia || !c || !c.createMediaStreamSource) { vcFail(); return; }
     var g = ++vc.gen;
     vc.state = 'ask';
     var pr;
-    try { pr = md.getUserMedia({ audio: true, video: false }); } catch (e) { vcFail(); return; }
+    try { pr = md.getUserMedia({ audio: true }); } catch (e) { vcFail(); return; }
     pr.then(function (stream) {
       if (g !== vc.gen) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
-      var r;
-      try { r = new MediaRecorder(stream); } catch (e) { vc.stream = stream; vcFail(); return; }
-      vc.stream = stream; vc.rec = r; vc.chunks = [];
-      r.ondataavailable = function (e) { if (e.data && e.data.size) vc.chunks.push(e.data); };
-      try { r.start(); } catch (e) { vcFail(); return; }
-      vc.state = 'rec';
-      vcMic.classList.add('rec'); vcMic.setAttribute('aria-label', 'とめる');
-      vcBar.classList.remove('on'); void vcBar.offsetWidth; vcBar.classList.add('on');
-      vcMsg.textContent = 'おはなし してね…';
-      hideWord();
-      vc.recT = later(vcStopRec, VC_MAX * 1000);
+      vc.stream = stream;
+      var src, sink;
+      try {
+        src = c.createMediaStreamSource(stream);
+        sink = c.createGain(); sink.gain.value = 0; sink.connect(c.destination);
+      } catch (e) { vcFail(); return; }
+      var max = Math.ceil(c.sampleRate * (VC_MAX + 0.5));
+      vc.chunks = []; vc.total = 0;
+      vcTap(c, src, sink, function (a) {
+        if (vc.state !== 'rec' || vc.total >= max) return;
+        vc.chunks.push(a); vc.total += a.length;
+      }).then(function (node) {
+        if (g !== vc.gen) { try { node.disconnect(); src.disconnect(); sink.disconnect(); } catch (e) {} return; }
+        vc.rec = { node: node, src: src, sink: sink };
+        if (c.state !== 'running') { try { c.resume(); } catch (e) {} }
+        vc.state = 'rec';
+        vcMic.classList.add('rec'); vcMic.setAttribute('aria-label', 'とめる');
+        vcBar.classList.remove('on'); void vcBar.offsetWidth; vcBar.classList.add('on');
+        vcMsg.textContent = 'おはなし してね…';
+        hideWord();
+        vc.recT = later(vcStopRec, VC_MAX * 1000);
+      }, function () {
+        try { src.disconnect(); sink.disconnect(); } catch (e) {}
+        if (g === vc.gen) vcFail();
+      });
     }, function () { if (g === vc.gen) vcFail(); });
   }
   onTap(vcMic, function () {
@@ -6713,7 +6758,7 @@
     },
     leave: function () {
       vc.gen++;
-      vcRelease(); vcStopPlay(); vcMicIdle();
+      vcRelease(); vcStopPlay(); vcMicIdle(); vcUnlockOff();
       vc.buf = null; vc.chunks = [];
       vcStage.classList.remove('has'); vcGrid.hidden = true;
     }

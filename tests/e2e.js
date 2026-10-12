@@ -2014,6 +2014,18 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.context().close();
   });
 
+  /* iOS 相当: AudioWorklet も MediaRecorder も無い -> ScriptProcessor で録れる */
+  T('voice-sp', async (br) => {
+    const p = await newPage(br, { width: 390, height: 844 }, { voices: JAV, init: 'delete window.AudioWorkletNode; delete window.MediaRecorder; window.__ses = []; ' });
+    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
+    await p.click('#vc-mic', { force: true }); await sleep(1200); await p.click('#vc-mic', { force: true }); await sleep(600);
+    const r = await p.evaluate(() => ({ has: !!window.__vc.buf, dur: window.__vc.buf ? window.__vc.buf.duration : 0, peak: window.__vc.buf ? Math.max.apply(null, Array.from(window.__vc.buf.getChannelData(0)).map(Math.abs)) : 0, tracks: window.__vc.stream ? 1 : 0 }));
+    ok(r.has && r.dur > 0.5 && r.peak > 0.001 && r.tracks === 0, 'voice-sp: ScriptProcessor PCM recording works without MediaRecorder/Worklet ' + JSON.stringify(r));
+    await p.click('.vc-b[data-voice="ghost"]', { force: true }); await sleep(150);
+    ok((await p.evaluate(() => window.__vc.live)) >= 3 && p.errs.length === 0, 'voice-sp: playback ok, no errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
   T('voice-deny', async (br) => {
     const p = await newPage(br, { width: 360, height: 740 }, { deny: true, voices: JAV });
     await tapTile(p, 'ボイスチェンジャー'); await sleep(400); await clearSays(p);
