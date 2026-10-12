@@ -1937,7 +1937,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       return ctx.resume().then(() => d.stream);
     };
   })();`;
-  const AU = p => p.evaluate(() => { const v = window.__vc, a = v.au; return { auto: v.auto, state: v.state, ph: v.ph, voice: v.voice, last: v.last, plays: v.plays, live: v.live, buf: v.buf, dur: v.buf ? v.buf.duration : 0, deaf: v.deafUntil === Infinity ? 'inf' : Math.round(v.deafUntil - performance.now()), n: a ? a.n : -1, chunks: a ? a.ch.length : -1, vad: a ? a.vad.st : '', count: a ? a.count : -1, skipped: a ? a.skipped : -1, tr: window.__fm ? window.__fm.tracks.filter(t => t.readyState === 'live').length : -1, ico: document.querySelector('#vc-ico').textContent, msg: document.querySelector('#vc-msg').textContent, pressed: document.querySelector('#vc-auto').getAttribute('aria-pressed') }; });
+  const AU = p => p.evaluate(() => { const v = window.__vc, a = v.au; return { auto: v.auto, state: v.state, ph: v.ph, voice: v.voice, last: v.last, plays: v.plays, live: v.live, buf: v.buf, dur: v.dur || 0, deaf: v.deafUntil === Infinity ? 'inf' : Math.round(v.deafUntil - performance.now()), n: a ? a.n : -1, chunks: a ? a.ch.length : -1, vad: a ? a.vad.st : '', count: a ? a.count : -1, skipped: a ? a.skipped : -1, tr: window.__fm ? window.__fm.tracks.filter(t => t.readyState === 'live').length : -1, ico: document.querySelector('#vc-ico').textContent, msg: document.querySelector('#vc-msg').textContent, pressed: document.querySelector('#vc-auto').getAttribute('aria-pressed') }; });
   const AUbuf = p => p.evaluate(() => { const v = window.__vc; if (!v.buf) return ''; return (v.buf.__id = v.buf.__id || Math.random()).toString(); });
   const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
   const VCFAST = 'window.__vcA.A.INTRO = 0.3;';   // はじめの よみあげ待ち（本番 2.5 秒）を縮める
@@ -2027,6 +2027,11 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     s = await AU(p); const buf1 = await AUbuf(p);
     ok(s.count === 1 && s.last === 'robot' && s.live >= 3 && s.msg === 'しゃべってるよ' && s.ico === '🔊' && s.deaf === 'inf' && s.dur > 0.4 && s.dur < 2.6 && await p.locator('.vc-b.on[data-voice="robot"]').count() === 1, tag + ': auto-played in the active voice, 🔊, button glows (' + s.dur.toFixed(2) + 's)');
     await shot('360x740-play');
+    /* 再生中に声ボタン: 選択だけ変わる（再生は止めない・元の声のまま・音も足さない） */
+    const pl0 = s.plays, live0 = s.live;
+    await p.click('.vc-b[data-voice="tiny"]', { force: true });
+    s = await AU(p);
+    ok(s.voice === 'tiny' && s.last === 'robot' && s.plays === pl0 && s.live === live0 && s.ph === 'play' && s.deaf === 'inf' && await p.locator('.vc-b.sel[data-voice="tiny"]').count() === 1 && await p.locator('.vc-b.on[data-voice="robot"]').count() === 1, tag + ': tapping a voice during playback only changes the selection (still the original voice, one playback)');
     /* half-duplex: 再生中は入力を捨てる */
     const sk0 = s.skipped;
     await p.evaluate(() => window.__fm.set(0.3)); await sleep(250);
@@ -2038,39 +2043,33 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.evaluate(() => window.__fm.set(0));
     await sleep(Math.max(0, s.deaf) + 100);
     s = await AU(p);
-    ok(s.ph === 'listen' && s.n >= 0 && await AUbuf(p) === buf1 && s.count === 1, tag + ': nothing recorded from the playback / deaf window');
-    /* 声ボタン: 直近の録音を別の声で何度でも */
+    ok(s.ph === 'listen' && s.n >= 0 && await AUbuf(p) === '' && s.count === 1, tag + ': nothing recorded from the playback / deaf window');
+    /* 再生が終わったら録音は捨てる。声ボタンは選ぶだけ（再生しない・ぴょこっと跳ねる） */
+    ok(await AUbuf(p) === '' && s.count === 1 && s.plays === 1, tag + ': recording is discarded after the single playback');
     const p1 = s.plays;
-    await p.click('.vc-b[data-voice="tiny"]', { force: true });
-    s = await AU(p);
-    ok(s.voice === 'tiny' && s.last === 'tiny' && s.plays === p1 + 1 && s.ph === 'play' && s.deaf === 'inf' && await p.locator('.vc-b.sel').count() === 1 && await AUbuf(p) === buf1, tag + ': tapping a voice replays the recent recording in it, mic stays deaf');
-    /* 全部の声を一通り（軽いチェック: 鳴る・エラーなし・ノードが残らない） */
-    const ids = await p.evaluate(() => window.__vcV.map(v => v.id));
-    let bad = 0, glow = 0;
-    for (const id of ids) {
-      await p.click('.vc-b[data-voice="' + id + '"]', { force: true });
-      const q = await AU(p);
-      if (q.last !== id || q.live < 2) bad++;
-      if (await p.locator('.vc-b.on[data-voice="' + id + '"]').count() === 1 && await p.locator('.vc-b.on').count() === 1) glow++;
-    }
-    s = await AU(p);
-    ok(bad === 0 && glow === ids.length && s.plays === p1 + 1 + ids.length && await AUbuf(p) === buf1, tag + ': every one of ' + ids.length + ' voices plays, only the playing button glows (' + glow + '/' + ids.length + ')');
-    ok(await until(p, async () => (await AU(p)).live === 0, 6000) && await p.locator('.vc-b.on').count() === 0 && (await AU(p)).ph === 'listen', tag + ': nodes disconnected + glow cleared after the last playback');
-    ok(p.errs.length === 0, tag + ': no console errors so far ' + p.errs.join(' | '));
-    /* 次の自動再生は選んだ声で */
     await p.click('.vc-b[data-voice="phone"]', { force: true });
-    await until(p, async () => (await AU(p)).live === 0, 6000); await sleep(600);
+    s = await AU(p);
+    ok(s.voice === 'phone' && s.plays === p1 && s.live === 0 && s.ph === 'listen' && s.deaf !== 'inf' && await p.locator('.vc-b.sel').count() === 1 && await p.locator('.vc-b.pop[data-voice="phone"]').count() === 1 && await p.locator('.vc-b.on').count() === 0, tag + ': tapping a voice does not play anything, just selects + hops');
+    ok(await until(p, async () => (await p.locator('.vc-b.pop').count()) === 0, 1500), tag + ': hop animation ends by itself');
+    ok(p.errs.length === 0, tag + ': no console errors so far ' + p.errs.join(' | '));
+    /* 次の発話は選んだ声で 1 回だけ */
+    await sleep(500);
     await p.evaluate(() => window.__fm.set(0.3)); await sleep(500); await p.evaluate(() => window.__fm.set(0));
     ok(await until(p, async () => (await AU(p)).count === 2, 3000), tag + ': second utterance committed');
     s = await AU(p);
-    ok(await AUbuf(p) !== buf1 && s.last === 'phone', tag + ': recent recording replaced, auto-played in the newly selected voice');
+    ok(s.last === 'phone' && s.plays === p1 + 1 && s.ph === 'play', tag + ': auto-played in the newly selected voice');
+    ok(await until(p, async () => (await AU(p)).live === 0, 6000) && await p.locator('.vc-b.on').count() === 0, tag + ': nodes disconnected + glow cleared after the playback');
+    await sleep(1000);
+    s = await AU(p);
+    ok(s.plays === p1 + 1 && s.ph === 'listen' && await AUbuf(p) === '', tag + ': played exactly once, then listening again, buffer discarded');
     /* 一時停止 OFF */
     await until(p, async () => (await AU(p)).ph === 'listen', 4000);
     await p.click('#vc-auto', { force: true });
     s = await AU(p);
-    ok(!s.auto && s.state === 'idle' && s.tr === 0 && s.pressed === 'false' && s.ico === '⏸' && s.dur > 0 && await p.locator('#vc-grid').isVisible() && (await p.locator('#vc-auto').textContent()).includes('ずっときく'), tag + ': ⏸ stops the mic, keeps the recording and the voices ' + JSON.stringify({ ...s, buf: 0 }));
+    ok(!s.auto && s.state === 'idle' && s.tr === 0 && s.pressed === 'false' && s.ico === '⏸' && await p.locator('#vc-grid').isVisible() && (await p.locator('#vc-auto').textContent()).includes('ずっときく'), tag + ': ⏸ stops the mic, voices stay ' + JSON.stringify({ ...s, buf: 0 }));
     await p.click('.vc-b[data-voice="low"]', { force: true });
-    ok((await AU(p)).last === 'low', tag + ': voices still replay while paused');
+    s = await AU(p);
+    ok(s.voice === 'low' && s.plays === p1 + 1 && s.live === 0 && await p.locator('.vc-b.sel[data-voice="low"]').count() === 1, tag + ': voices can still be selected while paused (no playback)');
     await p.click('#vc-auto', { force: true });
     ok(await until(p, async () => (await AU(p)).state === 'auto', 3000) && (await AU(p)).tr === 1, tag + ': 👂 ずっときく turns the mic on again');
     /* 横向き */
@@ -2105,7 +2104,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(s.dur > 1.3 && s.dur <= 2.1 && s.count === 1, 'voice-loud: buffer is the max segment (' + s.dur.toFixed(2) + 's incl. pre-roll)');
     let bad = 0, samples = 0;
     while ((await AU(p)).ph === 'play' && samples < 40) { const q = await AU(p); samples++; if (q.n !== 0 || q.chunks !== 0 || q.count !== 1 || q.vad !== 'idle') bad++; await sleep(100); }
-    ok(samples >= 4 && bad === 0 && (await AUbuf(p)) === b1, 'voice-loud: nothing recorded during playback although the mic keeps hearing sound (' + samples + ' samples, bad ' + bad + ')');
+    ok(samples >= 4 && bad === 0 && (await AU(p)).count === 1, 'voice-loud: nothing recorded during playback although the mic keeps hearing sound (' + samples + ' samples, bad ' + bad + ')');
     s = await AU(p);
     ok(s.n === 0 && s.deaf !== 'inf', 'voice-loud: still nothing in the buffer right after playback (deaf ' + s.deaf + 'ms)');
     ok(await until(p, async () => (await AU(p)).ph === 'talk', 2500), 'voice-loud: listens again after the deaf window');
@@ -2119,13 +2118,40 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const p = await newPage(br, { width: 390, height: 844 }, { voices: JAV, init: FAKEMIC + 'delete window.AudioWorkletNode; delete window.MediaRecorder; window.__fmInit = 0.3;' });
     await p.evaluate(VCFAST);
     await tapTile(p, 'ボイスチェンジャー');
+    await p.click('.vc-b[data-voice="rev"]', { force: true });
     ok(await until(p, async () => (await AU(p)).count === 0 && (await AU(p)).ph === 'talk', 3000), 'voice-sp: ScriptProcessor path hears sound without MediaRecorder/Worklet');
     await sleep(600); await p.evaluate(() => window.__fm.set(0));
     ok(await until(p, async () => (await AU(p)).count === 1, 3000), 'voice-sp: utterance committed');
     const r = await p.evaluate(() => ({ dur: window.__vc.buf.duration, peak: Math.max.apply(null, Array.from(window.__vc.buf.getChannelData(0)).map(Math.abs)) }));
     ok(r.dur > 0.3 && r.peak > 0.001, 'voice-sp: PCM buffer has sound ' + JSON.stringify(r));
-    await p.click('.vc-b[data-voice="rev"]', { force: true });
-    ok((await p.evaluate(() => window.__vc.live)) >= 3 && p.errs.length === 0, 'voice-sp: reverse playback ok, no errors ' + p.errs.join(' | '));
+    ok((await AU(p)).last === 'rev' && (await p.evaluate(() => window.__vc.live)) >= 3 && p.errs.length === 0, 'voice-sp: reverse playback ok, no errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  /* 全 18 声: 声を選ぶ → 発話 → 1 回だけ再生（エラーなし・ノードが残らない） */
+  T('voice-all', async (br) => {
+    const tag = 'voice-all';
+    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, init: FAKEMIC });
+    await p.evaluate(VCFAST + 'window.__vcA.A.QUIET = 0.2; window.__vcA.A.TAIL = 0.05; window.__vcA.A.MINV = 0.15; window.__vcA.A.PRE = 0.1;');
+    await tapTile(p, 'ボイスチェンジャー');
+    ok(await until(p, async () => (await AU(p)).state === 'auto' && (await AU(p)).ph === 'listen', 3000), tag + ': listening');
+    const ids = await p.evaluate(() => window.__vcV.map(v => v.id));
+    await sleep(500);
+    let bad = [], n = 0;
+    for (const id of ids) {
+      await p.click('.vc-b[data-voice="' + id + '"]', { force: true });
+      let q = await AU(p);
+      if (q.voice !== id || q.plays !== n || q.live !== 0) bad.push(id + ':select');
+      await p.evaluate(() => window.__fm.set(0.3)); await sleep(300); await p.evaluate(() => window.__fm.set(0));
+      if (!(await until(p, async () => (await AU(p)).plays === n + 1, 2500))) { bad.push(id + ':noplay ' + JSON.stringify({ ...(await AU(p)), buf: 0 })); break; }
+      n++;
+      q = await AU(p);
+      if (q.last !== id || q.live < 2) bad.push(id + ':play');
+      if (!(await until(p, async () => (await AU(p)).live === 0 && (await AU(p)).ph === 'listen', 8000))) bad.push(id + ':stuck');
+    }
+    const s = await AU(p);
+    ok(bad.length === 0 && s.plays === ids.length && ids.length === 18 && s.live === 0 && s.buf === null, tag + ': each of ' + ids.length + ' voices selected -> spoken once -> nodes gone ' + bad.join());
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
@@ -2160,7 +2186,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
 // 重いブロックから先に始める（ブロックを足したら測って足す）
 const WEIGHT = { 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
-  'voice-auto': 14, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
+  'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
 
 async function runWorker(name) {

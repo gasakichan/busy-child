@@ -1127,6 +1127,8 @@
   .vc-b.sel { box-shadow: inset 0 0 0 5px #8F6BF2, 0 5px 0 var(--shadow); }
   .vc-b.sel::after { content: '✓'; position: absolute; top: 4px; right: 8px; font-size: 20px; line-height: 1; font-weight: 700; color: #8F6BF2; }
   .vc-b.on { animation: vc-wob .35s ease-in-out infinite; box-shadow: 0 0 0 6px #fff, 0 0 26px 10px var(--c), 0 5px 0 var(--shadow); filter: brightness(1.08); z-index: 1; }
+  .vc-b.pop { animation: vc-pop .4s ease-out; }
+  @keyframes vc-pop { 0% { transform: scale(1); } 35% { transform: translateY(-8px) scale(1.1); } 70% { transform: translateY(1px) scale(.97); } 100% { transform: scale(1); } }
   @keyframes vc-wob { 0%, 100% { transform: rotate(-3deg) scale(1.04); } 50% { transform: rotate(3deg) scale(1.08); } }
   @media (min-aspect-ratio: 23/20) {
     #stage-voice { flex-direction: row; padding-top: 8px; }
@@ -1138,7 +1140,7 @@
     #vc-ask { flex: 0 0 auto; min-height: 120px; }
     .vc-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(80px, 1fr)); }
   }
-  @media (prefers-reduced-motion: reduce) { #vc-ico.lis, #vc-ico.rec, .vc-b.on { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { #vc-ico.lis, #vc-ico.rec, .vc-b.on, .vc-b.pop { animation: none; } }
 </style>
 </head>
 <body>
@@ -6596,12 +6598,12 @@
   }
   /* vc:end */
   var vcStage = $('#stage-voice'), vcIco = $('#vc-ico'), vcMsg = $('#vc-msg'), vcGrid = $('#vc-grid'), vcAuto = $('#vc-auto'), vcAsk = $('#vc-ask'), vcSt = $('#vc-st'), vcBtns = {};
-  var vc = { auto: false, ph: '', voice: 'normal', deafUntil: 0, au: null, state: 'idle', gen: 0, buf: null, stream: null, rec: null, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '' };
+  var vc = { auto: false, ph: '', voice: 'normal', deafUntil: 0, au: null, state: 'idle', gen: 0, buf: null, stream: null, rec: null, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '', dur: 0 };
   function vcStopPlay() {
     if (vc.endT) { cancel(vc.endT); vc.endT = 0; }
     vc.srcs.forEach(function (s) { try { s.stop(); } catch (e) {} });
     vc.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
-    vc.nodes = []; vc.srcs = []; vc.live = 0;
+    vc.nodes = []; vc.srcs = []; vc.live = 0; vc.buf = null;   /* きろくは 1かい さいせいしたら すてる */
     if (vc.btn) { vc.btn.classList.remove('on'); vc.btn = null; }
     if (vc.auto) {                      /* さいせい おわり: すこし まってから また きく（ハウリングよけ） */
       vc.deafUntil = performance.now() + VC_AUTO.TAIL * 1000;
@@ -6621,10 +6623,10 @@
     return (buf.__rev = r);
   }
   function vcPlay(v, btn) {
-    var c = audio();
-    if (!c || !vc.buf || quiet()) return;
-    vcStopPlay(); vcSession(vc.auto ? 'play-and-record' : 'playback'); vcUnlock();
-    var buf = v.rev ? vcReverse(c, vc.buf) : vc.buf, p = vcPlan(v, buf.duration), t0 = c.currentTime + 0.06, T = t0 + p.total;
+    var c = audio(), rec = vc.buf;
+    if (!c || !rec || quiet()) { vc.buf = null; return; }
+    vcStopPlay(); vc.buf = rec; vcSession(vc.auto ? 'play-and-record' : 'playback'); vcUnlock();
+    var buf = v.rev ? vcReverse(c, rec) : rec, p = vcPlan(v, buf.duration), t0 = c.currentTime + 0.06, T = t0 + p.total;
     var nodes = vc.nodes, srcs = vc.srcs;
     function N(n) { nodes.push(n); return n; }
     var head = N(c.createGain()), last = head;
@@ -6684,7 +6686,7 @@
       });
     }
     out.connect(comp); comp.connect(c.destination);
-    vc.live = nodes.length; vc.plays++; vc.last = v.id;
+    vc.live = nodes.length; vc.plays++; vc.last = v.id; vc.dur = rec.duration;
     if (btn) { vc.btn = btn; btn.classList.add('on'); }
     vc.endT = later(vcStopPlay, p.total * 1000 + 150);
     if (vc.auto) { vc.deafUntil = Infinity; vcAutoPhase('play'); }   /* さいせいちゅうは マイクを ぜんぶ すてる */
@@ -6807,10 +6809,10 @@
     if (!buf) { vcAutoPhase('listen'); return; }
     vc.buf = buf; au.count++;
     var v = vcVoice(vc.voice);
-    vcPlay(v, vcBtns[v.id]);
+    vcPlay(v, vcBtns[v.id]);   /* えらんだ こえで 1かいだけ */
     if (!vc.live) vcAutoPhase('listen');
   }
-  /* いちじ ていし（⏸）: マイクを とめる。きろくは のこり、声ボタンで なんどでも */
+  /* いちじ ていし（⏸）: マイクを とめる。声ボタンは つぎに つかう こえを えらぶだけ */
   function vcAutoOff() {
     vc.gen++;
     vcRelease(); vcMicIdle();
@@ -6862,12 +6864,11 @@
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'vc-b'; b.style.setProperty('--c', v.c);
     b.setAttribute('aria-label', v.lab); b.dataset.voice = v.id;
+    b.addEventListener('animationend', function (e) { if (e.animationName === 'vc-pop') b.classList.remove('pop'); });
     b.innerHTML = '<span class="ico">' + v.ico + '</span><span class="lab">' + v.lab + '</span>';
     onTap(b, function () {
-      vcSelect(v.id);                  /* ゆうこうな こえ（ずっときくは この こえで さいせい） */
-      if (!vc.buf) { bigWord(v.lab, '#8F6BF2', 'clamp(36px, 11vw, 100px)'); return; }
-      if (quiet()) { wiggle(b, 6); return; }
-      vcPlay(v, b);
+      vcSelect(v.id);                  /* つぎに つかう こえを えらぶだけ（おとは ならさない・さいせいちゅうでも とめない） */
+      b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
       bigWord(v.lab, '#8F6BF2', 'clamp(36px, 11vw, 100px)');
     });
     vcBtns[v.id] = b;
