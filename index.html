@@ -1082,54 +1082,46 @@
     .dr-b .e { font-size: 30px; }
   }
   /* ボイスチェンジャー */
-  #stage-voice { background: linear-gradient(#E6D6FF, #FFE0F1); display: flex; flex-direction: column; gap: 10px; padding: var(--top) 12px 12px; }
-  .vc-top { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
-  #stage-voice.has .vc-top { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; gap: 10px 14px; justify-content: flex-start; }
-  #stage-voice.has #vc-auto { flex: 1 1 100%; }
-  #stage-voice.has .vc-bar { display: none; }
-  #stage-voice.has .vc-msg { flex: 1 1 0; min-width: 0; text-align: left; }
-  #vc-mic {
-    position: relative; flex: 0 0 auto; border: 0; border-radius: 50%; padding: 0;
-    width: min(40vmin, 190px); height: min(40vmin, 190px);
-    background: #FF6B6B; color: #fff; font-size: min(21vmin, 90px); line-height: 1;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 0 rgba(43,58,103,.22);
-  }
-  #stage-voice.has #vc-mic { width: clamp(92px, 20vmin, 120px); height: clamp(92px, 20vmin, 120px); font-size: clamp(46px, 10vmin, 60px); }
-  #vc-mic:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(43,58,103,.22); }
-  #vc-mic.auto { background: #5BA8FF; }
-  #vc-mic.auto.ply { background: #3FBF8A; }
-  #vc-mic.auto.lis { animation: vc-breath 2.4s ease-in-out infinite; }
-  @keyframes vc-breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  #stage-voice { background: linear-gradient(#E6D6FF, #FFE0F1); display: flex; flex-direction: column; gap: 8px; padding: var(--top) 12px 10px; }
+  .vc-top { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; gap: 10px; min-height: 80px; }
+  .vc-st { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 10px; }
+  #vc-ico { flex: 0 0 auto; width: 64px; height: 64px; border-radius: 50%; background: #5BA8FF; color: #fff; font-size: 34px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 0 rgba(43,58,103,.2); }
+  #vc-ico.lis { animation: vc-breath 2.4s ease-in-out infinite; }
+  #vc-ico.rec { background: #FF3B3B; animation: vc-pulse .7s ease-in-out infinite; }
+  #vc-ico.ply { background: #3FBF8A; }
+  #vc-ico.off { background: #B8B2CC; }
+  @keyframes vc-breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  @keyframes vc-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  .vc-msg { flex: 1 1 0; min-width: 0; font-size: clamp(20px, 5.6vmin, 30px); line-height: 1.2; text-align: left; color: var(--ink); overflow-wrap: break-word; }
   #vc-auto {
-    flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px;
-    min-width: min(100%, 250px); max-width: 100%; min-height: 84px; padding: 0 18px;
-    border: 0; border-radius: 42px; background: #fff; color: var(--ink);
-    font-size: clamp(18px, 5.4vmin, 30px); line-height: 1.1; white-space: nowrap;
-    box-shadow: 0 6px 0 var(--shadow);
+    flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    min-width: 96px; min-height: 80px; padding: 4px 10px;
+    border: 0; border-radius: 24px; background: #fff; color: var(--ink);
+    font-size: 14px; line-height: 1.1; white-space: nowrap;
+    box-shadow: 0 5px 0 var(--shadow);
   }
-  #vc-auto .ico { font-size: 1.7em; line-height: 1; }
+  #vc-auto .ico { font-size: 30px; line-height: 1; }
   #vc-auto:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
-  #vc-auto.on { background: #8F6BF2; color: #fff; box-shadow: 0 0 0 5px #fff, 0 0 22px 8px rgba(143,107,242,.55), 0 6px 0 var(--shadow); }
-  #vc-mic.rec { background: #FF3B3B; animation: vc-pulse .7s ease-in-out infinite; }
-  #vc-mic.rec::after { content: ''; position: absolute; inset: -10px; border-radius: 50%; border: 6px solid #FF3B3B; opacity: .5; animation: vc-ring .7s ease-out infinite; }
-  @keyframes vc-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-  @keyframes vc-ring { from { transform: scale(.9); opacity: .7; } to { transform: scale(1.25); opacity: 0; } }
-  .vc-msg { font-size: clamp(22px, 5.4vmin, 34px); line-height: 1.25; text-align: center; color: var(--ink); max-width: 100%; padding: 0 4px; overflow-wrap: break-word; }
-  .vc-bar { width: min(60vmin, 240px); height: 14px; border-radius: 7px; background: rgba(43,58,103,.15); overflow: hidden; visibility: hidden; }
-  .vc-bar.on { visibility: visible; }
-  .vc-bar i { display: block; height: 100%; width: 0; background: #FF3B3B; border-radius: 7px; }
-  .vc-bar.on i { animation: vc-fill 4s linear forwards; }
-  @keyframes vc-fill { from { width: 0; } to { width: 100%; } }
-  .vc-grid { flex: 1 1 0; min-height: 0; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); }
+  #vc-auto.on { background: #fff; }
+  #vc-ask {
+    flex: 1 1 0; min-width: 0; min-height: 80px; padding: 8px 14px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    border: 0; border-radius: 28px; background: #FF6B6B; color: #fff;
+    font-size: clamp(22px, 6.4vmin, 32px); line-height: 1.2; font-weight: 700;
+    box-shadow: 0 6px 0 rgba(43,58,103,.25);
+  }
+  #vc-ask .ico { font-size: 1.8em; line-height: 1; }
+  #vc-ask:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(43,58,103,.25); }
+  .vc-grid { flex: 1 1 0; min-height: 0; display: grid; gap: 8px; padding: 6px; margin: 0 -6px; overflow-y: auto; overflow-x: hidden;
+    grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(80px, 1fr)); }
   .vc-b {
     container-type: size; min-width: 0; min-height: 0; padding: 0; overflow: hidden;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     border: 0; border-radius: 24px; background: var(--c); color: var(--ink);
     box-shadow: 0 5px 0 var(--shadow);
   }
-  .vc-b .ico { font-size: min(52cqh, 40cqw); line-height: 1; }
-  .vc-b .lab { font-size: min(22cqh, 15cqw, 26px); line-height: 1.1; white-space: nowrap; }
+  .vc-b .ico { font-size: min(50cqh, 40cqw); line-height: 1; }
+  .vc-b .lab { font-size: min(20cqh, 15cqw, 22px); line-height: 1.1; white-space: nowrap; }
   .vc-b:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
   .vc-b { position: relative; }
   .vc-b.sel { box-shadow: inset 0 0 0 5px #8F6BF2, 0 5px 0 var(--shadow); }
@@ -1137,13 +1129,16 @@
   .vc-b.on { animation: vc-wob .35s ease-in-out infinite; box-shadow: 0 0 0 6px #fff, 0 0 26px 10px var(--c), 0 5px 0 var(--shadow); filter: brightness(1.08); z-index: 1; }
   @keyframes vc-wob { 0%, 100% { transform: rotate(-3deg) scale(1.04); } 50% { transform: rotate(3deg) scale(1.08); } }
   @media (min-aspect-ratio: 23/20) {
-    #stage-voice { flex-direction: row; }
-    #stage-voice.has .vc-top { flex: 0 0 26%; flex-direction: column; flex-wrap: nowrap; justify-content: center; gap: 8px; }
-    #stage-voice.has #vc-auto { flex: 0 0 auto; min-height: 80px; padding: 0 10px; gap: 6px; }
-    #stage-voice.has .vc-msg { flex: 0 0 auto; text-align: center; }
-    .vc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+    #stage-voice { flex-direction: row; padding-top: 8px; }
+    .vc-top { flex: 0 0 20%; padding-top: 62px; flex-direction: column; justify-content: center; align-items: stretch; gap: 8px; }
+    .vc-st { flex: 0 0 auto; flex-direction: column; justify-content: center; text-align: center; gap: 4px; }
+    .vc-msg { flex: 0 0 auto; text-align: center; font-size: clamp(18px, 5vmin, 26px); }
+    #vc-ico { width: 56px; height: 56px; font-size: 30px; }
+    #vc-auto { min-height: 80px; padding: 2px 8px; }
+    #vc-ask { flex: 0 0 auto; min-height: 120px; }
+    .vc-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(80px, 1fr)); }
   }
-  @media (prefers-reduced-motion: reduce) { #vc-mic.rec, #vc-mic.rec::after, #vc-mic.auto.lis, .vc-b.on { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { #vc-ico.lis, #vc-ico.rec, .vc-b.on { animation: none; } }
 </style>
 </head>
 <body>
@@ -1380,12 +1375,11 @@
 
   <section class="stage" id="stage-voice" aria-label="ボイスチェンジャー" hidden>
     <div class="vc-top">
-      <button id="vc-mic" type="button" aria-label="ろくおん">🎤</button>
-      <div class="vc-msg" id="vc-msg"></div>
-      <div class="vc-bar" id="vc-bar" aria-hidden="true"><i></i></div>
-      <button id="vc-auto" type="button" aria-pressed="false" aria-label="ずっときく"><span class="ico">👂</span><span class="lab">ずっときく</span></button>
+      <div class="vc-st" id="vc-st"><div id="vc-ico" aria-hidden="true">👂</div><div class="vc-msg" id="vc-msg" role="status"></div></div>
+      <button id="vc-auto" type="button" aria-pressed="true" aria-label="とめる"><span class="ico">⏸</span><span class="lab">とめる</span></button>
+      <button id="vc-ask" type="button" aria-label="マイクをゆるしてね" hidden><span class="ico">🎤</span><span class="lab">マイクをゆるしてね</span></button>
     </div>
-    <div class="vc-grid" id="vc-grid" hidden></div>
+    <div class="vc-grid" id="vc-grid"></div>
     <div class="fx" id="fx-voice"></div>
   </section>
 
@@ -6527,22 +6521,31 @@
   };
 
   /* ====== ボイスチェンジャー ====== */
-  /* vc:begin  ボイスの定義と計画（純粋関数）。rate=はやさ+たかさ, speed=たかさそのまま はやさだけ（グレイン）, ring=リングモジュレーション(Hz), vib=ビブラート, echo=ディレイ+フィードバック */
-  var VC_MAX = 4;
+  /* vc:begin  ボイスの定義と計画（純粋関数）。rate=はやさ+たかさ, speed=たかさそのまま はやさだけ（グレイン）, ring=リングモジュレーション(Hz), vib=ビブラート, echo=ディレイ+フィードバック, verb=おふろ(ディレイの かさね), trem=ふるえ(Hz), rev=ぎゃくさい, crush=ビットクラッシュ(だんかい) */
   var VC_VOICES = [
-    { id: 'normal', ico: '🙂', lab: 'ふつう',     say: 'ふつう',     c: '#FFE48A', rate: 1 },
-    { id: 'high',   ico: '🐭', lab: 'たかいこえ', say: 'たかいこえ', c: '#FFC4DA', rate: 1.65, hs: 6 },
-    { id: 'low',    ico: '🐻', lab: 'ひくいこえ', say: 'ひくいこえ', c: '#FFD2B3', rate: 0.66, lp: 2600, ls: 6 },
-    { id: 'robot',  ico: '🤖', lab: 'ロボット',   say: 'ろぼっと',   c: '#BFE6FF', rate: 1, ring: 55, hp: 180 },
-    { id: 'ghost',  ico: '👻', lab: 'おばけ',     say: 'おばけ',     c: '#DCCFFF', rate: 0.85, vib: { hz: 5.5, cents: 90 }, lp: 3200, echo: { t: 0.24, fb: 0.5, mix: 0.5 } },
-    { id: 'echo',   ico: '⛰️', lab: 'やまびこ',   say: 'やまびこ',   c: '#B6F0E3', rate: 1, echo: { t: 0.38, fb: 0.55, mix: 0.6, lp: 2400 } },
-    { id: 'slow',   ico: '🐢', lab: 'ゆっくり',   say: 'ゆっくり',   c: '#C9F0A8', speed: 0.5 },
-    { id: 'fast',   ico: '🐇', lab: 'はやい',     say: 'はやい',     c: '#FFE0A3', speed: 1.9 }
+    { id: 'normal',  ico: '🙂', lab: 'ふつう',       say: 'ふつう',       c: '#FFE48A', rate: 1 },
+    { id: 'high',    ico: '🐭', lab: 'たかいこえ',   say: 'たかいこえ',   c: '#FFC4DA', rate: 1.65, hs: 6 },
+    { id: 'low',     ico: '🐻', lab: 'ひくいこえ',   say: 'ひくいこえ',   c: '#FFD2B3', rate: 0.66, lp: 2600, ls: 6 },
+    { id: 'tiny',    ico: '🐜', lab: 'ちいさいこえ', say: 'ちいさいこえ', c: '#FFB8CF', rate: 2.1, hs: 8 },
+    { id: 'giant',   ico: '🐘', lab: 'おおきいこえ', say: 'おおきいこえ', c: '#E8C9A8', rate: 0.5, lp: 2200, ls: 8 },
+    { id: 'bird',    ico: '🐤', lab: 'ことり',       say: 'ことり',       c: '#FFF3A0', rate: 1.7, hs: 5, vib: { hz: 13, cents: 70 } },
+    { id: 'robot',   ico: '🤖', lab: 'ロボット',     say: 'ろぼっと',     c: '#BFE6FF', rate: 1, ring: 55, hp: 180 },
+    { id: 'monster', ico: '👹', lab: 'かいじゅう',   say: 'かいじゅう',   c: '#FFB3A7', rate: 0.62, ring: 28, lp: 3000 },
+    { id: 'ghost',   ico: '👻', lab: 'おばけ',       say: 'おばけ',       c: '#DCCFFF', rate: 0.85, vib: { hz: 5.5, cents: 90 }, lp: 3200, echo: { t: 0.24, fb: 0.5, mix: 0.5 } },
+    { id: 'trem',    ico: '🥶', lab: 'ぶるぶる',     say: 'ぶるぶる',     c: '#C4E9FF', rate: 1, trem: 9 },
+    { id: 'siren',   ico: '🚨', lab: 'サイレン',     say: 'さいれん',     c: '#FFC2C2', rate: 1, vib: { hz: 0.9, cents: 700 } },
+    { id: 'phone',   ico: '📞', lab: 'でんわ',       say: 'でんわ',       c: '#D3E8B8', rate: 1, hp: 300, lp: 3400 },
+    { id: 'echo',    ico: '⛰️', lab: 'やまびこ',     say: 'やまびこ',     c: '#B6F0E3', rate: 1, echo: { t: 0.38, fb: 0.55, mix: 0.6, lp: 2400 } },
+    { id: 'bath',    ico: '🛁', lab: 'おふろ',       say: 'おふろ',       c: '#B8EBFF', rate: 1, verb: true },
+    { id: 'rev',     ico: '🙃', lab: 'さかさま',     say: 'さかさま',     c: '#E6C6F5', rate: 1, rev: true },
+    { id: 'slow',    ico: '🐢', lab: 'ゆっくり',     say: 'ゆっくり',     c: '#C9F0A8', speed: 0.5 },
+    { id: 'fast',    ico: '🐇', lab: 'はやい',       say: 'はやい',       c: '#FFE0A3', speed: 1.9 },
+    { id: 'crush',   ico: '👾', lab: 'ピコピコ',     say: 'ぴこぴこ',     c: '#C9C4FF', rate: 1, crush: 3 }
   ];
   /* d=きろくの ながさ(秒)。dur=さいせいの ながさ, tail=のこりの ひびき */
   function vcPlan(v, d) {
     var sp = v.speed || v.rate || 1;
-    var tail = v.echo ? Math.min(2.2, v.echo.t * 5) : 0.15;
+    var tail = v.echo ? Math.min(2.2, v.echo.t * 5) : v.verb ? 1.1 : 0.15;
     var dur = d / sp;
     return { grain: !!v.speed, dur: dur, tail: tail, total: dur + tail };
   }
@@ -6592,13 +6595,8 @@
     return Math.max(0, Math.min(total, total - Math.round(Math.max(0, quiet - VC_AUTO.KEEP) * sr)));
   }
   /* vc:end */
-  var vcStage = $('#stage-voice'), vcMic = $('#vc-mic'), vcMsg = $('#vc-msg'), vcBar = $('#vc-bar'), vcGrid = $('#vc-grid'), vcAuto = $('#vc-auto'), vcBtns = {};
-  var vc = { auto: false, ph: '', voice: 'normal', deafUntil: 0, au: null, state: 'idle', gen: 0, buf: null, stream: null, rec: null, chunks: [], total: 0, recT: 0, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '' };
-  var VC_HINT = '🎤を おして おはなししてね';
-  function vcSay(t, show, color) {
-    vcMsg.textContent = vis(show || t);
-    say(t); bigWord(show || t, color || '#8F6BF2', 'clamp(28px, 8.5vw, 80px)');
-  }
+  var vcStage = $('#stage-voice'), vcIco = $('#vc-ico'), vcMsg = $('#vc-msg'), vcGrid = $('#vc-grid'), vcAuto = $('#vc-auto'), vcAsk = $('#vc-ask'), vcSt = $('#vc-st'), vcBtns = {};
+  var vc = { auto: false, ph: '', voice: 'normal', deafUntil: 0, au: null, state: 'idle', gen: 0, buf: null, stream: null, rec: null, nodes: [], srcs: [], endT: 0, btn: null, plays: 0, live: 0, last: '' };
   function vcStopPlay() {
     if (vc.endT) { cancel(vc.endT); vc.endT = 0; }
     vc.srcs.forEach(function (s) { try { s.stop(); } catch (e) {} });
@@ -6615,11 +6613,18 @@
     vc.voice = id;
     for (var k in vcBtns) if (vcBtns.hasOwnProperty(k)) vcBtns[k].classList.toggle('sel', k === id);
   }
+  /* ぎゃくさい用: きろくを うしろから ならべた バッファ（いちど つくったら つかいまわす） */
+  function vcReverse(c, buf) {
+    if (buf.__rev) return buf.__rev;
+    var n = buf.length, r = c.createBuffer(1, n, buf.sampleRate), a = buf.getChannelData(0), b = r.getChannelData(0);
+    for (var i = 0; i < n; i++) b[i] = a[n - 1 - i];
+    return (buf.__rev = r);
+  }
   function vcPlay(v, btn) {
     var c = audio();
     if (!c || !vc.buf || quiet()) return;
     vcStopPlay(); vcSession(vc.auto ? 'play-and-record' : 'playback'); vcUnlock();
-    var buf = vc.buf, p = vcPlan(v, buf.duration), t0 = c.currentTime + 0.06, T = t0 + p.total;
+    var buf = v.rev ? vcReverse(c, vc.buf) : vc.buf, p = vcPlan(v, buf.duration), t0 = c.currentTime + 0.06, T = t0 + p.total;
     var nodes = vc.nodes, srcs = vc.srcs;
     function N(n) { nodes.push(n); return n; }
     var head = N(c.createGain()), last = head;
@@ -6648,17 +6653,35 @@
     if (v.lp) chain(bq('lowpass', v.lp));
     if (v.hs) chain(bq('highshelf', 2500, v.hs));
     if (v.ls) chain(bq('lowshelf', 300, v.ls));
+    if (v.crush) {                      /* ビットクラッシュ: だんだんに けずる WaveShaper */
+      var pre = chain(N(c.createGain())), sh = chain(N(c.createWaveShaper())), post = chain(N(c.createGain())), cv = new Float32Array(1024), L = v.crush;
+      pre.gain.value = 3; post.gain.value = 0.55;
+      for (var i = 0; i < 1024; i++) cv[i] = Math.max(-1, Math.min(1, Math.round((i / 511.5 - 1) * L) / L));
+      sh.curve = cv;
+    }
     if (v.ring) {                       /* リングモジュレーション: おとに ひくい ぶるぶる(おんがく)を かける */
       var rg = chain(N(c.createGain())); rg.gain.value = 0;
       osc(v.ring, T).connect(rg.gain);
     }
+    if (v.trem) {                       /* トレモロ: おおきさを はやく ゆらす */
+      var tg = chain(N(c.createGain())), tl = N(c.createGain());
+      tg.gain.value = 0.55; tl.gain.value = 0.45;
+      osc(v.trem, T).connect(tl); tl.connect(tg.gain);
+    }
     var comp = N(c.createDynamicsCompressor()), out = N(c.createGain());
-    out.gain.value = Math.min(VC_AUTO.GAIN_MAX, v.ring ? 1.6 : 1);
+    out.gain.value = Math.min(VC_AUTO.GAIN_MAX, v.ring ? 1.6 : v.trem ? 1.3 : 1);
     last.connect(out);
     if (v.echo) {                       /* ディレイ + フィードバック（くりかえしの たびに こもる） */
       var dl = N(c.createDelay(1)), fb = N(c.createGain()), lpf = bq('lowpass', v.echo.lp || 3500), wet = N(c.createGain());
       dl.delayTime.value = v.echo.t; fb.gain.value = v.echo.fb; wet.gain.value = v.echo.mix;
       last.connect(dl); dl.connect(lpf); lpf.connect(fb); fb.connect(dl); lpf.connect(wet); wet.connect(out);
+    }
+    if (v.verb) {                       /* おふろ: みじかい ディレイを いくつか かさねた リバーブふう */
+      [0.029, 0.043, 0.067, 0.089].forEach(function (t) {
+        var d = N(c.createDelay(1)), f = N(c.createGain()), w = N(c.createGain());
+        d.delayTime.value = t; f.gain.value = 0.55; w.gain.value = 0.3;
+        last.connect(d); d.connect(f); f.connect(d); d.connect(w); w.connect(out);
+      });
     }
     out.connect(comp); comp.connect(c.destination);
     vc.live = nodes.length; vc.plays++; vc.last = v.id;
@@ -6666,13 +6689,21 @@
     vc.endT = later(vcStopPlay, p.total * 1000 + 150);
     if (vc.auto) { vc.deafUntil = Infinity; vcAutoPhase('play'); }   /* さいせいちゅうは マイクを ぜんぶ すてる */
   }
+  /* じょうたいひょうじ（がめんの うえ）: ico=えもじ, cls=いろ, msg=ことば */
+  function vcUi(ico, cls, msg) {
+    vcIco.textContent = ico; vcIco.className = cls || '';
+    vcMsg.textContent = msg;
+  }
+  function vcToggleUi(on) {
+    vcAuto.setAttribute('aria-pressed', on ? 'true' : 'false');
+    vcAuto.querySelector('.ico').textContent = on ? '⏸' : '👂';
+    vcAuto.querySelector('.lab').textContent = on ? 'とめる' : 'ずっときく';
+    vcAuto.setAttribute('aria-label', on ? 'とめる' : 'ずっときく');
+  }
+  function vcShowAsk(on) { vcAsk.hidden = !on; vcSt.hidden = on; vcAuto.hidden = on; }
   function vcMicIdle() {
     vc.state = 'idle'; vc.auto = false; vc.ph = ''; vc.au = null; vc.deafUntil = 0;
-    vcMic.classList.remove('rec', 'auto', 'lis', 'ply'); vcBar.classList.remove('on');
-    vcMic.textContent = '🎤'; vcMic.setAttribute('aria-label', 'ろくおん');
-    vcAuto.classList.remove('on'); vcAuto.setAttribute('aria-pressed', 'false');
-    vcAuto.querySelector('.ico').textContent = '👂'; vcAuto.querySelector('.lab').textContent = 'ずっときく';
-    vcAuto.setAttribute('aria-label', 'ずっときく');
+    vcToggleUi(false);
   }
   /* iOS: サイレントスイッチでも Web Audio を ならす ために、むおんの <audio> を ユーザーそうさの なかで ならし、audioSession を きりかえる */
   var vcSil = null;
@@ -6722,7 +6753,6 @@
     if (vc.stream) { try { vc.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} vc.stream = null; }
   }
   function vcRelease() {
-    if (vc.recT) { cancel(vc.recT); vc.recT = 0; }
     var r = vc.rec; vc.rec = null;
     if (r) {
       try { if (r.node.port) r.node.port.onmessage = null; r.node.onaudioprocess = null; } catch (e) {}
@@ -6730,82 +6760,19 @@
     }
     vcStopTracks();
   }
+  /* マイクが つかえない: おおきな 「🎤 マイクを ゆるしてね」。タップで もういちど */
   function vcFail() {
     vcRelease(); vcMicIdle();
-    vcSay('まいくを ゆるしてね', 'マイクを ゆるしてね', '#E8362E');
+    vcUi('🎤', 'off', 'マイクを ゆるしてね');
+    vcShowAsk(true);
+    say('まいくを ゆるしてね'); bigWord('マイクを ゆるしてね', '#E8362E', 'clamp(28px, 8.5vw, 80px)');
   }
-  function vcRetry() {
-    vcRelease(); vcMicIdle();
-    vcSay('もういちど おはなししてね', null, '#8F6BF2');
-  }
-  function vcStopRec() {
-    if (vc.state !== 'rec') return;
-    var c = audio(), chunks = vc.chunks, total = vc.total;
-    vc.state = 'dec';
-    vcMic.classList.remove('rec'); vcBar.classList.remove('on');
-    tone(660, 0.1, 'triangle', 0.1);
-    vcRelease();
-    vc.chunks = [];
-    if (!c || total < c.sampleRate * 0.15) { vcRetry(); return; }
-    var buf;
-    try {
-      buf = c.createBuffer(1, total, c.sampleRate);
-      var ch = buf.getChannelData(0), o = 0;
-      chunks.forEach(function (a) { ch.set(a, o); o += a.length; });
-    } catch (e) { vcRetry(); return; }
-    vc.buf = buf; vcMicIdle();
-    vcStage.classList.add('has'); vcGrid.hidden = false;
-    vcMsg.textContent = 'こえを えらんでね';
-    say('こえを えらんでね'); tone(880, 0.12, 'triangle', 0.12);
-    var v0 = vcVoice(vc.voice); vcPlay(v0, vcBtns[v0.id]);
-  }
-  function vcStartRec() {
-    /* ユーザーそうさの どうき スタックの なかで（await の まえに）AudioContext を resume し、むおん audio を ならす */
-    var c = audio(), md = navigator.mediaDevices;
-    vcSession('play-and-record'); vcUnlock();
-    if (!md || !md.getUserMedia || !c || !c.createMediaStreamSource) { vcFail(); return; }
-    var g = ++vc.gen;
-    vc.state = 'ask';
-    var pr;
-    try { pr = md.getUserMedia({ audio: true }); } catch (e) { vcFail(); return; }
-    pr.then(function (stream) {
-      if (g !== vc.gen) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
-      vc.stream = stream;
-      var src, sink;
-      try {
-        src = c.createMediaStreamSource(stream);
-        sink = c.createGain(); sink.gain.value = 0; sink.connect(c.destination);
-      } catch (e) { vcFail(); return; }
-      var max = Math.ceil(c.sampleRate * (VC_MAX + 0.5));
-      vc.chunks = []; vc.total = 0;
-      vcTap(c, src, sink, function (a) {
-        if (vc.state !== 'rec' || vc.total >= max) return;
-        vc.chunks.push(a); vc.total += a.length;
-      }).then(function (node) {
-        if (g !== vc.gen) { try { node.disconnect(); src.disconnect(); sink.disconnect(); } catch (e) {} return; }
-        vc.rec = { node: node, src: src, sink: sink };
-        if (c.state !== 'running') { try { c.resume(); } catch (e) {} }
-        vc.state = 'rec';
-        vcMic.classList.add('rec'); vcMic.setAttribute('aria-label', 'とめる');
-        vcBar.classList.remove('on'); void vcBar.offsetWidth; vcBar.classList.add('on');
-        vcMsg.textContent = 'おはなし してね…';
-        hideWord();
-        vc.recT = later(vcStopRec, VC_MAX * 1000);
-      }, function () {
-        try { src.disconnect(); sink.disconnect(); } catch (e) {}
-        if (g === vc.gen) vcFail();
-      });
-    }, function () { if (g === vc.gen) vcFail(); });
-  }
-  /* ---- オート（ずっときく）---- */
-  var VC_PH = { listen: ['👂', 'きいてるよ'], talk: ['🎙️', 'ためてる…'], play: ['🔊', 'しゃべってるよ'] };
+  /* ---- ずっときく ---- */
+  var VC_PH = { ask: ['🎤', 'ask', 'じゅんびしてるよ'], listen: ['👂', 'lis', 'きいてるよ'], talk: ['🎙️', 'rec', 'ためてる…'], play: ['🔊', 'ply', 'しゃべってるよ'] };
   function vcAutoPhase(ph) {
     if (!vc.auto) return;
     vc.ph = ph;
-    vcMic.classList.add('auto');
-    vcMic.classList.toggle('rec', ph === 'talk'); vcMic.classList.toggle('lis', ph === 'listen'); vcMic.classList.toggle('ply', ph === 'play');
-    vcMic.textContent = VC_PH[ph][0]; vcMic.setAttribute('aria-label', VC_PH[ph][1]);
-    vcMsg.textContent = VC_PH[ph][1];
+    vcUi(VC_PH[ph][0], VC_PH[ph][1], VC_PH[ph][2]);
   }
   function vcRms(a) { var s = 0, n = a.length; for (var i = 0; i < n; i++) s += a[i] * a[i]; return n ? Math.sqrt(s / n) : 0; }
   function vcAutoClear() { var au = vc.au; if (!au) return; au.ch = []; au.n = 0; vcVadReset(au.vad); }
@@ -6839,27 +6806,25 @@
     }
     if (!buf) { vcAutoPhase('listen'); return; }
     vc.buf = buf; au.count++;
-    vcStage.classList.add('has'); vcGrid.hidden = false;
     var v = vcVoice(vc.voice);
     vcPlay(v, vcBtns[v.id]);
     if (!vc.live) vcAutoPhase('listen');
   }
+  /* いちじ ていし（⏸）: マイクを とめる。きろくは のこり、声ボタンで なんどでも */
   function vcAutoOff() {
     vc.gen++;
     vcRelease(); vcMicIdle();
-    if (vc.buf) vcMsg.textContent = 'こえを えらんでね';
-    else { vcMsg.textContent = VC_HINT; vcStage.classList.remove('has'); vcGrid.hidden = true; }
+    vcUi('⏸', 'off', 'ひとやすみ');
   }
+  /* ユーザーそうさの どうき スタックの なかで よぶ（enter() / タップ）。await の まえに AudioContext を resume、むおん audio、audioSession */
   function vcAutoOn() {
-    /* ユーザーそうさの なかで（await の まえに）AudioContext を resume、むおん audio、audioSession */
     var c = audio(), md = navigator.mediaDevices;
     vcSession('play-and-record'); vcUnlock();
+    vcShowAsk(false);
     if (!md || !md.getUserMedia || !c || !c.createMediaStreamSource) { vcFail(); return; }
     var g = ++vc.gen;
     vcStopPlay(); vc.auto = true; vc.state = 'ask';
-    vcAuto.classList.add('on'); vcAuto.setAttribute('aria-pressed', 'true');
-    vcAuto.querySelector('.ico').textContent = '⏹'; vcAuto.querySelector('.lab').textContent = 'とめる';
-    vcAuto.setAttribute('aria-label', 'とめる');
+    vcToggleUi(true); vcAutoPhase('ask');
     var pr;
     try { pr = md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); } catch (e) { vcFail(); return; }
     pr.then(function (stream) {
@@ -6878,41 +6843,32 @@
         vc.au = { vad: vcVadNew(), ch: [], n: 0, fed: 0, skipped: 0, count: 0 };
         vc.state = 'auto';
         vc.deafUntil = performance.now() + VC_AUTO.INTRO * 1000;   /* はじめの よみあげを ひろわない */
-        vcStage.classList.add('has'); vcGrid.hidden = false;
         vcAutoPhase('listen');
-        say('ずっと きいてるよ'); bigWord('きいてるよ', '#8F6BF2', 'clamp(28px, 8.5vw, 80px)');
+        say('おはなし してね');
       }, function () {
         try { src.disconnect(); sink.disconnect(); } catch (e) {}
         if (g === vc.gen) vcFail();
       });
     }, function () { if (g === vc.gen) vcFail(); });
   }
-  onTap(vcAuto, function () {
+  /* iOS: ユーザーそうさ として みとめられる click で マイクを あける */
+  vcAuto.addEventListener('click', function () {
     if (vc.auto) { vcAutoOff(); return; }
-    if (vc.state !== 'idle') { vc.gen++; vcRelease(); vcMicIdle(); }   /* てうごの ろくおんは やめる */
     hideWord();
     vcAutoOn();
   });
-  onTap(vcMic, function () {
-    if (vc.auto) return;
-    if (vc.state === 'rec') { vcStopRec(); return; }
-    if (vc.state !== 'idle') return;
-    vcStopPlay(); hideWord();
-    vcStartRec();
-  });
+  vcAsk.addEventListener('click', function () { hideWord(); vcAutoOn(); });
   VC_VOICES.forEach(function (v) {
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'vc-b'; b.style.setProperty('--c', v.c);
     b.setAttribute('aria-label', v.lab); b.dataset.voice = v.id;
     b.innerHTML = '<span class="ico">' + v.ico + '</span><span class="lab">' + v.lab + '</span>';
     onTap(b, function () {
-      if (!vc.buf && !vc.auto) return;
-      vcSelect(v.id);                  /* ゆうこうな こえ（オートは この こえで さいせい） */
+      vcSelect(v.id);                  /* ゆうこうな こえ（ずっときくは この こえで さいせい） */
       if (!vc.buf) { bigWord(v.lab, '#8F6BF2', 'clamp(36px, 11vw, 100px)'); return; }
       if (quiet()) { wiggle(b, 6); return; }
       vcPlay(v, b);
       bigWord(v.lab, '#8F6BF2', 'clamp(36px, 11vw, 100px)');
-      if (!vc.auto) vcMsg.textContent = v.lab;
     });
     vcBtns[v.id] = b;
     vcGrid.appendChild(b);
@@ -6920,15 +6876,15 @@
   games.voice = {
     el: vcStage,
     enter: function () {
+      /* タイルを タップした そうさの なかで マイクを あける（iOS） */
       vc.buf = null; vc.gen++; vcMicIdle(); vcSelect('normal');
-      vcStage.classList.remove('has'); vcGrid.hidden = true;
-      vcMsg.textContent = VC_HINT;
+      vcShowAsk(false);
+      vcAutoOn();
     },
     leave: function () {
       vc.gen++; vc.auto = false;
       vcRelease(); vcStopPlay(); vcMicIdle(); vcUnlockOff();
-      vc.buf = null; vc.chunks = [];
-      vcStage.classList.remove('has'); vcGrid.hidden = true;
+      vc.buf = null;
     }
   };
 

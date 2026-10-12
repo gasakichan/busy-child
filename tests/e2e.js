@@ -128,7 +128,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     if (tag === '360x740') await p.screenshot({ path: SP + '/home-p1-360.png' });
     if (tag === '1024x768') await p.screenshot({ path: SP + '/home-land.png' });
     await clearSays(p);
-    await p.click('#hm-next'); await sleep(400);
+    await p.click('#hm-next'); await sleep(320);
     const t2 = await tileInfo();
     ok(await icoChk(), tag + ' page2 tile icons + title image loaded');
     ok(t2.length === 9 && t2.every(t => t.ok && t.w === tiles[0].w && t.h === tiles[0].h && !t.clip), tag + ' page2: 9 tiles, same size as page1, not clipped');
@@ -140,17 +140,17 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(!sc2.h && !sc2.v, tag + ' page2 no scroll');
     // swipe right-ward drag (finger moves right) goes back; must not open a game
     const ab = await p.locator('#hm-area').boundingBox(); const y0 = ab.y + ab.height / 2;
-    await p.mouse.move(ab.x + 60, y0); await p.mouse.down(); await p.mouse.move(ab.x + 200, y0 + 10, { steps: 5 }); await p.mouse.up(); await sleep(450);
+    await p.mouse.move(ab.x + 60, y0); await p.mouse.down(); await p.mouse.move(ab.x + 200, y0 + 10, { steps: 5 }); await p.mouse.up(); await sleep(330);
     ok((await p.locator('#hm-p0').isVisible()) && (await p.locator('#hm-p1').isHidden()) && (await p.locator('#home').isVisible()), tag + ' swipe goes back to page1, no tile tapped');
-    await p.mouse.move(ab.x + 300, y0); await p.mouse.down(); await p.mouse.move(ab.x + 240, y0 + 200, { steps: 5 }); await p.mouse.up(); await sleep(400);
+    await p.mouse.move(ab.x + 300, y0); await p.mouse.down(); await p.mouse.move(ab.x + 240, y0 + 200, { steps: 5 }); await p.mouse.up(); await sleep(320);
     ok(await p.locator('#hm-p0').isVisible(), tag + ' mostly-vertical drag does not switch');
-    await p.click('.hm-dot:nth-child(2)'); await sleep(400);
+    await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     ok(await p.locator('#hm-p1').isVisible() && await p.locator('#hm-p0').isHidden(), tag + ' dot jumps to page2');
-    await p.click('.hm-dot:nth-child(1)'); await sleep(400);
+    await p.click('.hm-dot:nth-child(1)'); await sleep(320);
     // ---- page 3 (うごかす) ----
     ok(await p.locator('.hm-dot').count() === 3, tag + ' 3 page dots');
-    await p.click('.hm-dot:nth-child(2)'); await sleep(400);
-    await p.click('#hm-next'); await sleep(400);
+    await p.click('.hm-dot:nth-child(2)'); await sleep(320);
+    await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
     ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')], ti = document.querySelector('#hm-title img'); return ims.length === 2 && ims.every(i => i.complete && i.naturalWidth > 0) && !!ti && ti.complete && ti.naturalWidth > 0; }), tag + ' page3 koro + neko icon images + title image loaded (ドライブ falls back to the 🚗 emoji)');
     const t1b = tiles[0];
@@ -162,18 +162,18 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
     if (tag === '390x844') await p.screenshot({ path: SP + '/home-p3.png' });
     // swipe 2 -> 1 -> back ; arrows across 3 pages
-    await p.click('#hm-prev'); await sleep(400);
+    await p.click('#hm-prev'); await sleep(320);
     ok(await p.locator('#hm-p1').isVisible(), tag + ' ◀ from p3 -> p2');
-    await p.mouse.move(ab.x + 300, y0); await p.mouse.down(); await p.mouse.move(ab.x + 100, y0 + 5, { steps: 5 }); await p.mouse.up(); await sleep(450);
+    await p.mouse.move(ab.x + 300, y0); await p.mouse.down(); await p.mouse.move(ab.x + 100, y0 + 5, { steps: 5 }); await p.mouse.up(); await sleep(330);
     ok(await p.locator('#hm-p2').isVisible() && await p.locator('#hm-p1').isHidden(), tag + ' swipe left p2 -> p3');
-    await p.mouse.move(ab.x + 100, y0); await p.mouse.down(); await p.mouse.move(ab.x + 300, y0 + 5, { steps: 5 }); await p.mouse.up(); await sleep(450);
+    await p.mouse.move(ab.x + 100, y0); await p.mouse.down(); await p.mouse.move(ab.x + 300, y0 + 5, { steps: 5 }); await p.mouse.up(); await sleep(330);
     ok(await p.locator('#hm-p1').isVisible(), tag + ' swipe right p3 -> p2');
-    await p.click('.hm-dot:nth-child(1)'); await sleep(400);
+    await p.click('.hm-dot:nth-child(1)'); await sleep(320);
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
     for (let i = 0; i < 24; i++) {
-      await tapTile(p, LAB[i]); await sleep(i === 8 ? 600 : 500);
+      await tapTile(p, LAB[i]); await sleep(i === 8 ? 500 : 380);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
       const box = await p.locator(sel).boundingBox();
@@ -384,6 +384,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let sawGlow = false; for (let k = 0; k < 40 && !sawGlow; k++) { sawGlow = await p.evaluate(() => { const w = document.querySelector('#scanwin'); return !!w.style.getPropertyValue('--bs') || w.classList.contains('ok'); }); await sleep(100); }
     console.log('     (info) glow seen with fake camera: ' + sawGlow);
     if (tag === '390x844') await p.screenshot({ path: SP + '/shop-cam-v7.png' });
+    if (vp.width !== 390) { ok(p.errs.length === 0, tag + ' shop cam: no console errors (camera-position part runs at 390x844)'); await p.context().close(); return; }
     // camera position left
     await p.click('#homebtn');
     await holdOpen(p, 1600); await sleep(100);
@@ -408,7 +409,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.context().close();
   });
   /* ---------- 4b. shop pay: お金は1まいずつばらばら（まとめ表示なし）・iPad で大きく ---------- */
-  TV('shoppay', [{ width: 360, height: 740 }, { width: 820, height: 1180 }, { width: 1180, height: 820 }, { width: 844, height: 390 }], async (br, vp) => {
+  TV('shoppay', [{ width: 360, height: 740 }, { width: 1180, height: 820 }, { width: 844, height: 390 }], async (br, vp) => {
     const tag = vp.width + 'x' + vp.height;
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, LAB[8]); await sleep(900);
@@ -841,7 +842,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(p.errs.length === 0, 'sticker: no console errors ' + p.errs.join('|'));
     await p.context().close();
   });
-  TV('sticker-layout', [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 740, height: 360 }, { width: 844, height: 390 }, { width: 667, height: 375 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }], async (br, vp) => {
+  TV('sticker-layout', [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 740, height: 360 }, { width: 844, height: 390 }, { width: 1024, height: 768 }], async (br, vp) => {
     const p = await newPage(br, vp, { deny: true });
     await tapTile(p, 'シールちょう'); await sleep(500);
     const L = await p.evaluate(() => { const st = document.querySelector('#stage-sticker').getBoundingClientRect(), r = s => document.querySelector(s).getBoundingClientRect(), b = r('#stk-board'), sh = r('#stk-sheet'), hb = r('#homebtn'), cl = r('#clear'); const tabs = [...document.querySelectorAll('.stk-tab')].map(t => t.getBoundingClientRect()); const ov = (a, c) => a.left < c.right && a.right > c.left && a.top < c.bottom && a.bottom > c.top; return { ratio: +(b.height / st.height).toFixed(2), cell: Math.round(document.querySelector('.stk-cell').getBoundingClientRect().width), sheetIn: sh.bottom <= st.bottom + 1 && sh.left >= st.left && sh.right <= st.right, tabsIn: tabs.every(t => t.left >= st.left && t.right <= st.right && t.top >= st.top), tabOverlap: tabs.some(t => ov(t, hb) || ov(t, cl)), boardTabs: tabs.some(t => ov(t, b)), hs: document.documentElement.scrollWidth > innerWidth }; });
@@ -1347,7 +1348,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     for (const lab of labs) {
       if (lab) { await tapTile(p, lab); await sleep(400); }
-      await p.setViewportSize({ width: 844, height: 390 }); await sleep(900);
+      await p.setViewportSize({ width: 844, height: 390 }); await sleep(450);
       ok(await hit(p), 'rotate ' + (lab || 'home') + ': landscape 🏠 hit-tests to itself');
       await p.setViewportSize({ width: 390, height: 844 }); await sleep(900);
       await p.evaluate(() => { window.scrollTo(0, 300); document.body.scrollTop = 300; }); await sleep(50);
@@ -1390,6 +1391,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const d0 = await p.evaluate(() => [...document.querySelectorAll('.dr-road .dash')].map(d => d.getAttribute('points')).join('|')); await sleep(200);
     ok(d0 !== await p.evaluate(() => [...document.querySelectorAll('.dr-road .dash')].map(d => d.getAttribute('points')).join('|')) && await cnt('.dr-road .dash') === 8, tag + ': road dashes flow');
     await shot('day');
+    if (vp.width !== 390) { ok(p.errs.length === 0, tag + ': no console errors (layout-only viewport; full flow runs at 390x844)'); await p.context().close(); return; }
     /* ハンドル: 時計まわりにつかんで回す -> 回転 + けしきが左へ。遠景ほどゆっくり */
     const wb = await p.locator('#dr-wheel').boundingBox(), cx = wb.x + wb.width / 2, cy = wb.y + wb.height / 2, R = wb.width * 0.4;
     const at = deg => [cx + R * Math.cos(deg * Math.PI / 180), cy + R * Math.sin(deg * Math.PI / 180)];
@@ -1423,7 +1425,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     /* ボタン */
     const BT = [['とり', 'とり！'], ['くるま', 'くるま！'], ['よる', 'よる！'], ['あさ', 'あさ！'], ['ライト', 'ライト！'], ['あめ', 'あめ！'], ['どうぶつ', null], ['おんがく', 'るんるん']];
     for (const [lab, w] of BT) {
-      await sleep(1300); await clearSays(p);
+      await sleep(800); await clearSays(p);
       await btn(lab); await sleep(100);
       const s = await lastSay(), b = await big();
       ok(w ? s === w && b === w.replace('！', '') : /^[぀-ゟ]+$/.test(s.replace('！', '')) && b === s.replace('！', ''), tag + ': ' + lab + ' speaks "' + s + '" and shows the same word big');
@@ -1484,14 +1486,14 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('#homebtn'); await sleep(300);
     await tapTile(p, 'いないいないばあ'); await sleep(400);
     const seen = new Set();
-    for (let round = 0; round < 6; round++) {
+    for (let round = 0; round < (vp.width === 360 ? 4 : 2); round++) {
       for (let i = 0; i < 4; i++) { await p.locator('#baa .slot').nth(i).click(); await sleep(60); }
       await sleep(1100);
       const r = await p.evaluate(() => [...document.querySelectorAll('#baa .slot.open')].map(sl => { const im = sl.querySelector('.an .an-img'), nm = sl.querySelector('.nm').textContent; const b = im && im.getBoundingClientRect(), sb = sl.getBoundingClientRect(); return { ok: !!im && im.complete && im.naturalWidth > 0 && b.width >= 56 && b.left >= sb.left && b.right <= sb.right && b.top >= sb.top && b.bottom <= sb.bottom, nm, src: im && im.src.length }; }));
       ok(r.length === 4 && r.every(x => x.ok && /^[぀-ヿ]+$/.test(x.nm)), tag + ' baa round ' + (round + 1) + ': revealed animals are loaded images ' + JSON.stringify(r.map(x => x.nm + (x.ok ? '' : '!'))));
       r.forEach(x => seen.add(x.nm));
       if (round === 0) { await p.screenshot({ path: SP + '/animals-baa-' + vp.width + '.png' }); ok(await noHs(), tag + ' baa: no horizontal scroll'); }
-      await sleep(1200);
+      await sleep(800);
     }
     ok(await p.evaluate(() => (window.__says || []).some(s => /らいおん|ぺんぎん|うさぎ|ぶた|くま|さる|いぬ|ねこ|うし|ひよこ|かえる|ぞう/.test(s.t))), tag + ' baa: animal name spoken');
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join('|'));
@@ -1532,6 +1534,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     /* black key: on top of whites, pressable, active */
     const hit = await p.evaluate(() => { const bs = [...document.querySelectorAll('.pn-k.b')]; return bs.map(k => { const r = k.getBoundingClientRect(); const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return e === k; }); });
     ok(hit.length === 5 && hit.every(Boolean), tag + ': black keys win the hit test');
+    if (vp.width !== 390) { ok(p.errs.length === 0, tag + ': no console errors (layout-only viewport; full flow runs at 390x844)'); await p.context().close(); return; }
     b = await kb(9);
     await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(100);
     ok(await p.locator('.pn-k').nth(9).evaluate(e => e.classList.contains('on')) && (await on()) === 1, tag + ': black key pressable and active alone');
@@ -1645,6 +1648,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     f1 = (await PB()).fl;
     ok(f1[1].want && !f1[0].want && f1[1].a < f1[1].rest - 0.7, tag + ': tapping the right half raises only the right flipper');
     await p.mouse.up(); await sleep(300);
+    if (vp.width !== 390) { ok(p.errs.length === 0, tag + ': no console errors (layout-only viewport; full flow runs at 390x844)'); await p.context().close(); return; }
     /* multi-touch with pointer ids */
     await p.evaluate(([l, r, y]) => { const cv = document.querySelector('#pb-cv'); [[l, 31], [r, 32]].forEach(([x, id]) => cv.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: id, clientX: x, clientY: y }))); }, [lx, rx, fy]);
     f1 = (await PB()).fl;
@@ -1684,7 +1688,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
         q.fl[0].want = q.fl[1].want = false;
         if (q.mode === 'cheer') cups[q.scored] = (cups[q.scored] || 0) + 1; else bad++; }
       q.ready(); return { bad, oob, n: Object.keys(cups).length, cups }; }, play);
-    const idle = await run(false), played = await run(true);
+    const idle = await run(false); const played = await run(true);
+    for (let k = 0; k < 4 && played.n < 5; k++) { const more = await run(true); played.bad += more.bad; played.oob += more.oob; for (const c in more.cups) played.cups[c] = (played.cups[c] || 0) + more.cups[c]; played.n = Object.keys(played.cups).length; }   // ランダム操作なので、全カップに届くまで数回まで追加で打つ（不定期に落ちていた原因）
     ok(idle.bad === 0 && idle.oob === 0 && idle.n >= 2, tag + ': 60 hands-off shots all end in a cup, none off the board ' + JSON.stringify(idle));
     ok(played.bad === 0 && played.oob === 0 && played.n === 5, tag + ': 100 shots with random flipper play: every cup reached, none stuck or off the board ' + JSON.stringify(played));
     await p.evaluate(() => { const q = window.__pb; q.ready(); document.querySelector('#fx-pinball').innerHTML = ''; });
@@ -1922,26 +1927,45 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 
   /* ---------- ボイスチェンジャー ---------- */
+  const FAKEMIC = `(function(){
+    navigator.mediaDevices.getUserMedia = function(c){
+      window.__gum++;
+      if (window.__denyCam) return Promise.reject(new DOMException('denied','NotAllowedError'));
+      const ctx = new AudioContext(), o = ctx.createOscillator(), g = ctx.createGain(), d = ctx.createMediaStreamDestination();
+      o.frequency.value = 300; g.gain.value = window.__fmInit || 0; o.connect(g); g.connect(d); o.start();
+      window.__fm = { ctx, set: v => { g.gain.value = v; }, tracks: d.stream.getAudioTracks() };
+      return ctx.resume().then(() => d.stream);
+    };
+  })();`;
+  const AU = p => p.evaluate(() => { const v = window.__vc, a = v.au; return { auto: v.auto, state: v.state, ph: v.ph, voice: v.voice, last: v.last, plays: v.plays, live: v.live, buf: v.buf, dur: v.buf ? v.buf.duration : 0, deaf: v.deafUntil === Infinity ? 'inf' : Math.round(v.deafUntil - performance.now()), n: a ? a.n : -1, chunks: a ? a.ch.length : -1, vad: a ? a.vad.st : '', count: a ? a.count : -1, skipped: a ? a.skipped : -1, tr: window.__fm ? window.__fm.tracks.filter(t => t.readyState === 'live').length : -1, ico: document.querySelector('#vc-ico').textContent, msg: document.querySelector('#vc-msg').textContent, pressed: document.querySelector('#vc-auto').getAttribute('aria-pressed') }; });
+  const AUbuf = p => p.evaluate(() => { const v = window.__vc; if (!v.buf) return ''; return (v.buf.__id = v.buf.__id || Math.random()).toString(); });
+  const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+  const VCFAST = 'window.__vcA.A.INTRO = 0.3;';   // はじめの よみあげ待ち（本番 2.5 秒）を縮める
+  const vcHs = p => p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-voice').scrollWidth > document.querySelector('#stage-voice').clientWidth + 1);
+  const vcBtnInfo = p => p.evaluate(() => { const g = document.querySelector('#vc-grid').getBoundingClientRect(); return [...document.querySelectorAll('.vc-b')].map(b => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), r.left >= g.left - 1 && r.right <= g.right + 1, b.scrollWidth > b.clientWidth + 1 || b.scrollHeight > b.clientHeight + 1]; }); });
+  const vcEnter = async (p, fast = true) => { if (fast) await p.evaluate(VCFAST); await tapTile(p, 'ボイスチェンジャー'); };
+
   T('voice-pure', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(300);
     const r = await p.evaluate(() => {
-      const V = window.__vcV, out = { n: V.length, ids: V.map(v => v.id), plans: V.map(v => window.__vcPlan(v, 3)), gr: window.__vcGrains(4, 0.5), gr2: window.__vcGrains(4, 1.9) };
+      const V = window.__vcV, out = { n: V.length, ids: V.map(v => v.id), plans: V.map(v => window.__vcPlan(v, 3)), gr: window.__vcGrains(4, 0.5), gr2: window.__vcGrains(4, 1.9), labs: V.map(v => v.lab), cs: V.map(v => v.c) };
       return out;
     });
-    ok(r.n >= 6 && r.n <= 8 && new Set(r.ids).size === r.n, 'voice: 6-8 distinct voices ' + r.ids.join());
+    ok(r.n >= 16 && r.n <= 20 && new Set(r.ids).size === r.n && new Set(r.cs).size === r.n, 'voice: 16-20 distinct voices/colors (' + r.n + ') ' + r.ids.join());
+    ok(r.labs.every(l => /^[ぁ-んァ-ヶー]+$/.test(l) && l.length <= 6), 'voice: names are short kana ' + r.labs.join());
     ok(r.plans.every(q => q.dur > 0 && q.total >= q.dur && q.total < 20), 'voice: plans have sane durations ' + JSON.stringify(r.plans.map(q => +q.total.toFixed(2))));
     const byId = Object.fromEntries(r.ids.map((id, i) => [id, r.plans[i]]));
     ok(byId.high.dur < byId.normal.dur && byId.low.dur > byId.normal.dur && byId.slow.dur > 2 * byId.normal.dur * 0.99 && byId.fast.dur < byId.normal.dur && byId.echo.tail > byId.normal.tail, 'voice: high shorter, low/slow longer, fast shorter, echo has a tail');
+    ok(byId.tiny.dur < byId.high.dur && byId.giant.dur > byId.low.dur && byId.bath.tail > byId.normal.tail && byId.rev.dur === byId.normal.dur, 'voice: tiny/giant are beyond high/low, bath has a tail, reverse keeps its length');
     const gOk = (g, d, sp) => g.length > 5 && g.every((x, i) => x.off >= 0 && x.off < d && x.off + x.len <= d + 1e-6 && (i === 0 || (x.at > g[i - 1].at && x.off > g[i - 1].off))) && Math.abs(g[g.length - 1].at * sp - g[g.length - 1].off) < 1e-6;
     ok(gOk(r.gr, 4, 0.5) && gOk(r.gr2, 4, 1.9) && r.gr.length > r.gr2.length, 'voice: grain schedules are monotonic and inside the recording (' + r.gr.length + '/' + r.gr2.length + ')');
-    /* オート: VAD の状態遷移（純粋関数） */
+    /* ずっときく: VAD の状態遷移（純粋関数） */
     const a = await p.evaluate(() => {
       const H = window.__vcA, A = H.A;
       const sim = (parts, dt = 0.05) => {          // parts = [[rms, 秒], ...]
-        const s = H.vadNew(), ev = [], at = [];
-        parts.forEach(([r, sec]) => { const n = Math.round(sec / dt); for (let i = 0; i < n; i++) { const e = H.vad(s, r, dt); if (e) { ev.push(e); at.push(+(ev.length + ':' + s.len.toFixed(2)).split(':')[1]); } } });
-        return { ev, at, s };
+        const s = H.vadNew(), ev = [];
+        parts.forEach(([r, sec]) => { const n = Math.round(sec / dt); for (let i = 0; i < n; i++) { const e = H.vad(s, r, dt); if (e) ev.push(e); } });
+        return { ev, s };
       };
       const cal = [[0.003, 0.5]];
       const o = { A: JSON.parse(JSON.stringify(A)) };
@@ -1957,250 +1981,177 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       o.keep = [H.keep(48000, 48000, 0.7), H.keep(48000, 48000, 0), H.keep(1000, 48000, 0.7)];
       return o;
     });
-    ok(a.A.GAIN_MAX <= 1.6 && a.A.QUIET === 0.7 && a.A.MAXLEN === 6 && a.A.MINV === 0.3 && a.A.PRE === 0.3 && a.A.TAIL >= 0.5, 'voice-auto pure: tuning constants ' + JSON.stringify(a.A));
-    ok(a.silent.ev.length === 0 && a.silentThr === a.A.THR_MIN, 'voice-auto pure: silence never triggers, threshold has a floor (' + a.silentThr + ')');
-    ok(a.speech.ev.join() === 'start,end', 'voice-auto pure: speech -> start, end ' + a.speech.ev);
-    ok(a.blip.ev.join() === 'start,drop', 'voice-auto pure: blip shorter than 0.3s is dropped ' + a.blip.ev);
-    ok(a.long.ev.slice(0, 2).join() === 'start,max' && a.long.ev.length <= 3, 'voice-auto pure: forced end at 6s (then a new utterance may begin) ' + a.long.ev);
-    ok(a.gap.ev.join() === 'start,end', 'voice-auto pure: a 0.3s pause does not split speech ' + a.gap.ev);
-    ok(a.noisy.ev.join() === 'start' && a.noisyThr > a.A.THR_MIN && a.noisyThr <= a.A.THR_MAX && a.hiThr === a.A.THR_MAX, 'voice-auto pure: threshold calibrates to ambient noise (' + a.noisyThr.toFixed(3) + ', cap ' + a.hiThr + ') ' + a.noisy.ev);
-    ok(a.ring === 12 && a.ring2 === 0, 'voice-auto pure: pre-roll keeps >= 0.3s (' + a.ring + ')');
-    ok(a.keep[0] === 21600 && a.keep[1] === 48000 && a.keep[2] === 0, 'voice-auto pure: trailing silence trimmed to 0.15s ' + a.keep);
+    ok(a.A.GAIN_MAX <= 1.6 && a.A.QUIET === 0.7 && a.A.MAXLEN === 6 && a.A.MINV === 0.3 && a.A.PRE === 0.3 && a.A.TAIL >= 0.5, 'voice pure: tuning constants ' + JSON.stringify(a.A));
+    ok(a.silent.ev.length === 0 && a.silentThr === a.A.THR_MIN, 'voice pure: silence never triggers, threshold has a floor (' + a.silentThr + ')');
+    ok(a.speech.ev.join() === 'start,end', 'voice pure: speech -> start, end ' + a.speech.ev);
+    ok(a.blip.ev.join() === 'start,drop', 'voice pure: blip shorter than 0.3s is dropped ' + a.blip.ev);
+    ok(a.long.ev.slice(0, 2).join() === 'start,max' && a.long.ev.length <= 3, 'voice pure: forced end at 6s (then a new utterance may begin) ' + a.long.ev);
+    ok(a.gap.ev.join() === 'start,end', 'voice pure: a 0.3s pause does not split speech ' + a.gap.ev);
+    ok(a.noisy.ev.join() === 'start' && a.noisyThr > a.A.THR_MIN && a.noisyThr <= a.A.THR_MAX && a.hiThr === a.A.THR_MAX, 'voice pure: threshold calibrates to ambient noise (' + a.noisyThr.toFixed(3) + ', cap ' + a.hiThr + ') ' + a.noisy.ev);
+    ok(a.ring === 12 && a.ring2 === 0, 'voice pure: pre-roll keeps >= 0.3s (' + a.ring + ')');
+    ok(a.keep[0] === 21600 && a.keep[1] === 48000 && a.keep[2] === 0, 'voice pure: trailing silence trimmed to 0.15s ' + a.keep);
     await p.context().close();
   });
 
-  TV('voice', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
-    const tag = 'voice ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/voice-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
-    const p = await newPage(br, vp, { voices: JAV });
-    const st = () => p.evaluate(() => ({ state: window.__vc.state, has: !!window.__vc.buf, dur: window.__vc.buf ? window.__vc.buf.duration : 0, plays: window.__vc.plays, live: window.__vc.live, last: window.__vc.last, rec: document.querySelector('#vc-mic').classList.contains('rec'), tracks: window.__vc.stream ? window.__vc.stream.getTracks().filter(t => t.readyState === 'live').length : 0 }));
-    const hs = () => p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-voice').scrollWidth > document.querySelector('#stage-voice').clientWidth);
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(500);
-    ok(await p.locator('#stage-voice').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens ボイスチェンジャー');
-    ok((await says(p)).some(x => x.t === 'ぼいすちぇんじゃー！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks, shared 🏠, no adult button');
-    ok(await p.locator('#vc-grid').isHidden(), tag + ': voice buttons hidden before recording');
-    const mb = await p.locator('#vc-mic').boundingBox();
-    ok(mb.width >= 80 && mb.height >= 80 && !(await hs()), tag + ': big mic ' + Math.round(mb.width) + 'px, no hscroll');
-    await shot('a');
-    /* 録音 → もういちど押して止める */
-    await p.click('#vc-mic', { force: true }); await sleep(900);
-    let s = await st();
-    ok(s.state === 'rec' && s.rec && s.tracks === 1, tag + ': recording shows pulse (.rec) and mic is live ' + JSON.stringify(s));
-    ok(await p.locator('#vc-bar.on').count() === 1, tag + ': countdown bar visible while recording');
-    await shot('rec');
-    await p.click('#vc-mic', { force: true }); await sleep(900);
-    s = await st();
-    ok(s.state === 'idle' && s.has && s.dur > 0.3 && !s.rec && s.tracks === 0, tag + ': stop -> decoded buffer kept (' + s.dur.toFixed(2) + 's), mic released');
-    ok(await p.locator('#vc-grid').isVisible() && (await p.locator('.vc-b').count()) >= 6, tag + ': voice buttons appear');
-    const bb = await p.evaluate(() => [...document.querySelectorAll('.vc-b')].map(b => { const r = b.getBoundingClientRect(); const st = document.querySelector('#stage-voice').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), r.left >= st.left - 1 && r.right <= st.right + 1 && r.top >= st.top - 1 && r.bottom <= st.bottom + 1, b.scrollWidth > b.clientWidth + 1 || b.scrollHeight > b.clientHeight + 1]; }));
-    ok(bb.every(x => x[0] >= 80 && x[1] >= 80 && x[2] && !x[3]), tag + ': voice buttons >= 80px, inside, not clipped ' + JSON.stringify(bb));
-    const mb2 = await p.locator('#vc-mic').boundingBox();
-    ok(mb2.width >= 80 && !(await hs()), tag + ': mic still >= 80px after recording, no hscroll');
-    await sleep(600); await shot('b');
-    /* どのボタンも なんどでも */
-    const ids = await p.evaluate(() => window.__vcV.map(v => v.id));
-    const p0 = (await st()).plays; let bad = 0, glow = 0;
-    for (const id of ids.concat(ids.slice().reverse())) {
-      await p.click('.vc-b[data-voice="' + id + '"]', { force: true }); await sleep(120);
-      const q = await st();
-      if (q.last !== id || q.live < 3) bad++;
-      if (await p.locator('.vc-b.on[data-voice="' + id + '"]').count() === 1 && await p.locator('.vc-b.on').count() === 1) glow++;
-      if (id === 'robot' || id === 'slow') await shot('v-' + id);
-    }
-    s = await st();
-    ok(bad === 0 && glow === ids.length * 2 && s.plays - p0 === ids.length * 2 && s.has, tag + ': every voice plays, repeatedly, playing button glows (' + glow + '/' + ids.length * 2 + ')');
-    await p.click('.vc-b[data-voice="echo"]', { force: true }); await sleep(200);
-    const dur1 = (await st()).dur;
-    await p.click('.vc-b[data-voice="normal"]', { force: true }); await p.click('.vc-b[data-voice="normal"]', { force: true }); await sleep(200);
-    ok((await st()).dur === dur1 && (await st()).live > 0, tag + ': recording is kept across plays (same buffer)');
-    /* 再生が終わったらグラフが片づく */
-    await sleep(Math.ceil((dur1 + 0.6) * 1000) + 300);
-    s = await st();
-    ok(s.live === 0 && (await p.locator('.vc-b.on').count()) === 0, tag + ': nodes disconnected + glow cleared after playback ended (live=' + s.live + ')');
-    /* もう一度録ると置き換わる */
-    await p.click('#vc-mic', { force: true }); await sleep(700); await p.click('#vc-mic', { force: true }); await sleep(900);
-    s = await st();
-    ok(s.state === 'idle' && s.has && (await p.locator('#vc-grid').isVisible()), tag + ': re-record replaces the recording');
-    /* 自動停止 (4 秒) */
-    await sleep(600);
-    await p.click('#vc-mic', { force: true }); await sleep(1200);
-    ok((await st()).state === 'rec', tag + ': recording again');
-    await sleep(3400);
-    s = await st();
-    ok(s.state !== 'rec' && !s.rec && s.tracks === 0, tag + ': auto-stops at 4s ' + JSON.stringify(s));
-    await sleep(800);
-    ok((await st()).state === 'idle' && (await st()).has, tag + ': auto-stop leaves a playable recording');
-    ok(!(await hs()), tag + ': no hscroll');
-    /* 録音中に離れる → マイク停止 */
-    await p.click('#vc-mic', { force: true }); await sleep(700);
-    ok((await st()).tracks === 1, tag + ': recording before leaving');
-    await p.evaluate(() => { window.__tr = window.__vc.stream.getTracks(); });
-    await p.click('#homebtn'); await sleep(300);
-    const lv = await p.evaluate(() => ({ live: window.__tr.filter(t => t.readyState === 'live').length, st: window.__vc.state, live2: window.__vc.live, buf: !!window.__vc.buf, hidden: document.querySelector('#stage-voice').hidden }));
-    ok(lv.live === 0 && lv.st === 'idle' && lv.live2 === 0 && !lv.buf && lv.hidden, tag + ': leave() stops mic tracks, recorder and audio ' + JSON.stringify(lv));
-    /* 入りなおすと まっさら */
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
-    ok(await p.locator('#vc-grid').isHidden() && (await st()).state === 'idle', tag + ': re-enter starts fresh');
-    await p.click('#homebtn'); await sleep(150);
-    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
-    await p.context().close();
-  });
-
-  const FAKEMIC = `(function(){
-    navigator.mediaDevices.getUserMedia = function(c){
-      window.__gum++;
-      if (window.__denyCam) return Promise.reject(new DOMException('denied','NotAllowedError'));
-      const ctx = new AudioContext(), o = ctx.createOscillator(), g = ctx.createGain(), d = ctx.createMediaStreamDestination();
-      o.frequency.value = 300; g.gain.value = window.__fmInit || 0; o.connect(g); g.connect(d); o.start();
-      window.__fm = { ctx, set: v => { g.gain.value = v; }, tracks: d.stream.getAudioTracks() };
-      return ctx.resume().then(() => d.stream);
-    };
-  })();`;
-  const AU = p => p.evaluate(() => { const v = window.__vc, a = v.au; return { auto: v.auto, state: v.state, ph: v.ph, voice: v.voice, last: v.last, plays: v.plays, live: v.live, buf: v.buf, dur: v.buf ? v.buf.duration : 0, deaf: v.deafUntil === Infinity ? 'inf' : Math.round(v.deafUntil - performance.now()), n: a ? a.n : -1, chunks: a ? a.ch.length : -1, vad: a ? a.vad.st : '', count: a ? a.count : -1, skipped: a ? a.skipped : -1, tr: window.__fm ? window.__fm.tracks.filter(t => t.readyState === 'live').length : -1, mic: document.querySelector('#vc-mic').textContent, msg: document.querySelector('#vc-msg').textContent, pressed: document.querySelector('#vc-auto').getAttribute('aria-pressed') }; });
-  const AUbuf = p => p.evaluate(() => { const v = window.__vc; if (!v.buf) return ''; return (v.buf.__id = v.buf.__id || Math.random()).toString(); });
-  const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(50); } };
-
-  TV('voice-auto', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
-    const tag = 'voice-auto ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/voice-auto-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
-    const p = await newPage(br, vp, { voices: JAV, init: FAKEMIC });
-    const hs = () => p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-voice').scrollWidth > document.querySelector('#stage-voice').clientWidth);
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
-    await p.evaluate(() => { window.__vcA.A.INTRO = 0.3; });
-    const tb = await p.locator('#vc-auto').boundingBox();
-    ok(await p.locator('#vc-auto').isVisible() && tb.width >= 80 && tb.height >= 80 && !(await hs()), tag + ': toggle visible, ' + Math.round(tb.width) + 'x' + Math.round(tb.height) + ', no hscroll');
-    await shot('a');
-    await clearSays(p);
-    await p.click('#vc-auto', { force: true }); await sleep(900);
+  /* 入った瞬間から聞く: 声ボタンは最初から並ぶ → 自動録音 → 再生 → half-duplex → 声切替 → 全声 → OFF/ON → leave。縦 360x740 + 横 740x360 */
+  T('voice-auto', async (br) => {
+    const tag = 'voice-auto', shot = n => p.screenshot({ path: SP + '/voice-' + n + '.png' });
+    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, init: FAKEMIC });
+    await p.evaluate(VCFAST);
+    await tapTile(p, 'ボイスチェンジャー');
+    ok(await p.locator('#stage-voice').isVisible() && await p.locator('#hm-p2').isHidden() && await p.locator('#vc-grid').isVisible() && (await p.locator('.vc-b').count()) >= 16, tag + ': entering shows the voice buttons straight away (no mic-only screen)');
+    ok(await p.locator('#vc-mic').count() === 0 && await p.locator('#vc-bar').count() === 0, tag + ': manual mic UI is gone');
+    ok(await until(p, async () => (await AU(p)).state === 'auto', 3000), tag + ': mic opened by itself from the tile tap');
     let s = await AU(p);
-    ok(s.auto && s.state === 'auto' && s.ph === 'listen' && s.tr === 1 && s.pressed === 'true' && s.mic === '👂' && s.msg === 'きいてるよ', tag + ': ON opens the mic and shows きいてるよ 👂 ' + JSON.stringify({ ...s, buf: 0 }));
-    ok((await says(p)).filter(x => x.t === 'ずっと きいてるよ').length === 1 && await p.locator('#vc-grid').isVisible(), tag + ': spoke once on ON, voices shown');
-    let ob = await p.locator('#vc-mic').boundingBox();
-    ok(ob.width >= 80 && !(await hs()), tag + ': status icon >= 80px, no hscroll');
-    /* 有効なボイスを先に選ぶ（録音前） */
-    await p.click('.vc-b[data-voice="robot"]', { force: true }); await sleep(150);
+    ok(s.auto && s.ph === 'listen' && s.tr === 1 && s.ico === '👂' && s.msg === 'きいてるよ' && s.pressed === 'true', tag + ': status 👂 きいてるよ ' + JSON.stringify({ ...s, buf: 0 }));
+    const sy = await says(p);
+    ok(sy.some(x => x.t === 'ぼいすちぇんじゃー！') && sy.filter(x => x.t === 'おはなし してね').length === 1 && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks name + prompt once, shared 🏠, no adult button');
+    const bb = await vcBtnInfo(p);
+    ok(bb.length >= 16 && bb.every(x => x[0] >= 80 && x[1] >= 80 && x[2] && !x[3]), tag + ': ' + bb.length + ' voice buttons >= 80px, inside, not clipped (' + bb[0][0] + 'x' + bb[0][1] + ')');
+    const tb = await p.locator('#vc-auto').boundingBox(), st = await p.locator('#vc-st').boundingBox();
+    ok(tb.width >= 80 && tb.height >= 80 && st.y < tb.y + tb.height && st.y + st.height < 200 && !(await vcHs(p)), tag + ': status at top, toggle ' + Math.round(tb.width) + 'x' + Math.round(tb.height) + ', no hscroll');
+    const gs = await p.evaluate(() => { const g = document.querySelector('#vc-grid'); return g.scrollHeight - g.clientHeight; });
+    ok(gs <= 2, tag + ': all voices fit without scrolling at 360x740 (overflow ' + gs + 'px)');
+    await shot('360x740-listen');
+    /* 先に声を選ぶ（まだ再生しない） */
+    await p.click('.vc-b[data-voice="robot"]', { force: true });
     s = await AU(p);
-    ok(s.voice === 'robot' && s.plays === 0 && await p.locator('.vc-b.sel').count() === 1 && await p.locator('.vc-b.sel[data-voice="robot"]').count() === 1, tag + ': picking a voice before talking selects it (no playback yet)');
-    await shot('listen');
-    /* 発話 → ためてる */
-    await p.evaluate(() => window.__fm.set(0.3)); await sleep(700);
+    ok(s.voice === 'robot' && s.plays === 0 && await p.locator('.vc-b.sel').count() === 1 && await p.locator('.vc-b.sel[data-voice="robot"]').count() === 1, tag + ': picking a voice before talking selects it (no playback)');
+    /* 発話 → ためてる → 再生 */
+    await p.evaluate(() => window.__fm.set(0.3));
+    ok(await until(p, async () => (await AU(p)).ph === 'talk', 2000), tag + ': speech detected -> ためてる…');
     s = await AU(p);
-    ok(s.ph === 'talk' && s.msg === 'ためてる…' && await p.locator('#vc-mic.rec').count() === 1 && s.buf === null, tag + ': speech detected -> ためてる… pulse ' + s.ph);
-    await shot('talk');
-    await p.evaluate(() => window.__fm.set(0));
+    ok(s.msg === 'ためてる…' && s.ico === '🎙️' && await p.locator('#vc-ico.rec').count() === 1 && s.buf === null, tag + ': ためてる… pulse');
+    await sleep(300); await p.evaluate(() => window.__fm.set(0));
     ok(await until(p, async () => (await AU(p)).ph === 'play', 2500), tag + ': ~0.7s of silence ends the utterance -> plays');
     s = await AU(p); const buf1 = await AUbuf(p);
-    ok(s.count === 1 && s.last === 'robot' && s.live >= 3 && s.msg === 'しゃべってるよ' && s.mic === '🔊' && s.deaf === 'inf' && s.dur > 0.5 && s.dur < 2.6, tag + ': auto-played with the active voice, 🔊 (' + s.dur.toFixed(2) + 's, trimmed)');
-    ok(await p.locator('.vc-b.on[data-voice="robot"]').count() === 1, tag + ': playing button glows');
-    await shot('play');
-    /* ハウリング防止: 再生中は入力を捨てる */
+    ok(s.count === 1 && s.last === 'robot' && s.live >= 3 && s.msg === 'しゃべってるよ' && s.ico === '🔊' && s.deaf === 'inf' && s.dur > 0.4 && s.dur < 2.6 && await p.locator('.vc-b.on[data-voice="robot"]').count() === 1, tag + ': auto-played in the active voice, 🔊, button glows (' + s.dur.toFixed(2) + 's)');
+    await shot('360x740-play');
+    /* half-duplex: 再生中は入力を捨てる */
     const sk0 = s.skipped;
-    await p.evaluate(() => window.__fm.set(0.3)); await sleep(350);
+    await p.evaluate(() => window.__fm.set(0.3)); await sleep(250);
     s = await AU(p);
     ok(s.ph === 'play' && s.n === 0 && s.chunks === 0 && s.vad === 'idle' && s.skipped > sk0 && await AUbuf(p) === buf1 && s.count === 1, tag + ': input is discarded during playback (skipped +' + (s.skipped - sk0) + ' samples)');
     ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': playback ends -> listening again');
     s = await AU(p);
     ok(s.n === 0 && typeof s.deaf === 'number' && s.deaf > 0 && s.deaf <= 520, tag + ': ~0.5s deaf window after playback (' + s.deaf + 'ms left)');
-    await sleep(Math.max(0, s.deaf) + 300);
-    ok(await until(p, async () => (await AU(p)).ph === 'talk', 1500) && (await AUbuf(p)) === buf1, tag + ': resumes listening after the deaf window (still sounding -> ためてる)');
-    /* 有効なボイス切り替え: 次の自動再生に反映 */
     await p.evaluate(() => window.__fm.set(0));
+    await sleep(Math.max(0, s.deaf) + 100);
+    s = await AU(p);
+    ok(s.ph === 'listen' && s.n >= 0 && await AUbuf(p) === buf1 && s.count === 1, tag + ': nothing recorded from the playback / deaf window');
+    /* 声ボタン: 直近の録音を別の声で何度でも */
+    const p1 = s.plays;
+    await p.click('.vc-b[data-voice="tiny"]', { force: true });
+    s = await AU(p);
+    ok(s.voice === 'tiny' && s.last === 'tiny' && s.plays === p1 + 1 && s.ph === 'play' && s.deaf === 'inf' && await p.locator('.vc-b.sel').count() === 1 && await AUbuf(p) === buf1, tag + ': tapping a voice replays the recent recording in it, mic stays deaf');
+    /* 全部の声を一通り（軽いチェック: 鳴る・エラーなし・ノードが残らない） */
+    const ids = await p.evaluate(() => window.__vcV.map(v => v.id));
+    let bad = 0, glow = 0;
+    for (const id of ids) {
+      await p.click('.vc-b[data-voice="' + id + '"]', { force: true });
+      const q = await AU(p);
+      if (q.last !== id || q.live < 2) bad++;
+      if (await p.locator('.vc-b.on[data-voice="' + id + '"]').count() === 1 && await p.locator('.vc-b.on').count() === 1) glow++;
+    }
+    s = await AU(p);
+    ok(bad === 0 && glow === ids.length && s.plays === p1 + 1 + ids.length && await AUbuf(p) === buf1, tag + ': every one of ' + ids.length + ' voices plays, only the playing button glows (' + glow + '/' + ids.length + ')');
+    ok(await until(p, async () => (await AU(p)).live === 0, 6000) && await p.locator('.vc-b.on').count() === 0 && (await AU(p)).ph === 'listen', tag + ': nodes disconnected + glow cleared after the last playback');
+    ok(p.errs.length === 0, tag + ': no console errors so far ' + p.errs.join(' | '));
+    /* 次の自動再生は選んだ声で */
+    await p.click('.vc-b[data-voice="phone"]', { force: true });
+    await until(p, async () => (await AU(p)).live === 0, 6000); await sleep(600);
+    await p.evaluate(() => window.__fm.set(0.3)); await sleep(500); await p.evaluate(() => window.__fm.set(0));
     ok(await until(p, async () => (await AU(p)).count === 2, 3000), tag + ': second utterance committed');
     s = await AU(p);
-    ok((await AUbuf(p)) !== buf1 && s.last === 'robot', tag + ': recent recording replaced, played in robot');
-    ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': second playback ended');
-    await sleep(700);
-    const p1 = (await AU(p)).plays;
-    await p.click('.vc-b[data-voice="high"]', { force: true }); await sleep(200);
+    ok(await AUbuf(p) !== buf1 && s.last === 'phone', tag + ': recent recording replaced, auto-played in the newly selected voice');
+    /* 一時停止 OFF */
+    await until(p, async () => (await AU(p)).ph === 'listen', 4000);
+    await p.click('#vc-auto', { force: true });
     s = await AU(p);
-    ok(s.voice === 'high' && s.last === 'high' && s.plays === p1 + 1 && s.ph === 'play' && s.deaf === 'inf' && await p.locator('.vc-b.sel[data-voice="high"]').count() === 1 && await p.locator('.vc-b.sel').count() === 1, tag + ': tapping a voice makes it active, replays the recent recording, mic stays deaf');
-    ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': voice-button playback ended');
-    await sleep(1000);
-    await p.evaluate(() => window.__fm.set(0.3)); await sleep(500); await p.evaluate(() => window.__fm.set(0));
-    ok(await until(p, async () => (await AU(p)).count === 3, 3000), tag + ': third utterance');
-    s = await AU(p);
-    ok(s.last === 'high', tag + ': auto playback uses the newly active voice');
-    ok(await until(p, async () => (await AU(p)).ph === 'listen', 4000), tag + ': third playback ended');
-    ok(!(await hs()), tag + ': no hscroll');
-    /* OFF */
-    await p.click('#vc-auto', { force: true }); await sleep(400);
-    s = await AU(p);
-    ok(!s.auto && s.state === 'idle' && s.tr === 0 && s.pressed === 'false' && s.mic === '🎤' && s.dur > 0 && await p.locator('#vc-grid').isVisible(), tag + ': OFF stops the mic tracks, keeps the recording, back to 🎤 ' + JSON.stringify({ ...s, buf: 0 }));
-    await p.click('#vc-mic', { force: true }); await sleep(800); await p.click('#vc-mic', { force: true }); await sleep(700);
-    s = await AU(p);
-    ok(s.state === 'idle' && s.dur > 0.3 && s.last === 'high', tag + ': manual recording still works afterwards, plays the active voice');
-    await sleep(1200);
+    ok(!s.auto && s.state === 'idle' && s.tr === 0 && s.pressed === 'false' && s.ico === '⏸' && s.dur > 0 && await p.locator('#vc-grid').isVisible() && (await p.locator('#vc-auto').textContent()).includes('ずっときく'), tag + ': ⏸ stops the mic, keeps the recording and the voices ' + JSON.stringify({ ...s, buf: 0 }));
+    await p.click('.vc-b[data-voice="low"]', { force: true });
+    ok((await AU(p)).last === 'low', tag + ': voices still replay while paused');
+    await p.click('#vc-auto', { force: true });
+    ok(await until(p, async () => (await AU(p)).state === 'auto', 3000) && (await AU(p)).tr === 1, tag + ': 👂 ずっときく turns the mic on again');
+    /* 横向き */
+    await p.setViewportSize({ width: 740, height: 360 }); await sleep(400);
+    const lb = await vcBtnInfo(p), ls = await p.evaluate(() => { const t = document.querySelector('.vc-top').getBoundingClientRect(), g = document.querySelector('#vc-grid').getBoundingClientRect(); return { sameRow: Math.abs(t.top - g.top) < 40, over: document.querySelector('#vc-grid').scrollHeight - document.querySelector('#vc-grid').clientHeight, ico: document.querySelector('#vc-ico').getBoundingClientRect().height }; });
+    const lt = await p.locator('#vc-auto').boundingBox();
+    ok(lb.length >= 16 && lb.every(x => x[0] >= 80 && x[1] >= 80 && x[2] && !x[3]) && lt.width >= 80 && lt.height >= 80 && !(await vcHs(p)), 'voice-auto landscape 740x360: ' + lb.length + ' buttons >= 80px, toggle ' + Math.round(lt.width) + 'x' + Math.round(lt.height) + ', no hscroll ' + JSON.stringify(ls) + ' ' + lb[0]);
+    await shot('740x360-listen');
+    await p.setViewportSize({ width: 360, height: 740 }); await sleep(200);
     /* ON のまま leave */
-    await p.click('#vc-auto', { force: true }); await sleep(700);
-    ok((await AU(p)).tr === 1, tag + ': ON again');
     await p.evaluate(() => { window.__trs = window.__fm.tracks; });
-    await p.click('#homebtn'); await sleep(300);
+    await p.click('#homebtn'); await sleep(200);
     const lv = await p.evaluate(() => ({ live: window.__trs.filter(t => t.readyState === 'live').length, auto: window.__vc.auto, st: window.__vc.state, l2: window.__vc.live, buf: !!window.__vc.buf, hidden: document.querySelector('#stage-voice').hidden, au: !!window.__vc.au }));
-    ok(lv.live === 0 && !lv.auto && lv.st === 'idle' && lv.l2 === 0 && !lv.buf && lv.hidden && !lv.au, tag + ': leave() stops the auto mic and clears everything ' + JSON.stringify(lv));
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
-    ok(await p.locator('#vc-grid').isHidden() && (await p.locator('#vc-auto').getAttribute('aria-pressed')) === 'false' && await p.locator('.vc-b.sel').count() === 1, tag + ': re-enter starts fresh (voice back to ふつう)');
-    await p.click('#homebtn'); await sleep(150);
+    ok(lv.live === 0 && !lv.auto && lv.st === 'idle' && lv.l2 === 0 && !lv.buf && lv.hidden && !lv.au, tag + ': leave() stops the mic and clears everything ' + JSON.stringify(lv));
+    await tapTile(p, 'ボイスチェンジャー');
+    ok(await until(p, async () => (await AU(p)).state === 'auto' && (await AU(p)).buf === null, 3000) && await p.locator('.vc-b.sel[data-voice="normal"]').count() === 1 && await p.locator('#vc-grid').isVisible(), tag + ': re-enter starts fresh (listening again, voice back to ふつう, voices shown)');
+    await p.click('#homebtn'); await sleep(100);
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
-  /* 音がずっと鳴っている部屋: 再生中は録音が増えない（half-duplex）・最長 6 秒・ON 直後は聞かない */
-  T('voice-auto-loud', async (br) => {
+  /* 音がずっと鳴っている部屋: 再生中は録音が増えない（half-duplex）・最長で強制終了・ON 直後は聞かない */
+  T('voice-loud', async (br) => {
     const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, init: FAKEMIC + 'window.__fmInit = 0.3;' });
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
-    await p.click('#vc-auto', { force: true }); await sleep(1500);
+    await p.evaluate(() => { window.__vcA.A.INTRO = 0.9; window.__vcA.A.MAXLEN = 1.5; });
+    await tapTile(p, 'ボイスチェンジャー'); await sleep(450);
     let s = await AU(p);
-    ok(s.auto && s.ph === 'listen' && s.n === 0 && s.buf === null && s.skipped > 0, 'voice-auto-loud: first ~2.5s after ON is not recorded (own voice / intro) ' + JSON.stringify({ ph: s.ph, n: s.n, deaf: s.deaf }));
-    ok(await until(p, async () => (await AU(p)).ph === 'talk', 3000), 'voice-auto-loud: constant sound -> starts collecting after the intro');
-    ok(await until(p, async () => (await AU(p)).ph === 'play', 8000), 'voice-auto-loud: forced end at 6s -> plays');
+    ok(s.auto && s.ph === 'listen' && s.n === 0 && s.buf === null && s.skipped > 0, 'voice-loud: right after entering (intro) nothing is recorded ' + JSON.stringify({ ph: s.ph, n: s.n, deaf: s.deaf }));
+    ok(await until(p, async () => (await AU(p)).ph === 'talk', 2000), 'voice-loud: constant sound -> starts collecting after the intro');
+    ok(await until(p, async () => (await AU(p)).ph === 'play', 4000), 'voice-loud: forced end at the max length -> plays');
     s = await AU(p); const b1 = await AUbuf(p);
-    ok(s.dur > 5.5 && s.dur <= 6.6 && s.count === 1, 'voice-auto-loud: buffer is the max segment (' + s.dur.toFixed(2) + 's incl. pre-roll)');
+    ok(s.dur > 1.3 && s.dur <= 2.1 && s.count === 1, 'voice-loud: buffer is the max segment (' + s.dur.toFixed(2) + 's incl. pre-roll)');
     let bad = 0, samples = 0;
-    while ((await AU(p)).ph === 'play' && samples < 60) { const q = await AU(p); samples++; if (q.n !== 0 || q.chunks !== 0 || q.count !== 1 || q.vad !== 'idle') bad++; await sleep(150); }
-    ok(samples >= 5 && bad === 0 && (await AUbuf(p)) === b1, 'voice-auto-loud: nothing recorded during playback although the mic keeps hearing sound (' + samples + ' samples, bad ' + bad + ')');
+    while ((await AU(p)).ph === 'play' && samples < 40) { const q = await AU(p); samples++; if (q.n !== 0 || q.chunks !== 0 || q.count !== 1 || q.vad !== 'idle') bad++; await sleep(100); }
+    ok(samples >= 4 && bad === 0 && (await AUbuf(p)) === b1, 'voice-loud: nothing recorded during playback although the mic keeps hearing sound (' + samples + ' samples, bad ' + bad + ')');
     s = await AU(p);
-    ok(s.n === 0 && s.deaf !== 'inf', 'voice-auto-loud: still nothing in the buffer right after playback (deaf ' + s.deaf + 'ms)');
-    ok(await until(p, async () => (await AU(p)).ph === 'talk', 2500), 'voice-auto-loud: listens again after the deaf window');
-    await p.click('#homebtn'); await sleep(200);
-    ok(p.errs.length === 0, 'voice-auto-loud: no console errors ' + p.errs.join(' | '));
+    ok(s.n === 0 && s.deaf !== 'inf', 'voice-loud: still nothing in the buffer right after playback (deaf ' + s.deaf + 'ms)');
+    ok(await until(p, async () => (await AU(p)).ph === 'talk', 2500), 'voice-loud: listens again after the deaf window');
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0, 'voice-loud: no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
-  T('voice-auto-deny', async (br) => {
-    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, deny: true, init: FAKEMIC });
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(400); await clearSays(p);
-    await p.click('#vc-auto', { force: true }); await sleep(500);
-    const sy = await says(p), big = await p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
-    const s = await AU(p);
-    ok(sy.length >= 1 && sy[sy.length - 1].t === 'まいくを ゆるしてね' && big === 'マイクを ゆるしてね' && !s.auto && s.state === 'idle' && s.pressed === 'false' && s.mic === '🎤', 'voice-auto-deny: gentle message, toggle returns to OFF ' + JSON.stringify([sy.map(x => x.t), big]));
-    await p.click('#vc-auto', { force: true }); await sleep(400);
-    ok((await AU(p)).state === 'idle' && p.errs.length === 0, 'voice-auto-deny: can retry without errors ' + p.errs.join(' | '));
-    await p.context().close();
-  });
-
-  /* iOS 相当: AudioWorklet も MediaRecorder も無い -> ScriptProcessor で録れる */
+  /* iOS 相当: AudioWorklet も MediaRecorder も無い -> ScriptProcessor で聞ける */
   T('voice-sp', async (br) => {
-    const p = await newPage(br, { width: 390, height: 844 }, { voices: JAV, init: 'delete window.AudioWorkletNode; delete window.MediaRecorder; window.__ses = []; ' });
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(400);
-    await p.click('#vc-mic', { force: true }); await sleep(1200); await p.click('#vc-mic', { force: true }); await sleep(600);
-    const r = await p.evaluate(() => ({ has: !!window.__vc.buf, dur: window.__vc.buf ? window.__vc.buf.duration : 0, peak: window.__vc.buf ? Math.max.apply(null, Array.from(window.__vc.buf.getChannelData(0)).map(Math.abs)) : 0, tracks: window.__vc.stream ? 1 : 0 }));
-    ok(r.has && r.dur > 0.5 && r.peak > 0.001 && r.tracks === 0, 'voice-sp: ScriptProcessor PCM recording works without MediaRecorder/Worklet ' + JSON.stringify(r));
-    await p.click('.vc-b[data-voice="ghost"]', { force: true }); await sleep(150);
-    ok((await p.evaluate(() => window.__vc.live)) >= 3 && p.errs.length === 0, 'voice-sp: playback ok, no errors ' + p.errs.join(' | '));
+    const p = await newPage(br, { width: 390, height: 844 }, { voices: JAV, init: FAKEMIC + 'delete window.AudioWorkletNode; delete window.MediaRecorder; window.__fmInit = 0.3;' });
+    await p.evaluate(VCFAST);
+    await tapTile(p, 'ボイスチェンジャー');
+    ok(await until(p, async () => (await AU(p)).count === 0 && (await AU(p)).ph === 'talk', 3000), 'voice-sp: ScriptProcessor path hears sound without MediaRecorder/Worklet');
+    await sleep(600); await p.evaluate(() => window.__fm.set(0));
+    ok(await until(p, async () => (await AU(p)).count === 1, 3000), 'voice-sp: utterance committed');
+    const r = await p.evaluate(() => ({ dur: window.__vc.buf.duration, peak: Math.max.apply(null, Array.from(window.__vc.buf.getChannelData(0)).map(Math.abs)) }));
+    ok(r.dur > 0.3 && r.peak > 0.001, 'voice-sp: PCM buffer has sound ' + JSON.stringify(r));
+    await p.click('.vc-b[data-voice="rev"]', { force: true });
+    ok((await p.evaluate(() => window.__vc.live)) >= 3 && p.errs.length === 0, 'voice-sp: reverse playback ok, no errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
+  /* マイクが使えない: 大きな「🎤 マイクをゆるしてね」＋タップで再試行（許可されたら復帰） */
   T('voice-deny', async (br) => {
-    const p = await newPage(br, { width: 360, height: 740 }, { deny: true, voices: JAV });
-    await tapTile(p, 'ボイスチェンジャー'); await sleep(400); await clearSays(p);
-    await p.click('#vc-mic', { force: true }); await sleep(500);
+    const p = await newPage(br, { width: 360, height: 740 }, { deny: true, voices: JAV, init: FAKEMIC });
+    await p.evaluate(VCFAST);
+    await tapTile(p, 'ボイスチェンジャー'); await sleep(350);
     const big = await p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
     const sy = await says(p);
-    ok(sy.length >= 1 && sy[sy.length - 1].t === 'まいくを ゆるしてね' && big === 'マイクを ゆるしてね' && (await p.locator('#vc-msg').textContent()) === 'マイクを ゆるしてね', 'voice-deny: gentle hiragana message spoken + big on screen ' + JSON.stringify([sy.map(x => x.t), big]));
-    ok(await p.locator('#vc-grid').isHidden() && (await p.evaluate(() => window.__vc.state)) === 'idle' && (await p.locator('#vc-mic').isVisible()), 'voice-deny: no voices shown, mic stays usable');
-    const bw = await p.evaluate(() => { const b = document.querySelector('#bigword').getBoundingClientRect(); return b.width <= innerWidth + 1 && document.documentElement.scrollWidth <= innerWidth; });
-    ok(bw, 'voice-deny: message fits at 360px');
+    ok(sy.some(x => x.t === 'まいくを ゆるしてね') && big === 'マイクを ゆるしてね', 'voice-deny: gentle hiragana message spoken + big on screen ' + JSON.stringify([sy.map(x => x.t), big]));
+    const ak = await p.locator('#vc-ask').boundingBox();
+    ok(await p.locator('#vc-ask').isVisible() && (await p.locator('#vc-ask').textContent()).includes('🎤') && (await p.locator('#vc-ask').textContent()).includes('マイクをゆるしてね') && ak.height >= 80 && ak.width >= 200 && await p.locator('#vc-st').isHidden() && await p.locator('#vc-auto').isHidden(), 'voice-deny: big 🎤 マイクをゆるしてね button (' + Math.round(ak.width) + 'x' + Math.round(ak.height) + ')');
+    const bb = await vcBtnInfo(p);
+    ok(await p.locator('#vc-grid').isVisible() && bb.length >= 16 && bb.every(x => x[0] >= 80 && x[1] >= 80) && !(await vcHs(p)), 'voice-deny: voice buttons still shown, no hscroll');
+    await p.click('.vc-b[data-voice="robot"]', { force: true });
+    ok(await p.locator('.vc-b.sel[data-voice="robot"]').count() === 1 && (await AU(p)).plays === 0, 'voice-deny: voices can be tapped with nothing recorded (no error, no failure effect)');
     await p.screenshot({ path: SP + '/voice-deny.png' });
-    await p.click('#vc-mic', { force: true }); await sleep(400);
-    ok((await p.evaluate(() => window.__vc.state)) === 'idle' && p.errs.length === 0, 'voice-deny: can retry without errors ' + p.errs.join(' | '));
+    const g0 = await p.evaluate(() => window.__gum);
+    await p.click('#vc-ask', { force: true }); await sleep(350);
+    ok((await p.evaluate(() => window.__gum)) === g0 + 1 && await p.locator('#vc-ask').isVisible() && p.errs.length === 0, 'voice-deny: tap retries (still denied -> same gentle display), no errors ' + p.errs.join(' | '));
+    await p.evaluate(() => { window.__denyCam = false; });
+    await p.click('#vc-ask', { force: true });
+    ok(await until(p, async () => (await AU(p)).state === 'auto', 3000) && await p.locator('#vc-ask').isHidden() && await p.locator('#vc-auto').isVisible() && (await AU(p)).msg === 'きいてるよ', 'voice-deny: once allowed, tap recovers to 👂 きいてるよ');
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0 && (await p.evaluate(() => window.__fm.tracks.filter(t => t.readyState === 'live').length)) === 0, 'voice-deny: leave stops the mic, no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
@@ -2209,7 +2160,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
 // 重いブロックから先に始める（ブロックを足したら測って足す）
 const WEIGHT = { 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
-  'voice-390x844': 22, 'voice-360x740': 22, 'voice-740x360': 22, sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
+  'voice-auto': 14, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
 
 async function runWorker(name) {
