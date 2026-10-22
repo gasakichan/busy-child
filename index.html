@@ -73,12 +73,7 @@
 
   /* ホーム */
   #home { background: #FFF1C9; }
-  .hm-title {
-    position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2;
-    height: 56px; display: flex; align-items: center; gap: 8px; white-space: nowrap;
-    font-size: 32px; line-height: 1; color: var(--ink);
-  }
-  .hm-area { position: absolute; top: var(--top); bottom: 84px; left: 10px; right: 10px; overflow: hidden; }
+  .hm-area { position: absolute; top: 12px; bottom: 84px; left: 10px; right: 10px; overflow: hidden; }
   .hm-page {
     position: absolute; inset: 0;
     display: grid; gap: 10px; padding: 0 0 8px;
@@ -99,7 +94,6 @@
   .tile:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
   .tile .ico { font-size: 45cqmin; line-height: 1; }
   .tile .ico-img { display: block; width: 1.2em; height: 1.2em; object-fit: contain; pointer-events: none; -webkit-user-drag: none; user-select: none; }
-  .hm-title-img { display: block; width: 1.8em; height: 1.8em; object-fit: contain; margin: -0.4em 0; pointer-events: none; -webkit-user-drag: none; user-select: none; }
   .tile .lab { font-size: clamp(18px, 3.2vmin, 26px); line-height: 1.15; text-align: center; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; padding: 0 4px; }
   .tile .lab .pbr { display: none; }
   .tile .lab { white-space: nowrap; }
@@ -125,7 +119,7 @@
   @media (min-width: 700px) {
     .hm-area { left: 94px; right: 94px; }
     .hm-bar { display: contents; }
-    .hm-nav { position: absolute; top: calc(var(--top) + (100% - var(--top) - 84px) / 2 - 32px); z-index: 2; }
+    .hm-nav { position: absolute; top: calc(12px + (100% - 12px - 84px) / 2 - 32px); z-index: 2; }
     #hm-prev { left: 10px; }
     #hm-next { right: 10px; }
     .hm-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); }
@@ -1146,7 +1140,6 @@
 <body>
 <div class="stages" id="stages">
   <section class="stage" id="home" aria-label="ホーム">
-    <div class="hm-title" id="hm-title" role="heading" aria-level="1"></div>
     <div class="hm-area" id="hm-area">
       <div class="hm-page" id="hm-p0"></div>
       <div class="hm-page" id="hm-p1" hidden></div>
@@ -6975,7 +6968,7 @@
     { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
-  var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
+  var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
   var hmDots = [].slice.call(document.querySelectorAll('.hm-dot'));
   HPAGES.forEach(function (pg, i) {
     pg.ids.forEach(function (id) {
@@ -7009,16 +7002,8 @@
     else { to.style.transform = 'translateX(0)'; from.style.transform = 'translateX(' + (-dir * 100) + '%)'; }
     hmTimer = setTimeout(function () { hmTimer = 0; hmSettle(); }, 260);
     hmRender();
-    if (speak !== false) say(HPAGES[n].title);
   }
   function hmRender() {
-    var pg = HPAGES[hmPage];
-    hmTitle.textContent = '';
-    var i1;
-    if (pg.img && ICO[pg.img]) { i1 = document.createElement('img'); i1.className = 'hm-title-img'; i1.src = ICO[pg.img]; i1.alt = ''; i1.decoding = 'async'; i1.draggable = false; }
-    else { i1 = document.createElement('span'); i1.textContent = pg.ico; }
-    var t1 = document.createElement('span'); t1.textContent = pg.title;
-    hmTitle.appendChild(i1); hmTitle.appendChild(t1);
     hmPrev.hidden = hmPage === 0; hmNext.hidden = hmPage === HPAGES.length - 1;
     hmDots.forEach(function (d, i) { if (i === hmPage) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); });
   }
