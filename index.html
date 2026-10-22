@@ -420,6 +420,8 @@
   .nk-hit { position: absolute; width: 80px; height: 80px; padding: 0; border: 0; background: transparent; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
   /* ピンボール */
   #stage-pinball { background: #D8EEFF; }
+  #stage-nami { background: #2A2A6A; }
+  #nm-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-launch {
     position: absolute; z-index: 5; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; padding: 0; border-radius: 50%;
@@ -1365,6 +1367,10 @@
     <canvas id="pb-cv" aria-label="ピンボール"></canvas>
     <button id="pb-launch" type="button" aria-label="ボールを ぽん"></button>
     <div class="fx" id="fx-pinball"></div>
+  </section>
+
+  <section class="stage" id="stage-nami" aria-label="なみもよう" hidden>
+    <canvas id="nm-cv" aria-label="なみもよう"></canvas>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -5947,6 +5953,162 @@
     resize: function () { if (pb.on) pbGeo(); }
   };
 
+  /* ====== 26. なみもよう（さわると なみが ひろがる。なみが ぶつかると きらきら） ====== */
+  var nmStage = $('#stage-nami'), nmCv = $('#nm-cv'), nmCtx = nmCv.getContext('2d');
+  /* nami:begin */
+  function circleHits(ax, ay, ar, bx, by, br) {
+    var dx = bx - ax, dy = by - ay, d = Math.sqrt(dx * dx + dy * dy);
+    if (!(d > 1e-6)) return [];
+    if (d > ar + br || d < Math.abs(ar - br)) return [];
+    var a = (ar * ar - br * br + d * d) / (2 * d), h = Math.sqrt(Math.max(0, ar * ar - a * a));
+    var mx = ax + dx * a / d, my = ay + dy * a / d, ox = -dy / d * h, oy = dx / d * h;
+    return [[mx + ox, my + oy], [mx - ox, my - oy]];
+  }
+  /* nami:end */
+  var NM = { speed: 260, life: 2.2, maxRings: 14, maxParts: 350, perFrame: 14, pairCd: 0.04, sndGap: 90 };
+  var NM_SCALE = [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99, 880];
+  var nm = { on: false, raf: 0, last: 0, clock: 0, W: 0, H: 0, dpr: 1, rings: [], parts: [], hue: 0, id: 0, ptrs: {}, pend: [], hintsLeft: 3, nextHint: 0.4, lastSnd: 0, hits: 0, frames: 0 };
+  function nmSize() {
+    var r = nmStage.getBoundingClientRect(), W = Math.round(r.width), H = Math.round(r.height);
+    if (W < 50 || H < 50) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    nmCv.width = Math.round(W * dpr); nmCv.height = Math.round(H * dpr);
+    nm.W = W; nm.H = H; nm.dpr = dpr;
+  }
+  function nmAddRing(x, y, silent) {
+    if (nm.rings.length >= NM.maxRings) nm.rings.shift();
+    nm.hue = (nm.hue + 47) % 360;
+    nm.rings.push({ id: ++nm.id, x: x, y: y, r: 0, age: 0, hue: nm.hue, cd: {} });
+    if (!silent && nm.W) {
+      var i = Math.max(0, Math.min(4, Math.floor(x / nm.W * 5)));
+      tone(NM_SCALE[i] / 2, 0.5, 'sine', 0.07);
+    }
+  }
+  function nmHint() {
+    var cx = nm.W / 2, cy = nm.H / 2, k = Math.min(nm.W, nm.H) * 0.12, n = 2 + (Math.random() < 0.5 ? 1 : 0), i;
+    for (i = 0; i < n; i++) nm.pend.push({ t: nm.clock + i * 0.25, x: cx + (i % 2 ? 1 : -1) * k * (1 + i * 0.3), y: cy + (i - 1) * k * 0.6 });
+  }
+  function nmTouched() { nm.hintsLeft = 3; nm.nextHint = nm.clock + 3; }
+  function nmSpawn(x, y, hue) {
+    var shapes = ['c', 's', 'h'], a = Math.random() * 6.283, sp = 40 + Math.random() * 110;
+    if (nm.parts.length >= NM.maxParts) nm.parts.shift();
+    nm.parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, age: 0, life: 0.7 + Math.random() * 0.6, sz: 4 + Math.random() * 5, hue: hue + (Math.random() * 30 - 15), sh: shapes[Math.floor(Math.random() * 3)], rot: Math.random() * 6.283 });
+  }
+  function nmStep(dt) {
+    var i, j, rs = nm.rings, ps = nm.parts, budget = NM.perFrame, snd = false, lim = Math.max(nm.W, nm.H) * 0.7;
+    nm.clock += dt;
+    if (!nm.pend.length && nm.hintsLeft > 0 && nm.clock >= nm.nextHint) {
+      nm.hintsLeft--; nm.nextHint = nm.clock + 4; nmHint();
+    }
+    nm.pend = nm.pend.filter(function (q) { if (nm.clock >= q.t) { nmAddRing(q.x, q.y); return false; } return true; });
+    rs = nm.rings;
+    for (i = 0; i < rs.length; i++) { rs[i].age += dt; rs[i].r = rs[i].age * NM.speed; }
+    nm.rings = rs = rs.filter(function (r) { return r.age < NM.life && r.r < lim; });
+    for (i = 0; i < rs.length; i++) for (j = i + 1; j < rs.length; j++) {
+      var A = rs[i], B = rs[j], hs = circleHits(A.x, A.y, A.r, B.x, B.y, B.r);
+      if (!hs.length) continue;
+      if (nm.clock - (A.cd[B.id] || -1) < NM.pairCd) continue;
+      A.cd[B.id] = nm.clock;
+      var hue = A.hue + (((B.hue - A.hue + 540) % 360) - 180) / 2;
+      if (hue < 0) hue += 360;
+      for (var k = 0; k < hs.length && budget > 0; k++) {
+        for (var m = 0; m < 3 && budget > 0; m++, budget--) nmSpawn(hs[k][0], hs[k][1], hue);
+      }
+      nm.hits++;
+      if (!snd && nm.clock * 1000 - nm.lastSnd >= NM.sndGap) {
+        snd = true; nm.lastSnd = nm.clock * 1000;
+        var f = NM_SCALE[Math.floor(Math.random() * NM_SCALE.length)] * 2;
+        tone(f, 0.28, 'sine', 0.035, f * (Math.random() < 0.5 ? 1.25 : 0.85));
+      }
+    }
+    for (i = 0; i < ps.length; i++) {
+      var p = ps[i], damp = Math.exp(-2.2 * dt);
+      p.age += dt; p.vx *= damp; p.vy *= damp; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += dt * 2;
+    }
+    nm.parts = ps.filter(function (p) { return p.age < p.life; });
+  }
+  function nmShape(c, p, s) {
+    c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.beginPath();
+    if (p.sh === 'c') c.arc(0, 0, s, 0, 6.283);
+    else if (p.sh === 's') {
+      for (var i = 0; i < 10; i++) { var rr = i % 2 ? s * 0.45 : s * 1.3, a = i * Math.PI / 5 - Math.PI / 2; c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+      c.closePath();
+    } else {
+      c.moveTo(0, s * 0.9); c.bezierCurveTo(-s * 1.6, -s * 0.1, -s * 0.8, -s * 1.3, 0, -s * 0.45);
+      c.bezierCurveTo(s * 0.8, -s * 1.3, s * 1.6, -s * 0.1, 0, s * 0.9);
+    }
+    c.fill(); c.restore();
+  }
+  function nmDraw() {
+    var c = nmCtx, W = nm.W, H = nm.H, g, i;
+    if (!W) return;
+    c.setTransform(nm.dpr, 0, 0, nm.dpr, 0, 0);
+    c.globalCompositeOperation = 'source-over';
+    g = c.createLinearGradient(0, 0, W * 0.4, H);
+    g.addColorStop(0, '#1B2A5E'); g.addColorStop(0.55, '#3A2A78'); g.addColorStop(1, '#5A3A92');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+    for (i = 0; i < nm.rings.length; i++) {
+      var r = nm.rings[i], al = Math.pow(1 - r.age / NM.life, 1.3), w = 10 - 4 * (r.age / NM.life);
+      if (r.r < 1) continue;
+      c.strokeStyle = 'hsla(' + r.hue + ',85%,72%,' + (al * 0.22).toFixed(3) + ')'; c.lineWidth = w * 2.4;
+      c.beginPath(); c.arc(r.x, r.y, r.r, 0, 6.283); c.stroke();
+      c.strokeStyle = 'hsla(' + r.hue + ',85%,74%,' + (al * 0.75).toFixed(3) + ')'; c.lineWidth = w;
+      c.beginPath(); c.arc(r.x, r.y, r.r, 0, 6.283); c.stroke();
+    }
+    for (i = 0; i < nm.parts.length; i++) {
+      var p = nm.parts[i], t = p.age / p.life;
+      c.fillStyle = 'hsla(' + p.hue.toFixed(0) + ',90%,80%,' + (1 - t).toFixed(3) + ')';
+      nmShape(c, p, p.sz * (1 - t * 0.4));
+    }
+    c.globalCompositeOperation = 'source-over';
+  }
+  function nmFrame(ts) {
+    nm.raf = 0;
+    if (!nm.on || document.hidden) return;
+    var dt = nm.last ? Math.min((ts - nm.last) / 1000, 1 / 20) : 0;
+    nm.last = ts; nm.frames++;
+    nmStep(dt); nmDraw();
+    nm.raf = requestAnimationFrame(nmFrame);
+  }
+  function nmKick() { if (nm.on && !nm.raf && !document.hidden) { nm.last = 0; nm.raf = requestAnimationFrame(nmFrame); } }
+  function nmPos(e) { var r = nmCv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function nmDown(e) {
+    var q = nmPos(e);
+    try { nmCv.setPointerCapture(e.pointerId); } catch (er) {}
+    nm.ptrs[e.pointerId] = { x: q.x, y: q.y, t: performance.now() };
+    nmAddRing(q.x, q.y); nmTouched();
+  }
+  function nmMove(e) {
+    var s = nm.ptrs[e.pointerId]; if (!s) return;
+    var q = nmPos(e), now = performance.now(), d = Math.hypot(q.x - s.x, q.y - s.y);
+    if ((now - s.t >= 120 && d > 8) || d >= 70) { nmAddRing(q.x, q.y); s.x = q.x; s.y = q.y; s.t = now; nmTouched(); }
+  }
+  function nmUp(e) { delete nm.ptrs[e.pointerId]; }
+  function nmVis() { nmKick(); }
+  function nmReset() {
+    nm.rings = []; nm.parts = []; nm.pend = []; nm.ptrs = {}; nm.hue = Math.floor(Math.random() * 360); nm.clock = 0; nm.hintsLeft = 3; nm.nextHint = 0.4; nm.lastSnd = -1e9; nm.hits = 0; nm.last = 0;
+  }
+  games.nami = {
+    el: nmStage,
+    enter: function () {
+      nmReset(); nm.on = true; nmSize();
+      nmCv.addEventListener('pointerdown', nmDown); nmCv.addEventListener('pointermove', nmMove);
+      window.addEventListener('pointerup', nmUp); window.addEventListener('pointercancel', nmUp);
+      document.addEventListener('visibilitychange', nmVis);
+      nmKick();
+    },
+    leave: function () {
+      nm.on = false;
+      if (nm.raf) { cancelAnimationFrame(nm.raf); nm.raf = 0; }
+      nmCv.removeEventListener('pointerdown', nmDown); nmCv.removeEventListener('pointermove', nmMove);
+      window.removeEventListener('pointerup', nmUp); window.removeEventListener('pointercancel', nmUp);
+      document.removeEventListener('visibilitychange', nmVis);
+      nmReset();
+    },
+    resize: function () { if (nm.on) nmSize(); }
+  };
+
   /* ---------- せってい（おとなよう）シート ---------- */
   var setSheet = $('#setsheet'), setBtn = $('#setbtn'), thrIn = $('#thr'), segs = [].slice.call(setSheet.querySelectorAll('.seg'));
   var ctBtn = $('#cam-test'), ctVideo = $('#set-video'), ctMsg = $('#cam-msg'), diagEl = $('#diag');
@@ -6967,12 +7129,13 @@
     piano: { ico: '🎹', lab: 'ピアノ',         c: '#FFD6E8', say: 'ピアノ！' },
     pinball: { ico: '🎱', lab: 'ピンボール',     c: '#D9D0FF', say: 'ピンボール！' },
     neko:  { ico: '🐱', lab: 'ねこさがし',     c: '#FFD8B0', say: 'ねこさがし！' },
+    nami:  { ico: '🌊', lab: 'なみもよう', c: '#BFD8FF', say: 'なみもよう！' },
     voice: { ico: '🎤', lab: 'ボイスチェンジャー', br: 'ボイス', c: '#EBCBFF', say: 'ぼいすちぇんじゃー！' }
   };
   var HPAGES = [
     { title: 'あそぶ', ico: '🎈', img: 'pg-asobu', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
     { title: 'まなぶ', ico: '🔤', img: 'pg-manabu', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
-    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice'] }
+    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
   var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmTitle = $('#hm-title'), hmPrev = $('#hm-prev'), hmNext = $('#hm-next');

@@ -25,6 +25,8 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['function pbFrame(ts) {', 'function pbFrame(ts) { window.__pbFrames = (window.__pbFrames || 0) + 1;'],
   ['var pb = {', 'var pb = window.__pb = {'],
   ['var nk = {', 'var nk = window.__nk = {'],
+  ['games.nami = {', 'window.__namiHits = circleHits; games.nami = {'],
+  ['var nm = {', 'var nm = window.__nm = {'],
   ['games.neko = {', 'window.__nkStart = nkStart; window.__nkMake = nkMake; window.__nkPR = nkPR; window.__nkCatR = nkCatR; games.neko = {'],
   ['var vc = {', 'var vc = window.__vc = {'],
   ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr }; games.voice = {'],
@@ -36,15 +38,15 @@ if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう'];
 const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
 async function gotoPage(p, n) {
   const cur = await p.evaluate(() => [0, 1, 2].find(i => !document.querySelector('#hm-p' + i).hidden));
   if (cur !== n) { await p.click('.hm-dot:nth-child(' + (n + 1) + ')'); await sleep(280); }
 }
 async function tapTile(p, lab) {
-  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし' || lab === 'ボイスチェンジャー') ? 2 : PAGE2.has(lab) ? 1 : 0);
+  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし' || lab === 'ボイスチェンジャー' || lab === 'なみもよう') ? 2 : PAGE2.has(lab) ? 1 : 0);
   await p.click('.hm-page:not([hidden]) .tile[aria-label="' + lab + '"]');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -154,9 +156,9 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const t3 = await tileInfo();
     ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')], ti = document.querySelector('#hm-title img'); return ims.length === 2 && ims.every(i => i.complete && i.naturalWidth > 0) && !!ti && ti.complete && ti.naturalWidth > 0; }), tag + ' page3 koro + neko icon images + title image loaded (ドライブ falls back to the 🚗 emoji)');
     const t1b = tiles[0];
-    ok(t3.length === 6 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 6 tiles, same size as others ' + JSON.stringify(t3));
-    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy && t3[4].cx === tiles[1].cx && t3[4].cy === tiles[3].cy && t3[5].cx === tiles[2].cx && t3[5].cy === tiles[3].cy, tag + ' page3: first row columns 1-3, 4th-6th tiles row 2 columns 1-3');
-    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
+    ok(t3.length === 7 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 7 tiles, same size as others ' + JSON.stringify(t3));
+    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy && t3[4].cx === tiles[1].cx && t3[4].cy === tiles[3].cy && t3[5].cx === tiles[2].cx && t3[5].cy === tiles[3].cy && t3[6].cx === tiles[1].cx && t3[6].cy === tiles[6].cy, tag + ' page3: first row columns 1-3, 4th-6th tiles row 2 columns 1-3, 7th centered on row 3');
+    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
     ok((await p.locator('#hm-title').textContent()) === 'うごかす' && await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && (await says(p)).some(x => x.t === 'うごかす'), tag + ' page3 title, ▶ hidden, ◀ shown, speaks');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
@@ -172,7 +174,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 25; i++) {
       await tapTile(p, LAB[i]); await sleep(i === 8 ? 500 : 380);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
@@ -1037,7 +1039,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 22 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (22 rows)');
+      ok(await p.locator('.st-row.zero').count() === 23 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (23 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2192,10 +2194,79 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.context().close();
   });
 
+  /* ---------- なみもよう ---------- */
+  T('nami', async (br) => {
+    const vp = { width: 360, height: 740 };
+    const p = await newPage(br, vp, { deny: true });
+    const NM = () => p.evaluate(() => { const q = window.__nm; return { on: q.on, raf: q.raf, rings: q.rings.length, parts: q.parts.length, hits: q.hits, frames: q.frames, hintsLeft: q.hintsLeft }; });
+    const px = () => p.evaluate(() => { const c = document.querySelector('#nm-cv'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; const bg = [d[0], d[1], d[2]]; let n = 0; for (let i = 0; i < d.length; i += 16) if (Math.abs(d[i] - bg[0]) + Math.abs(d[i + 1] - bg[1]) + Math.abs(d[i + 2] - bg[2]) > 60) n++; return n; });
+    // pure function
+    const ch = await p.evaluate(() => {
+      const ev = window.__namiHits;
+      const a = ev(0, 0, 5, 6, 0, 5), tang = ev(0, 0, 5, 10, 0, 5), far = ev(0, 0, 1, 10, 0, 1), inside = ev(0, 0, 10, 1, 0, 2), conc = ev(3, 3, 5, 3, 3, 5);
+      return { a, tang, far, inside, conc };
+    });
+    ok(ch.a.length === 2 && Math.abs(ch.a[0][0] - 3) < 1e-9 && Math.abs(Math.abs(ch.a[0][1]) - 4) < 1e-9 && ch.a[0][1] * ch.a[1][1] < 0, 'nami: circleHits gives (3,±4) for 5/5 radii 6 apart');
+    ok(ch.far.length === 0 && ch.inside.length === 0 && ch.conc.length === 0 && ch.tang.length === 2 && Math.abs(ch.tang[0][0] - 5) < 1e-6, 'nami: circleHits none for far/contained/concentric, tangent gives one point twice');
+    await tapTile(p, 'なみもよう'); await sleep(500);
+    ok(await p.locator('#stage-nami').isVisible() && await p.locator('#hm-p2').isHidden(), 'nami: tile on page 3 opens なみもよう');
+    ok((await says(p)).some(x => x.t === 'なみもよう！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), 'nami: speaks なみもよう！, shared 🏠, no adult button');
+    const cv = await p.locator('#nm-cv').boundingBox();
+    const cs = await p.evaluate(() => { const c = document.querySelector('#nm-cv'); return { w: c.width, h: c.height, cw: c.clientWidth, ch: c.clientHeight, dpr: devicePixelRatio }; });
+    ok(Math.abs(cs.w - cs.cw * Math.min(cs.dpr, 2)) <= 1 && Math.abs(cs.h - cs.ch * Math.min(cs.dpr, 2)) <= 1, 'nami: canvas matches size x DPR (<=2)');
+    await sleep(900);
+    ok((await NM()).rings >= 1, 'nami: hint rings appear on entering without touching');
+    // wait for hint rings to die; hint must not repeat before 3s idle
+    await sleep(1800);
+    const x0 = cv.x + 150, y0 = cv.y + 300;
+    await p.mouse.click(x0, y0); await p.mouse.click(x0 + 70, y0 + 20);
+    await sleep(500);
+    const n1 = await NM();
+    ok(n1.rings >= 2 && n1.hits >= 1 && n1.parts >= 1, 'nami: two nearby taps -> rings cross and sparkles burst ' + JSON.stringify(n1));
+    ok(await px() > 200, 'nami: canvas shows rings/particles (non-background pixels)');
+    await p.screenshot({ path: SP + '/nami-a.png' });
+    // drag spawns continuous rings, many fingers capped
+    await p.mouse.move(cv.x + 40, cv.y + 500); await p.mouse.down();
+    for (let i = 0; i < 20; i++) { await p.mouse.move(cv.x + 40 + i * 12, cv.y + 500 - i * 8); await sleep(40); }
+    await p.mouse.up();
+    const n2 = await NM();
+    ok(n2.rings > 3 && n2.rings <= 14, 'nami: drag makes a trail of rings, capped at 14 (' + n2.rings + ')');
+    for (let k = 0; k < 40; k++) { await p.mouse.click(cv.x + 20 + (k * 29) % 300, cv.y + 120 + (k * 53) % 500); }
+    await sleep(100);
+    const n3 = await NM();
+    ok(n3.rings <= 14 && n3.parts <= 350, 'nami: caps hold under spam (rings ' + n3.rings + ', parts ' + n3.parts + ')');
+    await p.screenshot({ path: SP + '/nami-b.png' });
+    const sc = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth || document.querySelector('#stage-nami').scrollWidth > document.querySelector('#stage-nami').clientWidth);
+    ok(!sc, 'nami: no horizontal scroll at 360px');
+    // everything fades by itself
+    await sleep(3000);
+    const n4 = await NM();
+    ok(n4.parts === 0 || n4.parts < n3.parts, 'nami: particles fade out (' + n4.parts + ')');
+    // idle hint comes back after ~3s without touching
+    await p.mouse.click(cv.x + 100, cv.y + 400);
+    await sleep(6200);
+    const h = await p.evaluate(() => window.__nm.hintsLeft);
+    ok(h < 3, 'nami: idle hint rings fire again after a few seconds (hintsLeft ' + h + ')');
+    // leave stops the loop and re-entry resets
+    await p.click('#homebtn'); await sleep(200);
+    const fr = (await NM());
+    await sleep(400);
+    const fr2 = await NM();
+    ok(!fr.on && fr.raf === 0 && fr2.frames === fr.frames && fr.rings === 0 && fr.parts === 0, 'nami: leaving stops rAF and clears state ' + JSON.stringify(fr));
+    ok(await p.locator('#hm-p2').isVisible() && await p.locator('#stage-nami').isHidden(), 'nami: 🏠 returns to page 3');
+    await tapTile(p, 'なみもよう'); await sleep(300);
+    const re = await NM();
+    ok(re.on && re.parts === 0 && re.hintsLeft === 3, 're-enter starts fresh ' + JSON.stringify(re));
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0, 'nami: no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
