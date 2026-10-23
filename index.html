@@ -7471,7 +7471,7 @@
         { x1: cx - cupW / 2, y1: cy, x2: cx - cupW / 2, y2: cy + cupD, col: '#FFB59E' },
         { x1: cx - cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy + cupD, col: '#FFB59E' },
         { x1: cx + cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy, col: '#FFB59E' }],
-      px: 0.5 * Wg, py: Math.max(0.045 * Hg, 14), L: pl, amp: Math.max(0, 0.5 * Wg - Math.max(4 * cs, 0.045 * Wg) - gap / 2 - 12), gap: gap, half: gap / 2 - 6
+      px: 0.5 * Wg, py: Math.max(0.045 * Hg, 14), L: pl, ext: Math.max(20, gap / 2 + 8), amp: Math.max(0, 0.5 * Wg - 84 - Math.max(20, gap / 2 + 8)),   /* 🏠（左上 12+56px）の したに もぐらない はんい */ gap: gap, half: gap / 2 - 6
     };
   }
   function snSegDist(px, py, x1, y1, x2, y2) {

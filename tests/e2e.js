@@ -2428,10 +2428,12 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let s = await SN();
     ok(s.on && s.raf > 0 && s.cells <= 45000 && s.cs >= 3.4 && s.cs < 6 && s.sand === 0 && s.water === 0 && s.ci === 0 && s.floor === 3, tag + ': starts empty, cell ' + s.cs.toFixed(2) + 'px, ' + s.cells + ' cells (capped), floor solid');
     /* ディスペンサーは うえの レールを ひだりみぎに スライド（かたむきは ±15°いない） */
-    let mx = -9, mn = 9, xmax = -1e9, xmin = 1e9;
-    for (let k = 0; k < 60; k++) { const q = await p.evaluate(() => ({ a: window.__sn.ang, x: window.__sn.ch.px, W: window.__sn.geo.Wg })); mx = Math.max(mx, q.a); mn = Math.min(mn, q.a); xmax = Math.max(xmax, q.x / q.W); xmin = Math.min(xmin, q.x / q.W); await sleep(110); }
+    let homeOvl = 0, mx = -9, mn = 9, xmax = -1e9, xmin = 1e9;
+    for (let k = 0; k < 60; k++) { const q = await p.evaluate(() => { const s = window.__sn, z = document.querySelector('#sn-zone').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect(), l = z.left + s.ox + s.ch.px - s.geo.ext, r = z.left + s.ox + s.ch.px + s.geo.ext, b = z.top + s.oy + s.geo.py + s.geo.L + 4; return { a: s.ang, x: s.ch.px, W: s.geo.Wg, ovl: l < hb.right && hb.left < r && z.top + s.oy < hb.bottom && hb.top < b }; });
+      if (q.ovl) homeOvl++; mx = Math.max(mx, q.a); mn = Math.min(mn, q.a); xmax = Math.max(xmax, q.x / q.W); xmin = Math.min(xmin, q.x / q.W); await sleep(110); }
     ok(mx === 0 && mn === 0, tag + ': chute never tilts, always points straight down (' + mn + ' .. ' + mx + ')');
-    ok(xmin < 0.2 && xmax > 0.8, tag + ': chute slides left and right near the walls (x ' + xmin.toFixed(2) + ' .. ' + xmax.toFixed(2) + ' of the box)');
+    ok(homeOvl === 0, tag + ': the chute never goes under the 🏠 button at either end');
+    ok(xmin < 0.35 && xmax > 0.65, tag + ': chute slides left and right near the walls (x ' + xmin.toFixed(2) + ' .. ' + xmax.toFixed(2) + ' of the box)');
     await shot('a');
     /* すな: おしている あいだ でる。ひらがなで よみあげ＋おおきく ひょうじ */
     await clearSays(p);
