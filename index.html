@@ -446,6 +446,27 @@
     .mx-count { left: 140px; }
   }
   @media (prefers-reduced-motion: reduce) { .mx-b.hint { animation: none; box-shadow: 0 0 0 5px #fff, 0 0 0 10px #FFC83D; } .mx-new { animation: none; } }
+  /* すなば */
+  #stage-suna { background: #FFF1D2; display: flex; flex-direction: column; }
+  .sn-zone { position: relative; flex: 1 1 0; min-height: 0; }
+  #sn-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .sn-bar { flex: 0 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 92px; gap: 8px; align-items: center; padding: 8px 12px 12px; position: relative; z-index: 2; }
+  .sn-b, .sn-clean { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 4px solid rgba(90,58,34,.55); background: var(--c); color: var(--ink); box-shadow: 0 5px 0 var(--shadow); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  .sn-b { height: 108px; min-width: 80px; border-radius: 26px; }
+  .sn-b .ico { font-size: 40px; line-height: 1; }
+  .sn-b .lab { font-size: 26px; line-height: 1.1; }
+  .sn-b.on, .sn-b:active, .sn-clean:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--shadow); }
+  #sn-sand { --c: #F6D168; }
+  #sn-water { --c: #7CC8FF; }
+  .sn-clean { --c: #FFFFFF; height: 92px; min-width: 80px; border-radius: 22px; border-color: rgba(90,58,34,.35); }
+  .sn-clean .ico { font-size: 30px; line-height: 1; }
+  .sn-clean .lab { font-size: 15px; line-height: 1.1; white-space: nowrap; }
+  @media (min-aspect-ratio: 4/3) and (max-height: 520px) {
+    #stage-suna { flex-direction: row; }
+    .sn-bar { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) 84px; width: 124px; align-items: stretch; padding: 8px 8px 8px 0; }
+    .sn-b { height: auto; min-height: 100px; }
+    .sn-clean { height: 84px; }
+  }
   #pb-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-launch {
     position: absolute; z-index: 5; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; padding: 0; border-radius: 50%;
@@ -1433,6 +1454,15 @@
     </div>
     <div class="mx-tray" id="mx-tray"></div>
     <div class="fx" id="fx-mix"></div>
+  </section>
+
+  <section class="stage" id="stage-suna" aria-label="すなば" hidden>
+    <div class="sn-zone" id="sn-zone"><canvas id="sn-cv" aria-label="すなば"></canvas></div>
+    <div class="sn-bar" id="sn-bar">
+      <button class="sn-b" id="sn-sand" type="button" aria-label="すな"><span class="ico">🏖️</span><span class="lab">すな</span></button>
+      <button class="sn-b" id="sn-water" type="button" aria-label="みず"><span class="ico">💧</span><span class="lab">みず</span></button>
+      <button class="sn-clean" id="sn-clean" type="button" aria-label="おそうじ"><span class="ico">🧹</span><span class="lab">おそうじ</span></button>
+    </div>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -7407,6 +7437,340 @@
     }
   };
 
+  /* ====== 28. すなば（すな と みず を ながして あそぶ。ざーっと おそうじ） ====== */
+  var snStage = $('#stage-suna'), snZone = $('#sn-zone'), snCv = $('#sn-cv'), snCtx = snCv.getContext('2d');
+  var snBtnSand = $('#sn-sand'), snBtnWater = $('#sn-water'), snBtnClean = $('#sn-clean');
+  var SN_COLS = [
+    { say: 'きいろの すな', hex: '#F6D168' }, { say: 'ぴんくの すな', hex: '#FF9EC4' }, { say: 'みどりの すな', hex: '#8EDB7C' },
+    { say: 'おれんじの すな', hex: '#FFA95C' }, { say: 'むらさきの すな', hex: '#B58CF0' }, { say: 'しろの すな', hex: '#FBF6EC' }, { say: 'あかの すな', hex: '#F0605A' }];
+  var SN = { cell: 3.5, maxCells: 42000, hz: 120, maxSteps: 4, amp: 85 * Math.PI / 180, period: 4, minEmit: 0.5, disp: 5, grav: 900, out: 140, maxParts: 400, rate: { sand: 3, water: 4 }, sayGap: 700 };
+  function snPal(hex, mul) {
+    var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    return mul.map(function (m) { return ((255 << 24) | ((Math.min(255, b * m) | 0) << 16) | ((Math.min(255, g * m) | 0) << 8) | (Math.min(255, r * m) | 0)) >>> 0; });
+  }
+  var SN_NZ = [1, 0.96, 1.04, 0.92];
+  /* すな: [かわき x4, ぬれ x4]（ぬれすなは すこし こい）。みず: [本体 x4, 水面] */
+  var SN_PAL = SN_COLS.map(function (c) { return snPal(c.hex, SN_NZ.concat(SN_NZ.map(function (k) { return k * 0.78; }))); });
+  var SN_WATER = snPal('#4FAEF5', SN_NZ).concat(snPal('#A6DEFF', [1]));
+  var sn = { on: false, raf: 0, last: 0, simT: 0, acc: 0, W: 0, H: 0, dpr: 1, cs: 3.5, gw: 0, gh: 0, ox: 0, oy: 0, t: null, c: null, st: null, stamp: 0, flip: false,
+    img: null, buf: null, off: null, offCtx: null, geo: null, ch: { tx: 0, ty: 0, dx: 0, dy: 1, nx: 1, ny: 0, vx: 0, vy: 0 },
+    hold: { sand: 0, water: 0 }, until: { sand: 0, water: 0 }, emitted: { sand: false, water: false }, lastSnd: { sand: 0, water: 0 }, ci: 0, emitCi: 0, parts: [],
+    sandN: 0, waterN: 0, colN: [0, 0, 0, 0, 0, 0, 0], drain: 0, drainT: 0, open: 0, lastSay: -1e9, ang: 0, frames: 0 };
+  /* ゆか と かべ と しょうがいぶつ の かたち（ぜんぶ はこの おおきさに たいする ひりつ。px） */
+  function snGeoMake() {
+    var cs = sn.cs, Wg = sn.gw * cs, Hg = sn.gh * cs, rad = 32 * Math.PI / 180, co = Math.cos(rad), si = Math.sin(rad);
+    var len = Math.min(0.40 * Wg, 0.20 * Hg / si), th = Math.max(2.4 * cs, 0.03 * Wg);
+    var cupD = 0.13 * Hg, cupW = Math.min(0.26 * Wg, 2.6 * cupD), cx = 0.5 * Wg, cy = 0.74 * Hg;
+    var lowL = { x: 0.47 * Wg, y: 0.47 * Hg }, lowR = { x: 0.53 * Wg, y: 0.67 * Hg };
+    var gap = Math.max(22, Math.min(40, 0.06 * Wg)), pl = Math.max(0.19 * Hg, 40);
+    return {
+      Wg: Wg, Hg: Hg, th: th, wallPx: Math.max(4 * cs, 0.045 * Wg), floorPx: Math.max(3 * cs, 0.028 * Hg),
+      segs: [
+        { x1: lowL.x - len * co, y1: lowL.y - len * si, x2: lowL.x, y2: lowL.y, col: '#A8E6CF' },
+        { x1: lowR.x + len * co, y1: lowR.y - len * si, x2: lowR.x, y2: lowR.y, col: '#C9B8F5' },
+        { x1: cx - cupW / 2, y1: cy, x2: cx - cupW / 2, y2: cy + cupD, col: '#FFB59E' },
+        { x1: cx - cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy + cupD, col: '#FFB59E' },
+        { x1: cx + cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy, col: '#FFB59E' }],
+      px: 0.5 * Wg, py: Math.max(0.045 * Hg, 14), L: pl, gap: gap, half: gap / 2 - 6
+    };
+  }
+  function snSegDist(px, py, x1, y1, x2, y2) {
+    var dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy, u = l2 ? Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2)) : 0;
+    var ex = x1 + dx * u - px, ey = y1 + dy * u - py;
+    return Math.sqrt(ex * ex + ey * ey);
+  }
+  function snFloor(solid) {
+    var gw = sn.gw, gh = sn.gh, wc = Math.max(3, Math.round(sn.geo.wallPx / sn.cs)), fr = Math.max(3, Math.round(sn.geo.floorPx / sn.cs));
+    for (var y = gh - fr; y < gh; y++) for (var x = wc; x < gw - wc; x++) { sn.t[y * gw + x] = solid ? 3 : 0; sn.c[y * gw + x] = 0; }
+  }
+  function snBuild() {
+    var gw = sn.gw, gh = sn.gh, cs = sn.cs, g = sn.geo, wc = Math.max(3, Math.round(g.wallPx / cs)), half = g.th / 2;
+    sn.t.fill(0); sn.c.fill(0); sn.st.fill(0); sn.stamp = 0;
+    for (var y = 0; y < gh; y++) for (var x = 0; x < wc; x++) { sn.t[y * gw + x] = 3; sn.t[y * gw + gw - 1 - x] = 3; }
+    snFloor(true);
+    g.segs.forEach(function (s) {
+      var x0 = Math.max(0, Math.floor((Math.min(s.x1, s.x2) - half) / cs)), x1 = Math.min(gw - 1, Math.ceil((Math.max(s.x1, s.x2) + half) / cs));
+      var y0 = Math.max(0, Math.floor((Math.min(s.y1, s.y2) - half) / cs)), y1 = Math.min(gh - 1, Math.ceil((Math.max(s.y1, s.y2) + half) / cs));
+      for (var y = y0; y <= y1; y++) for (var x = x0; x <= x1; x++) {
+        if (snSegDist((x + 0.5) * cs, (y + 0.5) * cs, s.x1, s.y1, s.x2, s.y2) <= half) sn.t[y * gw + x] = 3;
+      }
+    });
+  }
+  function snSize(force) {
+    var r = snZone.getBoundingClientRect(), W = Math.round(r.width), H = Math.round(r.height);
+    if (W < 50 || H < 50) return;
+    if (!force && sn.t && W === sn.W && H === sn.H) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    snCv.width = Math.round(W * dpr); snCv.height = Math.round(H * dpr);
+    sn.W = W; sn.H = H; sn.dpr = dpr;
+    sn.cs = Math.max(SN.cell, Math.sqrt(W * H / SN.maxCells));
+    sn.gw = Math.floor(W / sn.cs); sn.gh = Math.floor(H / sn.cs);
+    sn.ox = (W - sn.gw * sn.cs) / 2; sn.oy = H - sn.gh * sn.cs;
+    var n = sn.gw * sn.gh;
+    sn.t = new Uint8Array(n); sn.c = new Uint8Array(n); sn.st = new Uint16Array(n);
+    sn.off = document.createElement('canvas'); sn.off.width = sn.gw; sn.off.height = sn.gh;
+    sn.offCtx = sn.off.getContext('2d'); sn.img = sn.offCtx.createImageData(sn.gw, sn.gh); sn.buf = new Uint32Array(sn.img.data.buffer);
+    sn.geo = snGeoMake(); snBuild(); sn.parts.length = 0; sn.drain = 0; sn.open = 0;
+  }
+  function snBtnColor() { snBtnSand.style.setProperty('--c', SN_COLS[sn.ci].hex); }
+  function snReset() {
+    sn.simT = 0; sn.acc = 0; sn.last = 0; sn.ci = 0; sn.emitCi = 0; sn.hold.sand = sn.hold.water = 0; sn.until.sand = sn.until.water = 0;
+    sn.parts.length = 0; sn.drain = 0; sn.drainT = 0; sn.open = 0; sn.sandN = sn.waterN = 0; sn.colN = [0, 0, 0, 0, 0, 0, 0]; sn.lastSay = -1e9;
+    snBtnColor(); snBtnSand.classList.remove('on'); snBtnWater.classList.remove('on');
+  }
+  /* ディスペンサー: しじく から したむき 2ほんのバー。ふれはば ±85°（せいげんは）。ch に さきっぽ と むき と せんそく を いれる */
+  function snChute(tm) {
+    var g = sn.geo, w = 2 * Math.PI / SN.period, a = SN.amp * Math.sin(w * tm), da = SN.amp * w * Math.cos(w * tm), ch = sn.ch;
+    sn.ang = a;
+    ch.dx = Math.sin(a); ch.dy = Math.cos(a); ch.nx = Math.cos(a); ch.ny = -Math.sin(a);
+    ch.tx = g.px + ch.dx * g.L; ch.ty = g.py + ch.dy * g.L; ch.vx = ch.nx * g.L * da; ch.vy = ch.ny * g.L * da;
+    return ch;
+  }
+  function snActive(k) { return !!sn.hold[k] || sn.simT < sn.until[k]; }
+  /* さきっぽ の セルが うまっていたら でない（とまるだけ）。でたものは つぶ（かんせい あり）として とび、ぶつかった ところで セルに なる */
+  function snEmit(kind) {
+    var ch = sn.ch, g = sn.geo, cs = sn.cs, gw = sn.gw, gh = sn.gh, ix = Math.floor(ch.tx / cs), iy = Math.floor(ch.ty / cs);
+    if (ix < 0 || ix >= gw || iy < 0 || iy >= gh || sn.t[iy * gw + ix] !== 0) return;
+    for (var k = 0; k < SN.rate[kind] && sn.parts.length < SN.maxParts; k++) {
+      var u = (Math.random() * 2 - 1) * g.half;
+      sn.parts.push({ x: (ch.tx + ch.nx * u) / cs, y: (ch.ty + ch.ny * u) / cs, vx: (ch.dx * SN.out + ch.vx) / cs, vy: (ch.dy * SN.out + ch.vy) / cs, k: kind === 'sand' ? 1 : 2, c: kind === 'sand' ? sn.emitCi : 0 });
+    }
+    sn.emitted[kind] = true;
+  }
+  function snDeposit(p) {
+    var gw = sn.gw, gh = sn.gh, x = Math.floor(p.x), y = Math.floor(p.y);
+    for (var k = 0; k < 4; k++) {
+      var yy = y - k;
+      if (x >= 0 && x < gw && yy >= 0 && yy < gh && sn.t[yy * gw + x] === 0) { sn.t[yy * gw + x] = p.k; sn.c[yy * gw + x] = p.c; return; }
+    }
+  }
+  function snParts(dt) {
+    var gw = sn.gw, gh = sn.gh, g = SN.grav / sn.cs, ps = sn.parts;
+    for (var i = ps.length - 1; i >= 0; i--) {
+      var p = ps[i], dead = false;
+      p.vy += g * dt;
+      var dx = p.vx * dt, dy = p.vy * dt, n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 0.9));
+      dx /= n; dy /= n;
+      for (var s = 0; s < n; s++) {
+        var nx = p.x + dx, ny = p.y + dy, ix = Math.floor(nx), iy = Math.floor(ny);
+        if (ix < 0 || ix >= gw || iy >= gh) { dead = true; break; }
+        if (iy >= 0 && sn.t[iy * gw + ix] !== 0) { snDeposit(p); dead = true; break; }
+        p.x = nx; p.y = ny;
+      }
+      if (dead) { ps[i] = ps[ps.length - 1]; ps.pop(); }
+    }
+  }
+  /* おちずな セルオートマトン。st[] は このステップで うごいたセルの めじるし（にどうごき ぼうし） */
+  function snStep() {
+    var t = sn.t, c = sn.c, st = sn.st, gw = sn.gw, gh = sn.gh, stamp = ++sn.stamp, open = sn.open > 0, drain = sn.drain === 1, disp = SN.disp;
+    if (stamp > 65000) { st.fill(0); sn.stamp = stamp = 1; }
+    sn.flip = !sn.flip;
+    for (var y = gh - 1; y >= 0; y--) {
+      var row = y * gw, lastRow = y === gh - 1;
+      for (var k = 0; k < gw; k++) {
+        var x = sn.flip ? k : gw - 1 - k, i = row + x, v = t[i];
+        if (v === 0 || v === 3 || st[i] === stamp) continue;
+        if (lastRow) { if (open) t[i] = 0; continue; }
+        var b = i + gw, bv = t[b];
+        if (drain && bv === 3 && Math.random() < 0.3) { t[i] = 0; continue; }
+        if (v === 1) {
+          if (bv === 0) { t[b] = 1; c[b] = c[i]; t[i] = 0; st[b] = stamp; continue; }
+          if (bv === 2) { t[b] = 1; c[b] = c[i] | 16; t[i] = 2; c[i] = 0; st[b] = st[i] = stamp; continue; }
+          var d = Math.random() < 0.5 ? -1 : 1;
+          for (var q = 0; q < 2; q++, d = -d) {
+            var nx = x + d;
+            if (nx < 0 || nx >= gw || t[i + d] === 3) continue;
+            var j = b + d, jv = t[j];
+            if (jv === 0) { t[j] = 1; c[j] = c[i]; t[i] = 0; st[j] = stamp; break; }
+            if (jv === 2) { t[j] = 1; c[j] = c[i] | 16; t[i] = 2; c[i] = 0; st[j] = st[i] = stamp; break; }
+          }
+        } else {
+          if (bv === 0) { t[b] = 2; c[b] = 0; t[i] = 0; st[b] = stamp; continue; }
+          if (bv === 1 && Math.random() < 0.05) c[b] |= 16;   /* みずに ふれた すなは ぬれる */
+          var d2 = Math.random() < 0.5 ? -1 : 1, mv = false;
+          for (var q2 = 0; q2 < 2 && !mv; q2++, d2 = -d2) {
+            var nx2 = x + d2;
+            if (nx2 < 0 || nx2 >= gw || t[i + d2] === 3) continue;
+            var j2 = b + d2;
+            if (t[j2] === 0) { t[j2] = 2; c[j2] = 0; t[i] = 0; st[j2] = stamp; mv = true; }
+          }
+          if (mv) continue;
+          d2 = Math.random() < 0.5 ? -1 : 1;
+          for (var q3 = 0; q3 < 2; q3++, d2 = -d2) {
+            var far = 0;
+            for (var s = 1; s <= disp; s++) {
+              var nx3 = x + d2 * s;
+              if (nx3 < 0 || nx3 >= gw || t[row + nx3] !== 0) break;
+              far = s;
+            }
+            if (far) { var j3 = row + x + d2 * far; t[j3] = 2; c[j3] = 0; t[i] = 0; st[j3] = stamp; break; }
+          }
+        }
+      }
+    }
+  }
+  function snTick(dt) {
+    sn.simT += dt;
+    snChute(sn.simT);
+    if (!sn.drain) { if (snActive('sand')) snEmit('sand'); if (snActive('water')) snEmit('water'); }
+    snParts(dt); snStep();
+  }
+  function snRender() {
+    var t = sn.t, c = sn.c, gw = sn.gw, gh = sn.gh, b = sn.buf, sandN = 0, waterN = 0, cn = sn.colN;
+    for (var q = 0; q < cn.length; q++) cn[q] = 0;
+    for (var y = 0; y < gh; y++) {
+      for (var x = 0; x < gw; x++) {
+        var i = y * gw + x, v = t[i];
+        if (v === 0 || v === 3) { b[i] = 0; continue; }
+        var nz = (x * 7 + y * 13 + ((x * y) & 3)) & 3;
+        if (v === 1) { var cv = c[i]; b[i] = SN_PAL[cv & 15][((cv & 16) ? 4 : 0) + nz]; sandN++; cn[cv & 15]++; }
+        else { b[i] = (y > 0 && t[i - gw] === 0) ? SN_WATER[4] : SN_WATER[nz]; waterN++; }
+      }
+    }
+    sn.sandN = sandN; sn.waterN = waterN;
+    sn.offCtx.putImageData(sn.img, 0, 0);
+  }
+  var SN_INK = '#5A3A22';
+  function snLine(ctx, x1, y1, x2, y2, w, col) {
+    ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  function snPlank(ctx, x, y, w, h) {
+    ctx.fillStyle = '#F0C58C'; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = 'rgba(130,80,30,.14)';
+    if (h > w) for (var yy = y + 46; yy < y + h; yy += 92) ctx.fillRect(x, yy, w, 3); else for (var xx = x + 46; xx < x + w; xx += 92) ctx.fillRect(xx, y, 3, h);
+  }
+  function snDraw() {
+    var ctx = snCtx, g = sn.geo, Wg = g.Wg, Hg = g.Hg, dpr = sn.dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, sn.W, sn.H);
+    ctx.save(); ctx.translate(sn.ox, sn.oy);
+    var bg = ctx.createLinearGradient(0, 0, 0, Hg); bg.addColorStop(0, '#FFF8E6'); bg.addColorStop(1, '#FFE9BE');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, Wg, Hg);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(sn.off, 0, 0, Wg, Hg);
+    g.segs.forEach(function (s) { snLine(ctx, s.x1, s.y1, s.x2, s.y2, g.th + 7, SN_INK); });
+    g.segs.forEach(function (s) { snLine(ctx, s.x1, s.y1, s.x2, s.y2, g.th, s.col); });
+    g.segs.forEach(function (s) { snLine(ctx, s.x1, s.y1, s.x2, s.y2, Math.max(2, g.th * 0.22), 'rgba(255,255,255,.55)'); });
+    /* かべ と ゆか（そこが ひらく） */
+    var wp = g.wallPx, fp = g.floorPx, o = sn.open;
+    snPlank(ctx, 0, 0, wp, Hg); snPlank(ctx, Wg - wp, 0, wp, Hg);
+    ctx.strokeStyle = SN_INK; ctx.lineWidth = 4; ctx.lineCap = 'butt';
+    ctx.beginPath(); ctx.moveTo(wp, 0); ctx.lineTo(wp, Hg); ctx.moveTo(Wg - wp, 0); ctx.lineTo(Wg - wp, Hg); ctx.stroke();
+    var fw = Wg - 2 * wp;
+    if (o <= 0.001) { snPlank(ctx, wp, Hg - fp, fw, fp); ctx.strokeRect(wp, Hg - fp, fw, fp + 4); }
+    else {
+      var ang = o * 80 * Math.PI / 180;
+      [[wp, 1], [Wg - wp, -1]].forEach(function (h) {
+        ctx.save(); ctx.translate(h[0], Hg - fp / 2); ctx.rotate(ang * h[1]);
+        var fx = h[1] > 0 ? 0 : -fw / 2; snPlank(ctx, fx, -fp / 2, fw / 2, fp); ctx.strokeRect(fx, -fp / 2, fw / 2, fp); ctx.restore();
+      });
+    }
+    /* ディスペンサー */
+    var ch = sn.ch, px = g.px, py = g.py, gp = g.gap / 2;
+    snPlank(ctx, px - 9, -4, 18, py + 4); ctx.strokeStyle = SN_INK; ctx.lineWidth = 3; ctx.strokeRect(px - 9, -4, 18, py + 4);
+    [-1, 1].forEach(function (sd) {
+      var sx = px + ch.nx * sd * gp, sy = py + ch.ny * sd * gp;
+      snLine(ctx, sx, sy, sx + ch.dx * g.L, sy + ch.dy * g.L, 15, SN_INK);
+    });
+    snLine(ctx, px - ch.nx * gp, py - ch.ny * gp, px + ch.nx * gp, py + ch.ny * gp, 15, SN_INK);
+    [-1, 1].forEach(function (sd) {
+      var sx = px + ch.nx * sd * gp, sy = py + ch.ny * sd * gp;
+      snLine(ctx, sx, sy, sx + ch.dx * g.L, sy + ch.dy * g.L, 8, '#FF9CBB');
+    });
+    snLine(ctx, px - ch.nx * gp, py - ch.ny * gp, px + ch.nx * gp, py + ch.ny * gp, 8, '#FF9CBB');
+    ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.fillStyle = '#FFD66B'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = SN_INK; ctx.stroke();
+    ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fillStyle = SN_INK; ctx.fill();
+    ctx.restore();
+  }
+  function snPress(kind, id) {
+    if (sn.hold[kind]) return;
+    audio();
+    sn.hold[kind] = id + 1; sn.until[kind] = Math.max(sn.until[kind], sn.simT + SN.minEmit);
+    (kind === 'sand' ? snBtnSand : snBtnWater).classList.add('on');
+    var now = performance.now(), text, col;
+    if (kind === 'sand') { sn.emitCi = sn.ci; text = SN_COLS[sn.ci].say; col = SN_COLS[sn.ci].hex; } else { text = 'みず'; col = '#35A7FF'; }
+    if (now - sn.lastSay > SN.sayGap) { sn.lastSay = now; say(text); bigWord(text, col); }
+  }
+  /* はなしたら すなは つぎの いろへ（ボタンの いろも かわる） */
+  function snRelease(kind) {
+    if (!sn.hold[kind]) return;
+    sn.hold[kind] = 0;
+    (kind === 'sand' ? snBtnSand : snBtnWater).classList.remove('on');
+    if (kind === 'sand') { sn.ci = (sn.ci + 1) % SN_COLS.length; snBtnColor(); }
+  }
+  function snDown(kind) {
+    return function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault(); snPress(kind, e.pointerId);
+    };
+  }
+  var snDownSand = snDown('sand'), snDownWater = snDown('water');
+  function snUp(e) {
+    if (sn.hold.sand === e.pointerId + 1) snRelease('sand');
+    if (sn.hold.water === e.pointerId + 1) snRelease('water');
+  }
+  function snReleaseAll() { snRelease('sand'); snRelease('water'); }
+  function snKey(kind) {   /* キーボード／スクリーンリーダー: クリックは ひとおし（0.5びょう ぶん） */
+    return function (e) { if (e.detail === 0) { snPress(kind, -1); snRelease(kind); } };
+  }
+  var snKeySand = snKey('sand'), snKeyWater = snKey('water');
+  function snClean() {
+    if (sn.drain || !sn.t) return;
+    sn.drain = 1; sn.drainT = 0; sn.parts.length = 0;
+    snFloor(false);
+    tone(520, 0.6, 'triangle', 0.07, 180);
+  }
+  onTap(snBtnClean, function () { if (sn.on) snClean(); });
+  function snCtl(e) { e.preventDefault(); }
+  function snVis() { if (document.hidden) snReleaseAll(); }
+  function snFrame(ts) {
+    if (!sn.on) { sn.raf = 0; return; }
+    sn.raf = requestAnimationFrame(snFrame);
+    var dt = sn.last ? Math.min(0.05, (ts - sn.last) / 1000) : 1 / 60;
+    sn.last = ts; sn.frames++;
+    if (!sn.t) { snSize(true); if (!sn.t) return; }
+    var step = 1 / SN.hz, n = 0;
+    sn.acc += dt; sn.emitted.sand = sn.emitted.water = false;
+    while (sn.acc >= step && n < SN.maxSteps) { sn.acc -= step; n++; snTick(step); }
+    if (sn.acc > step) sn.acc = 0;
+    if (sn.drain === 1) {
+      sn.drainT += dt; sn.open = Math.min(1, sn.open + dt / 0.25);
+      if (sn.drainT > 0.5 && sn.sandN + sn.waterN === 0) sn.drain = 2;
+      else if (sn.drainT > 6) { for (var i = 0; i < sn.t.length; i++) if (sn.t[i] === 1 || sn.t[i] === 2) sn.t[i] = 0; }
+    } else if (sn.drain === 2) {
+      sn.open = Math.max(0, sn.open - dt / 0.3);
+      if (sn.open <= 0) { snFloor(true); sn.drain = 0; }
+    }
+    if (sn.emitted.sand && ts - sn.lastSnd.sand > 110) { sn.lastSnd.sand = ts; tone(rand(1900, 2900), 0.04, 'triangle', 0.02); }
+    if (sn.emitted.water && ts - sn.lastSnd.water > 150) { var f = rand(380, 620); sn.lastSnd.water = ts; tone(f, 0.09, 'sine', 0.045, f * 1.6); }
+    snRender(); snDraw();
+  }
+  games.suna = {
+    el: snStage,
+    enter: function () {
+      snReset(); sn.on = true; snSize(true);
+      snBtnSand.addEventListener('pointerdown', snDownSand); snBtnWater.addEventListener('pointerdown', snDownWater);
+      snBtnSand.addEventListener('click', snKeySand); snBtnWater.addEventListener('click', snKeyWater);
+      $('#sn-bar').addEventListener('contextmenu', snCtl);
+      window.addEventListener('pointerup', snUp); window.addEventListener('pointercancel', snUp);
+      document.addEventListener('visibilitychange', snVis);
+      if (sn.raf) cancelAnimationFrame(sn.raf);
+      sn.raf = requestAnimationFrame(snFrame);
+    },
+    leave: function () {
+      sn.on = false;
+      if (sn.raf) { cancelAnimationFrame(sn.raf); sn.raf = 0; }
+      snBtnSand.removeEventListener('pointerdown', snDownSand); snBtnWater.removeEventListener('pointerdown', snDownWater);
+      snBtnSand.removeEventListener('click', snKeySand); snBtnWater.removeEventListener('click', snKeyWater);
+      $('#sn-bar').removeEventListener('contextmenu', snCtl);
+      window.removeEventListener('pointerup', snUp); window.removeEventListener('pointercancel', snUp);
+      document.removeEventListener('visibilitychange', snVis);
+      snReset();
+      if (sn.t) { sn.t.fill(0); sn.c.fill(0); }
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: function () { if (sn.on) snSize(false); }
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var ICO = {
@@ -7461,12 +7825,13 @@
     neko:  { ico: '🐱', lab: 'ねこさがし',     c: '#FFD8B0', say: 'ねこさがし！' },
     nami:  { ico: '🌊', lab: 'なみもよう', c: '#BFD8FF', say: 'なみもよう！' },
     voice: { ico: '🎤', lab: 'ボイスチェンジャー', br: 'ボイス', c: '#EBCBFF', say: 'ぼいすちぇんじゃー！' },
-    mix:   { ico: '🧪', lab: 'まぜまぜ',       c: '#FFD3EC', say: 'まぜまぜ！' }
+    mix:   { ico: '🧪', lab: 'まぜまぜ',       c: '#FFD3EC', say: 'まぜまぜ！' },
+    suna:  { ico: '🏖️', lab: 'すなば',         c: '#FFE6B8', say: 'すなば！' }
   };
   var HPAGES = [
     { title: 'あそぶ', ico: '🎈', img: 'pg-asobu', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
     { title: 'まなぶ', ico: '🔤', img: 'pg-manabu', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
-    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix'] }
+    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix', 'suna'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
   var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmPrev = $('#hm-prev'), hmNext = $('#hm-next');

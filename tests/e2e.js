@@ -27,6 +27,7 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['var nk = {', 'var nk = window.__nk = {'],
   ['games.nami = {', 'window.__namiHits = circleHits; games.nami = {'],
   ['var nm = {', 'var nm = window.__nm = {'],
+  ['var sn = {', 'var sn = window.__sn = {'],
   ['games.neko = {', 'window.__nkStart = nkStart; window.__nkMake = nkMake; window.__nkPR = nkPR; window.__nkCatR = nkCatR; games.neko = {'],
   ['var vc = {', 'var vc = window.__vc = {'],
   ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr }; games.voice = {'],
@@ -38,15 +39,15 @@ if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば'];
 const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
 async function gotoPage(p, n) {
   const cur = await p.evaluate(() => [0, 1, 2].find(i => !document.querySelector('#hm-p' + i).hidden));
   if (cur !== n) { await p.click('.hm-dot:nth-child(' + (n + 1) + ')'); await sleep(280); }
 }
 async function tapTile(p, lab) {
-  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし' || lab === 'ボイスチェンジャー' || lab === 'なみもよう' || lab === 'まぜまぜ') ? 2 : PAGE2.has(lab) ? 1 : 0);
+  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし' || lab === 'ボイスチェンジャー' || lab === 'なみもよう' || lab === 'まぜまぜ' || lab === 'すなば') ? 2 : PAGE2.has(lab) ? 1 : 0);
   await p.click('.hm-page:not([hidden]) .tile[aria-label="' + lab + '"]');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -156,9 +157,10 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const t3 = await tileInfo();
     ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')]; return ims.length === 3 && ims.every(i => i.complete && i.naturalWidth > 0); }), tag + ' page3 koro + neko + まぜまぜ icon images (ドライブ falls back to the 🚗 emoji)');
     const t1b = tiles[0];
-    ok(t3.length === 8 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 8 tiles, same size as others ' + JSON.stringify(t3));
-    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy && t3[4].cx === tiles[1].cx && t3[4].cy === tiles[3].cy && t3[5].cx === tiles[2].cx && t3[5].cy === tiles[3].cy && t3[6].cx === tiles[0].cx && t3[6].cy === tiles[6].cy && t3[7].cx === tiles[1].cx && t3[7].cy === tiles[6].cy, tag + ' page3: first row columns 1-3, 4th-6th tiles row 2 columns 1-3, 7th/8th on row 3 columns 1-2');
-    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう,まぜまぜ' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
+    ok(t3.length === 9 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 9 tiles, same size as others ' + JSON.stringify(t3));
+    ok(t3.every((t, k) => t.cx === tiles[k].cx && t.cy === tiles[k].cy), tag + ' page3: 3x3 grid in the same positions as page1');
+    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう,まぜまぜ,すなば' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
+    ok((await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[8].querySelector('.ico').textContent)) === '🏖️', tag + ' page3 すなば tile shows the 🏖️ emoji (no image icon yet)');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible(), tag + ' page3 ▶ hidden, ◀ shown, speaks');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
@@ -174,7 +176,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 27; i++) {
       await tapTile(p, LAB[i]); await sleep(i === 8 ? 500 : 380);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
@@ -1054,7 +1056,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 24 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (24 rows)');
+      ok(await p.locator('.st-row.zero').count() === 25 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (25 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2403,10 +2405,125 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.context().close();
   });
 
+  /* ---------- すなば ---------- */
+  TV('suna', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
+    const tag = 'suna ' + vp.width + 'x' + vp.height, land = vp.width > vp.height, shot = n => p.screenshot({ path: SP + '/suna-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true });
+    const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    const SN = () => p.evaluate(() => { const q = window.__sn; let wmin = 1e9, wmax = -1, wy = 0, sy = 0, wetN = 0;
+      if (q.t) for (let y = 0; y < q.gh; y++) for (let x = 0; x < q.gw; x++) { const v = q.t[y * q.gw + x]; if (v === 2) { wmin = Math.min(wmin, x); wmax = Math.max(wmax, x); wy = Math.max(wy, y); } else if (v === 1) { sy = Math.max(sy, y); if (q.c[y * q.gw + x] & 16) wetN++; } }
+      return { on: q.on, raf: q.raf, frames: q.frames, sand: q.sandN, water: q.waterN, col: q.colN.slice(), ci: q.ci, drain: q.drain, open: q.open, parts: q.parts.length, gw: q.gw, gh: q.gh, cs: q.cs, hs: q.hold.sand, hw: q.hold.water, ang: q.ang, wspan: wmax - wmin + 1, wy, sy, wetN,
+        floor: q.t ? q.t[(q.gh - 1) * q.gw + (q.gw >> 1)] : -1, cells: q.gw * q.gh, bg: getComputedStyle(document.querySelector('#sn-sand')).backgroundColor }; });
+    const hold = async (sel, ms) => { const b = await p.locator(sel).boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(ms); await p.mouse.up(); };
+    await tapTile(p, 'すなば'); await sleep(600);
+    ok(await p.locator('#stage-suna').isVisible() && await p.locator('#hm-p2').isHidden(), tag + ': tile on page 3 opens すなば');
+    ok((await says(p)).some(x => x.t === 'すなば！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks すなば！, shared 🏠, no adult button');
+    const geo = await p.evaluate(() => { const st = document.querySelector('#stage-suna').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect(), r = s => { const b = document.querySelector(s).getBoundingClientRect(); return { w: b.width, h: b.height, l: b.left, t: b.top, r: b.right, b: b.bottom, in: b.left >= st.left && b.right <= st.right && b.top >= st.top && b.bottom <= st.bottom, ovl: b.left < hb.right && hb.left < b.right && b.top < hb.bottom && hb.top < b.bottom }; };
+      const z = r('#sn-zone'); return { sand: r('#sn-sand'), water: r('#sn-water'), clean: r('#sn-clean'), zone: z, cv: r('#sn-cv'), hs: document.documentElement.scrollWidth > innerWidth + 1 || document.body.scrollWidth > innerWidth + 1 || document.querySelector('#stage-suna').scrollWidth > document.querySelector('#stage-suna').clientWidth,
+        cw: document.querySelector('#sn-cv').width, ch: document.querySelector('#sn-cv').height, dpr: devicePixelRatio }; });
+    ok(geo.sand.h >= 100 && geo.water.h >= 100 && geo.sand.w >= 80 && geo.water.w >= 80 && geo.clean.w >= 80 && geo.clean.h >= 80, tag + ': すな/みず >=100px high, おそうじ >=80px ' + JSON.stringify([geo.sand.w, geo.sand.h, geo.water.w, geo.water.h, geo.clean.w, geo.clean.h].map(Math.round)));
+    ok(geo.sand.in && geo.water.in && geo.clean.in && !geo.sand.ovl && !geo.water.ovl && !geo.clean.ovl && !geo.hs, tag + ': buttons inside the stage, not under 🏠, no hscroll');
+    ok(land ? (geo.sand.l >= geo.zone.r - 1 && Math.abs(geo.sand.l - geo.water.l) < 2 && geo.water.t > geo.sand.t && geo.clean.t > geo.water.t) : (Math.abs(geo.sand.t - geo.water.t) < 2 && geo.water.l > geo.sand.l && geo.clean.l > geo.water.l && geo.sand.t >= geo.zone.b - 1), tag + ': ' + (land ? 'landscape: buttons stacked on the right' : 'portrait: buttons side by side under the sandbox'));
+    ok(geo.zone.w > 200 && geo.zone.h > 200 && Math.abs(geo.cw - geo.cv.w * Math.min(geo.dpr, 2)) <= 1 && Math.abs(geo.ch - geo.cv.h * Math.min(geo.dpr, 2)) <= 1, tag + ': sandbox canvas is big and matches size x DPR');
+    let s = await SN();
+    ok(s.on && s.raf > 0 && s.cells <= 45000 && s.cs >= 3.4 && s.cs < 6 && s.sand === 0 && s.water === 0 && s.ci === 0 && s.floor === 3, tag + ': starts empty, cell ' + s.cs.toFixed(2) + 'px, ' + s.cells + ' cells (capped), floor solid');
+    /* ディスペンサーは ±85° を 4びょうくらいで ゆっくり ゆれる */
+    let mx = -9, mn = 9, ang = [];
+    for (let k = 0; k < 40; k++) { const a = (await SN()).ang; ang.push(a); mx = Math.max(mx, a); mn = Math.min(mn, a); await sleep(110); }
+    ok(mx > 1.35 && mn < -1.35 && mx < 1.49 && mn > -1.49, tag + ': chute swings both ways within +-85deg (' + (mn * 180 / Math.PI).toFixed(0) + ' .. ' + (mx * 180 / Math.PI).toFixed(0) + ')');
+    await shot('a');
+    /* すな: おしている あいだ でる。ひらがなで よみあげ＋おおきく ひょうじ */
+    await clearSays(p);
+    const col0 = (await SN()).bg;
+    const sb = await p.locator('#sn-sand').boundingBox();
+    await p.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); await p.mouse.down(); await sleep(300);
+    ok((await says(p)).some(x => x.t === 'きいろの すな') && (await big()) === 'きいろの すな', tag + ': speaks きいろの すな and shows it big (' + await big() + ')');
+    await sleep(1200);
+    s = await SN();
+    ok(s.hs > 0 && s.sand + s.parts > 100 && s.water === 0, tag + ': holding すな makes sand ' + s.sand + '+' + s.parts + ' in flight');
+    await sleep(1500);
+    const s2 = await SN();
+    ok(s2.sand > s.sand + 100, tag + ': keeps coming while held (' + s.sand + ' -> ' + s2.sand + ')');
+    await p.mouse.up(); await sleep(250);
+    s = await SN();
+    ok(s.hs === 0 && s.ci === 1 && s.bg !== col0, tag + ': releasing moves on to the next colour, button colour changes ' + col0 + ' -> ' + s.bg);
+    const n0 = (await SN()).sand;
+    await p.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); await p.mouse.down(); await p.mouse.up(); await sleep(1400);
+    s = await SN();
+    ok(s.sand > n0 + 60, tag + ': a short tap still pours for about 0.5s (' + n0 + ' -> ' + s.sand + ')');
+    ok(s.col[0] > 50 && s.col[1] > 20, tag + ': first grains yellow, second press pink (layers by colour) ' + JSON.stringify(s.col));
+    ok((await says(p)).some(x => x.t === 'ぴんくの すな'), tag + ': second press speaks ぴんくの すな');
+    /* れんだは よみあげを まびく */
+    await clearSays(p);
+    for (let k = 0; k < 6; k++) { await p.mouse.down(); await p.mouse.up(); await sleep(60); }
+    ok((await says(p)).length <= 2, tag + ': rapid tapping thins out the speech (' + (await says(p)).length + ')');
+    await sleep(1200);
+    ok((await SN()).ci === (1 + 1 + 6) % 7, tag + ': every press advances the colour (7 colours cycle)');
+    /* そこまで ながれが とどく */
+    await sleep(2500);
+    s = await SN();
+    ok(s.sy >= s.gh - 8, tag + ': sand reaches the bottom of the box (lowest row ' + s.sy + '/' + s.gh + ')');
+    /* みず */
+    await clearSays(p);
+    const wb = await p.locator('#sn-water').boundingBox();
+    await p.mouse.move(wb.x + wb.width / 2, wb.y + wb.height / 2); await p.mouse.down(); await sleep(300);
+    ok((await says(p)).some(x => x.t === 'みず') && (await big()) === 'みず', tag + ': speaks みず and shows it big');
+    await sleep(2200);
+    s = await SN();
+    ok(s.hw > 0 && s.water + s.parts > 100, tag + ': holding みず makes water ' + s.water);
+    await sleep(3000); await p.mouse.up(); await sleep(2500);
+    s = await SN();
+    ok(s.water > 300 && s.wspan >= s.gw * 0.3 && s.wy >= s.gh - 8, tag + ': water spreads sideways (' + s.wspan + '/' + s.gw + ') and pools at the bottom (row ' + s.wy + '/' + s.gh + ')');
+    ok(s.ci === (1 + 1 + 6) % 7, tag + ': みず does not change the sand colour');
+    ok(s.wetN > 0, tag + ': sand that meets water turns wet (' + s.wetN + ' cells)');
+    await shot('b');
+    /* ふたつ おなじに おせる（マルチタッチ） */
+    const multi = await p.evaluate(() => { const ev = (id, el) => el.dispatchEvent(new PointerEvent('pointerdown', { pointerId: id, bubbles: true, button: 0 })), q = window.__sn;
+      ev(31, document.querySelector('#sn-sand')); ev(32, document.querySelector('#sn-water')); const a = [q.hold.sand, q.hold.water];
+      window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 31 })); const b = [q.hold.sand, q.hold.water];
+      window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 32 })); return { a, b, c: [q.hold.sand, q.hold.water] }; });
+    ok(multi.a[0] && multi.a[1] && !multi.b[0] && multi.b[1] && !multi.c[0] && !multi.c[1], tag + ': sand + water can be held together, each released on its own ' + JSON.stringify(multi));
+    /* おそうじ */
+    await sleep(1500);
+    const before = await SN();
+    await p.click('#sn-clean'); await sleep(250);
+    s = await SN();
+    ok(s.drain === 1 && s.open > 0 && s.floor === 0, tag + ': おそうじ opens the floor ' + JSON.stringify([s.drain, s.open, s.floor]));
+    await sleep(300); await shot('drain');
+    ok(await until(p, async () => { const q = await SN(); return q.sand + q.water + q.parts === 0; }, 5000), tag + ': everything pours out (' + before.sand + '+' + before.water + ' -> 0)');
+    ok(await until(p, async () => { const q = await SN(); return q.drain === 0 && q.open === 0 && q.floor === 3; }, 3000), tag + ': floor closes again by itself');
+    ok(!(await p.evaluate(() => document.querySelector('#sn-clean').disabled)) && await p.locator('#stage-suna').isVisible(), tag + ': nothing punishing, play goes on');
+    await p.mouse.move(wb.x + wb.width / 2, wb.y + wb.height / 2); await p.mouse.down(); await p.mouse.up(); await sleep(1500);
+    ok((await SN()).water > 20, tag + ': pouring works again after cleaning');
+    /* てんぷ: おおきな はこ いっぱいでも 止まるだけ */
+    const stuck = await p.evaluate(() => { const q = window.__sn; const g = q.geo, cs = q.cs; const ix = Math.floor(q.ch.tx / cs), iy = Math.floor(q.ch.ty / cs); return { ix, iy }; });
+    ok(stuck.ix >= 0, tag + ': chute tip is inside the box');
+    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth && document.querySelector('#stage-suna').scrollWidth <= document.querySelector('#stage-suna').clientWidth), tag + ': no horizontal scroll');
+    /* リサイズ（かいてん）で つくりなおし */
+    if (!land) { await p.setViewportSize({ width: vp.height > vp.width ? 740 : vp.width, height: 360 }); await sleep(1200);
+      const r = await SN(); const gz = await p.evaluate(() => { const b = document.querySelector('#sn-sand').getBoundingClientRect(), z = document.querySelector('#sn-zone').getBoundingClientRect(); return { h: b.height, side: b.left >= z.right - 1 }; });
+      ok(r.on && r.gw * r.cs > 400 && r.sand === 0 && gz.h >= 100 && gz.side, tag + ': rotating to landscape rebuilds the box, buttons move to the right ' + JSON.stringify([r.gw, r.gh, gz]));
+      await shot('rot');
+      await p.setViewportSize(vp); await sleep(1200); }
+    /* でる */
+    await p.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); await p.mouse.down(); await sleep(400);
+    await p.click('#homebtn'); await sleep(200);
+    const l1 = await SN(); await sleep(500); const l2 = await SN();
+    ok(!l1.on && l1.raf === 0 && l2.frames === l1.frames && l1.sand === 0 && l1.water === 0 && l1.parts === 0 && l1.hs === 0 && l1.hw === 0, tag + ': leaving stops rAF, clears grains, releases buttons ' + JSON.stringify([l1.on, l1.raf, l1.sand, l1.hs]));
+    ok(await p.locator('#hm-p2').isVisible() && await p.locator('#stage-suna').isHidden(), tag + ': 🏠 returns to page 3');
+    await p.mouse.up();
+    await tapTile(p, 'すなば'); await sleep(500);
+    const re = await SN();
+    ok(re.on && re.sand === 0 && re.water === 0 && re.ci === 0 && re.floor === 3 && re.raf > 0, tag + ': re-enter starts from an empty box, first colour ' + JSON.stringify([re.sand, re.ci]));
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
