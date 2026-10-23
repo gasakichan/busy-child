@@ -203,6 +203,21 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 
   /* ---------- 2. settings ---------- */
+  T('phone-numbers', async (br) => {
+    const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
+    await tapTile(p, LAB[9]); await sleep(500);
+    const dial = async (d) => { for (const k of d) { await p.click('#ph-keys .pk >> text="' + k + '"', { force: true }); await sleep(120); } };
+    const textOf = () => p.evaluate(() => document.querySelector('#ph-text').textContent);
+    for (const [num, word] of [['110', 'けいさつ'], ['119', 'しょうぼうしゃ'], ['118', 'かいじょうほあんちょう'], ['117', 'ただいま']]) {
+      await dial(num);
+      ok(await until(p, async () => (await textOf()).includes(word), 4000), 'phone ' + num + ' answers with ' + word + ': ' + await textOf());
+      ok(await until(p, async () => await p.locator('#ph-call').isHidden(), 9000), 'phone ' + num + ' hangs up by itself');
+    }
+    await dial('177');
+    ok(await until(p, async () => (await textOf()).includes('です') && !(await textOf()).includes('けいさつ'), 4000), 'phone 177 (ended service) answers with an animal');
+    ok(p.errs.length === 0, 'phone: no console errors ' + p.errs.join(' | '));
+  });
+
   T('settings', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     await holdOpen(p, 300); await sleep(100);

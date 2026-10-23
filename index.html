@@ -2910,7 +2910,31 @@
     }
     phIds.push(later(phAnswer, 1500));
   }
+  /* にほんの 3けたばんごう（177・104 は 終了ずみなので 入れない）。ほかは どうぶつが でる */
+  var PH_HOURS = ['じゅうにじ', 'いちじ', 'にじ', 'さんじ', 'よじ', 'ごじ', 'ろくじ', 'しちじ', 'はちじ', 'くじ', 'じゅうじ', 'じゅういちじ'];
+  function sirenTwo(f1, f2, n, step) { for (var i = 0; i < n; i++) tone(i % 2 ? f2 : f1, step, 'triangle', 0.1, 0, 0.9 + i * step); }
+  var PH_SPECIAL = {
+    '110': { e: '🚓', c: '#CFE3FF', n: 'けいさつ', t: 'もしもし！\nけいさつ です！\nおまわりさん が いくよ！', s: 'もしもし！ けいさつ です！ おまわりさん が いくよ！', fx: function () { sirenTwo(660, 880, 6, 0.4); } },
+    '119': { e: '🚒', c: '#FFC9C0', n: 'しょうぼう', t: 'もしもし！\nしょうぼうしゃ・\nきゅうきゅうしゃ です！\nすぐ いくよ！', s: 'もしもし！ しょうぼうしゃ と きゅうきゅうしゃ です！ すぐ いくよ！', fx: function () { sirenTwo(780, 620, 6, 0.4); } },
+    '118': { e: '🚢', c: '#BFE6F5', n: 'かいじょうほあんちょう', t: 'もしもし！\nかいじょうほあんちょう\nです！ ふねで いくよ！', s: 'もしもし！ かいじょうほあんちょう です！ ふねで いくよ！', fx: function () { tone(180, 0.9, 'sawtooth', 0.08, 0, 0.9); tone(135, 0.9, 'sawtooth', 0.08, 0, 1.9); } },
+    '117': { e: '🕐', c: '#FFF2B8', n: 'じほう', hour: true, fx: function () { for (var i = 0; i < 3; i++) tone(880, 0.12, 'sine', 0.12, 0, 0.9 + i); tone(1760, 0.8, 'sine', 0.12, 0, 3.9); } }
+  };
   function phAnswer() {
+    var code = phDigits.join(''), sp = PH_SPECIAL[code];
+    if (sp) {
+      var hr = sp.hour ? PH_HOURS[new Date().getHours() % 12] : '';
+      var st = sp.hour ? 'ただいま\n' + hr + ' です！\nポッ ポッ ポッ ポーン' : sp.t;
+      phAnimal.style.setProperty('--c', sp.c);
+      phAnimal.textContent = sp.e;
+      phText.textContent = vis(st);
+      say(sp.hour ? 'ただいま、' + hr + ' です！' : sp.s);
+      phAnimal.animate([{ transform: 'scale(.3)' }, { transform: 'scale(1.15)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: reduce ? 150 : 450, easing: 'ease-out' });
+      sp.fx();
+      var rr = centerIn(phAnimal, fxPhone);
+      burst(fxPhone, rr.x, rr.y, { n: 10, emoji: ['✨', '⭐', '💛'], far: 1.6 });
+      phIds.push(later(function () { phHang(true); }, sp.hour ? 6000 : 5000));
+      return;
+    }
     var a = pick(ANIMALS);
     phAnimal.style.setProperty('--c', a.c);
     phAnimal.textContent = a.e;
