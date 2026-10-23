@@ -416,6 +416,36 @@
   #stage-pinball { background: #D8EEFF; }
   #stage-nami { background: #2A2A6A; }
   #nm-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  /* まぜまぜラボ */
+  #stage-mix { background: linear-gradient(#FFF3D6, #FFE3EE); display: flex; flex-direction: column; padding-top: var(--top); }
+  .mx-count { position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); left: 80px; right: 80px; height: 56px; z-index: 3; display: flex; align-items: center; justify-content: center; font-size: clamp(20px, 6vw, 28px); color: var(--ink); white-space: nowrap; pointer-events: none; }
+  .mx-zone { position: relative; flex: 1 1 0; min-height: 0; container-type: size; touch-action: manipulation; }
+  .mx-pot { position: absolute; bottom: 1%; left: 0; right: 0; margin: 0 auto; width: min(76cqw, 55cqh); aspect-ratio: 240 / 210; }
+  .mx-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; pointer-events: none; }
+  .mx-in { position: absolute; inset: 0; pointer-events: none; }
+  .mx-ing { position: absolute; top: 5%; left: 50%; width: 27%; height: auto; aspect-ratio: 1; margin: 0 0 0 -13.5%; pointer-events: none; -webkit-user-drag: none; transition: left .25s ease; }
+  .mx-ing.l { left: 37%; }
+  .mx-ing.r { left: 63%; }
+  .mx-fly { position: absolute; left: 0; top: 0; z-index: 5; width: 68px; height: 68px; margin: -34px 0 0 -34px; pointer-events: none; will-change: transform; }
+  .mx-res { position: absolute; top: 0; left: 0; right: 0; height: 52%; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; z-index: 2; }
+  .mx-resbox { position: relative; width: min(58cqw, 36cqh); height: min(58cqw, 36cqh); }
+  .mx-resbox img { width: 100%; height: 100%; display: block; object-fit: contain; filter: drop-shadow(0 6px 0 rgba(43,58,103,.14)); -webkit-user-drag: none; }
+  .mx-new { position: absolute; right: -14%; top: -6%; padding: 4px 14px; border-radius: 999px; background: #FF5FA2; color: #fff; font-size: clamp(18px, 5.5vw, 26px); white-space: nowrap; box-shadow: 0 3px 0 var(--shadow); transform: rotate(8deg); animation: mxnew .6s ease-in-out infinite alternate; }
+  @keyframes mxnew { from { transform: rotate(8deg) scale(1); } to { transform: rotate(4deg) scale(1.12); } }
+  .mx-cap { margin-top: 4px; font-size: clamp(30px, 10vw, 48px); line-height: 1.1; color: var(--ink); white-space: nowrap; text-shadow: 0 3px 0 #fff; }
+  .mx-tray { flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 92px; gap: 8px; padding: 6px 12px 12px; }
+  .mx-b { min-width: 80px; min-height: 80px; padding: 4px 0 2px; border: 0; border-radius: 22px; background: var(--c); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; box-shadow: 0 4px 0 var(--shadow); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .mx-b img { width: 56px; height: 56px; display: block; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+  .mx-b span { font-size: 18px; line-height: 1.1; }
+  .mx-b:active { transform: translateY(2px); }
+  .mx-b.hint { animation: mxhint .7s ease-in-out; z-index: 1; }
+  @keyframes mxhint { 0%, 100% { transform: scale(1); box-shadow: 0 4px 0 var(--shadow); } 40% { transform: scale(1.12); box-shadow: 0 0 0 5px #fff, 0 0 0 10px #FFC83D, 0 0 22px 10px rgba(255,200,61,.7); } }
+  @media (min-aspect-ratio: 4/3) and (max-height: 520px) {
+    #stage-mix { padding-top: 12px; padding-left: 80px; }
+    .mx-tray { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: 86px; padding-left: 0; }
+    .mx-count { left: 140px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mx-b.hint { animation: none; box-shadow: 0 0 0 5px #fff, 0 0 0 10px #FFC83D; } .mx-new { animation: none; } }
   #pb-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-launch {
     position: absolute; z-index: 5; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; padding: 0; border-radius: 50%;
@@ -1364,6 +1394,45 @@
 
   <section class="stage" id="stage-nami" aria-label="なみもよう" hidden>
     <canvas id="nm-cv" aria-label="なみもよう"></canvas>
+  </section>
+
+  <section class="stage" id="stage-mix" aria-label="まぜまぜ" hidden>
+    <div class="mx-count" id="mx-count" aria-live="off"></div>
+    <div class="mx-zone" id="mx-zone">
+      <div class="mx-res" id="mx-res" hidden>
+        <div class="mx-resbox">
+          <img id="mx-res-img" width="192" height="192" alt="" draggable="false" decoding="async">
+          <div class="mx-new" id="mx-new" hidden>はっけん！</div>
+        </div>
+        <div class="mx-cap" id="mx-cap"></div>
+      </div>
+      <div class="mx-pot" id="mx-pot" aria-label="おなべ" role="img">
+        <svg class="mx-svg" viewBox="0 0 240 210" aria-hidden="true" focusable="false">
+          <ellipse cx="120" cy="200" rx="92" ry="8" fill="rgba(43,58,103,.14)"/>
+          <path d="M30 76 C2 68 0 116 34 122" fill="none" stroke="#5A3A22" stroke-width="20" stroke-linecap="round"/>
+          <path d="M30 76 C2 68 0 116 34 122" fill="none" stroke="#D3BFFA" stroke-width="9" stroke-linecap="round"/>
+          <path d="M210 76 C238 68 240 116 206 122" fill="none" stroke="#5A3A22" stroke-width="20" stroke-linecap="round"/>
+          <path d="M210 76 C238 68 240 116 206 122" fill="none" stroke="#D3BFFA" stroke-width="9" stroke-linecap="round"/>
+          <ellipse cx="74" cy="196" rx="20" ry="11" fill="#8E70D8" stroke="#5A3A22" stroke-width="6"/>
+          <ellipse cx="166" cy="196" rx="20" ry="11" fill="#8E70D8" stroke="#5A3A22" stroke-width="6"/>
+          <ellipse cx="120" cy="62" rx="96" ry="28" fill="#6B4A3A" stroke="#5A3A22" stroke-width="6"/>
+          <ellipse cx="120" cy="64" rx="82" ry="21" fill="#FFD98A"/>
+          <ellipse cx="96" cy="60" rx="20" ry="4" fill="#FFF1C4"/>
+        </svg>
+        <div class="mx-in" id="mx-in"></div>
+        <svg class="mx-svg" viewBox="0 0 240 210" aria-hidden="true" focusable="false">
+          <path d="M24 62 C14 130 44 190 120 190 C196 190 226 130 216 62 A96 28 0 0 1 24 62 Z" fill="#B89CF2" stroke="#5A3A22" stroke-width="6" stroke-linejoin="round"/>
+          <path d="M44 100 C46 138 64 168 92 178" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="120" cy="140" r="9" fill="#FFE27A" stroke="#5A3A22" stroke-width="4"/>
+          <circle cx="150" cy="150" r="5" fill="#FFB3D1" stroke="#5A3A22" stroke-width="3"/>
+          <circle cx="92" cy="152" r="5" fill="#9FDCFF" stroke="#5A3A22" stroke-width="3"/>
+          <path d="M24 62 A96 28 0 0 0 216 62" fill="none" stroke="#5A3A22" stroke-width="18" stroke-linecap="round"/>
+          <path d="M24 62 A96 28 0 0 0 216 62" fill="none" stroke="#D3BFFA" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="mx-tray" id="mx-tray"></div>
+    <div class="fx" id="fx-mix"></div>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -7071,6 +7140,244 @@
     }
   };
 
+  /* ====== まぜまぜラボ ====== */
+  var mxStage = $('#stage-mix'), mxZone = $('#mx-zone'), mxPot = $('#mx-pot'), mxIn = $('#mx-in'), mxRes = $('#mx-res');
+  var mxResImg = $('#mx-res-img'), mxNew = $('#mx-new'), mxCap = $('#mx-cap'), mxTray = $('#mx-tray'), mxCnt = $('#mx-count'), fxMix = $('#fx-mix');
+  var MX_KEY = 'ponpon.mix.v1';
+  var MX_BASE = [['hi', 'ひ', '#FFD2B3'], ['mizu', 'みず', '#BFE3FF'], ['tsuchi', 'つち', '#EAD3B5'], ['kaze', 'かぜ', '#CDEFF0'], ['tane', 'たね', '#FFF0B8'], ['yuki', 'ゆき', '#E3ECFF']];
+  var MX_NAME = { ohisama: 'おひさま', yuge: 'ゆげ', osara: 'おさら', kikyu: 'ききゅう', popcorn: 'ぽっぷこーん', mizutamari: 'みずたまり', umi: 'うみ', doro: 'どろ', nami: 'なみ', me: 'め', koori: 'こおり', yama: 'やま', suna: 'すな', hana: 'はな', yukiyama: 'ゆきやま', fusen: 'ふうせん', tanpopo: 'たんぽぽ', yukinohana: 'ゆきのはな', ki: 'き', yukiusagi: 'ゆきうさぎ', yukidaruma: 'ゆきだるま' };
+  /* くみあわせひょう: [もと, もと, できるもの]。じゅんばんは とわない */
+  var MX_TABLE = [
+    ['hi', 'hi', 'ohisama'], ['hi', 'mizu', 'yuge'], ['hi', 'tsuchi', 'osara'], ['hi', 'kaze', 'kikyu'], ['hi', 'tane', 'popcorn'], ['hi', 'yuki', 'mizutamari'],
+    ['mizu', 'mizu', 'umi'], ['mizu', 'tsuchi', 'doro'], ['mizu', 'kaze', 'nami'], ['mizu', 'tane', 'me'], ['mizu', 'yuki', 'koori'],
+    ['tsuchi', 'tsuchi', 'yama'], ['tsuchi', 'kaze', 'suna'], ['tsuchi', 'tane', 'hana'], ['tsuchi', 'yuki', 'yukiyama'],
+    ['kaze', 'kaze', 'fusen'], ['kaze', 'tane', 'tanpopo'], ['kaze', 'yuki', 'yukinohana'],
+    ['tane', 'tane', 'ki'], ['tane', 'yuki', 'yukiusagi'],
+    ['yuki', 'yuki', 'yukidaruma']
+  ];
+  var MX_IDX = {}, MX_MAP = {};
+  MX_BASE.forEach(function (b, i) { MX_IDX[b[0]] = i; });
+  function mxKey(i, j) { return Math.min(i, j) + '-' + Math.max(i, j); }
+  MX_TABLE.forEach(function (t) { MX_MAP[mxKey(MX_IDX[t[0]], MX_IDX[t[1]])] = t[2]; });
+  function mxLookup(i, j) { return MX_MAP[mxKey(i, j)]; }
+  var mx = { phase: 'idle', a: -1, b: -1, found: {}, all: false, celebrate: false, hintT: 0, hintIds: [], t: [], anims: [], fade: null, gen: 0, hintShown: 0 };
+  window.__mx = mx; window.__mxTable = MX_TABLE;
+  var mxBtns = [];
+  (function () {
+    try {
+      var o = JSON.parse(window.localStorage.getItem(MX_KEY) || 'null');
+      if (o && typeof o === 'object') {
+        if (Array.isArray(o.f)) o.f.forEach(function (id) { if (MX_NAME[id]) mx.found[id] = 1; });
+        mx.all = o.all === true;
+      }
+    } catch (e) {}
+  })();
+  function mxSave() { try { window.localStorage.setItem(MX_KEY, JSON.stringify({ f: Object.keys(mx.found), all: mx.all })); } catch (e) {} }
+  function mxNum() { return Object.keys(mx.found).length; }
+  function mxRender() { mxCnt.textContent = 'みつけた ' + mxNum() + ' / ' + MX_TABLE.length; }
+  function mxLater(fn, ms) { var id = later(fn, ms); mx.t.push(id); return id; }
+  function mxAnim(el, kf, opt) {
+    var a = el.animate(kf, opt);
+    if (mx.anims.length > 30) mx.anims = mx.anims.filter(function (q) { return q.playState !== 'finished' && q.playState !== 'idle'; });
+    mx.anims.push(a); return a;
+  }
+
+  /* ヒント: 6びょう さわらないと、まだ みつけていない くみあわせの もとを ぴかぴか */
+  function mxHintCancel() {
+    if (mx.hintT) { cancel(mx.hintT); mx.hintT = 0; }
+    mx.hintIds.forEach(cancel); mx.hintIds = [];
+    mxBtns.forEach(function (b) { b.classList.remove('hint'); });
+  }
+  function mxHintSchedule() {
+    mxHintCancel();
+    if (mxNum() >= MX_TABLE.length) return;
+    mx.hintT = later(mxHint, 6000);
+  }
+  function mxGlow(i, delay) {
+    mx.hintIds.push(later(function () {
+      var b = mxBtns[i]; if (!b) return;
+      b.classList.remove('hint'); void b.offsetWidth; b.classList.add('hint'); mx.hintShown++;
+      tone(880, 0.12, 'sine', 0.08);
+      mx.hintIds.push(later(function () { b.classList.remove('hint'); }, 760));
+    }, delay));
+  }
+  function mxHint() {
+    mx.hintT = 0;
+    if (mx.phase !== 'idle' && mx.phase !== 'one') return;
+    var left = MX_TABLE.filter(function (t) { return !mx.found[t[2]]; });
+    if (!left.length) return;
+    var pick1 = null;
+    if (mx.phase === 'one') {
+      var mine = left.filter(function (t) { return MX_IDX[t[0]] === mx.a || MX_IDX[t[1]] === mx.a; });
+      if (mine.length) {
+        pick1 = pick(mine);
+        mxGlow(MX_IDX[pick1[0]] === mx.a ? MX_IDX[pick1[1]] : MX_IDX[pick1[0]], 0);
+      }
+    }
+    if (!pick1) { pick1 = pick(left); mxGlow(MX_IDX[pick1[0]], 0); mxGlow(MX_IDX[pick1[1]], 900); }
+    mx.hintT = later(mxHint, 6000 + 1800);
+  }
+
+  /* おなべ */
+  function mxPotCenter() { return centerIn(mxPot, fxMix); }
+  function mxDrop(i, slot, second) {
+    var img = document.createElement('img');
+    img.className = 'mx-ing ' + (second ? (slot ? 'r' : 'l') : '');
+    img.width = 192; img.height = 192; img.alt = ''; img.draggable = false;
+    img.src = 'assets/mix/' + MX_BASE[i][0] + '.webp';
+    img.style.opacity = '0';
+    mxIn.appendChild(img);
+    var from = centerIn(mxBtns[i], fxMix), to = centerIn(img, fxMix);
+    var fly = document.createElement('img');
+    fly.className = 'mx-fly'; fly.alt = ''; fly.width = 192; fly.height = 192; fly.src = img.src;
+    fxMix.appendChild(fly);
+    var gen = mx.gen, dx = from.x - to.x, dy = from.y - to.y;
+    var a = mxAnim(fly, [
+      { transform: 'translate(' + from.x + 'px,' + from.y + 'px) scale(1)' },
+      { transform: 'translate(' + (to.x + dx * 0.4) + 'px,' + (to.y + dy * 0.4 - 70) + 'px) scale(1.15)', offset: 0.55 },
+      { transform: 'translate(' + to.x + 'px,' + to.y + 'px) scale(.9)' }
+    ], { duration: reduce ? 150 : 380, easing: 'ease-in' });
+    a.onfinish = function () {
+      fly.remove();
+      if (gen !== mx.gen) return;
+      img.style.opacity = '1';
+      mxAnim(img, [{ transform: 'translateY(-10%) scale(1.1)' }, { transform: 'translateY(6%) scale(.92)', offset: 0.6 }, { transform: 'none' }], { duration: reduce ? 100 : 300, easing: 'ease-out' });
+      bounce(mxPot, 6);
+      tone(300, 0.16, 'sine', 0.2, 140);
+    };
+    a.oncancel = function () { fly.remove(); };
+  }
+  function mxTap(i) {
+    audio();
+    if (mx.phase === 'mixing') return;
+    if (mx.phase === 'result') mxClear();
+    mxHintCancel();
+    var b = mxBtns[i];
+    bounce(b, 6);
+    if (mx.a < 0) {
+      mx.a = i; mx.phase = 'one';
+      mxDrop(i, 0, false);
+      say(MX_BASE[i][1]);
+      mxHintSchedule();
+      return;
+    }
+    mx.b = i; mx.phase = 'mixing';
+    mxDrop(i, 1, true);
+    var f = mxIn.firstChild; if (f) f.classList.add('l');
+    mxIn.lastChild.classList.add('r');
+    var gen = mx.gen;
+    mxLater(function () { if (gen === mx.gen) mxMix(); }, reduce ? 200 : 420);
+  }
+  function mxMix() {
+    var ims = [].slice.call(mxIn.children), w = mxPot.clientWidth, rx = w * 0.17, ry = w * 0.05, dur = reduce ? 400 : 1000, gen = mx.gen;
+    ims.forEach(function (el, k) {
+      var kf = [], n = 16, t0 = k * Math.PI;
+      for (var j = 0; j <= n; j++) {
+        var th = t0 + (j / n) * Math.PI * 4;
+        kf.push({ transform: 'translate(' + ((Math.cos(th) - Math.cos(t0)) * rx).toFixed(1) + 'px,' + ((Math.sin(th) - Math.sin(t0)) * ry).toFixed(1) + 'px) rotate(' + (j * 45) + 'deg)' });
+      }
+      mxAnim(el, kf, { duration: dur, easing: 'linear' });
+    });
+    mxAnim(mxPot, [
+      { transform: 'rotate(0) scale(1)' }, { transform: 'rotate(-5deg) scale(1.04,.97)' }, { transform: 'rotate(5deg) scale(.97,1.03)' },
+      { transform: 'rotate(-5deg) scale(1.04,.97)' }, { transform: 'rotate(5deg) scale(.97,1.03)' }, { transform: 'rotate(0) scale(1)' }
+    ], { duration: dur, easing: 'ease-in-out' });
+    for (var s = 0; s < 6; s++) tone(300 + s * 70, 0.1, 'triangle', 0.12, 0, s * 0.15);
+    var c = mxPotCenter(), h = mxPot.clientHeight;
+    mxLater(function () { burst(fxMix, c.x, c.y - h * 0.18, { n: 8, emoji: ['✨', '⭐', '💫'], far: 0.7 }); }, dur * 0.45);
+    mxLater(function () { if (gen === mx.gen) mxResult(); }, dur);
+  }
+  function mxResult() {
+    var id = mxLookup(mx.a, mx.b) || 'ohisama', name = MX_NAME[id], first = !mx.found[id];
+    mxIn.innerHTML = '';
+    if (mx.fade) { try { mx.fade.cancel(); } catch (e) {} mx.fade = null; }
+    mxResImg.src = 'assets/mix/' + id + '.webp';
+    mxCap.textContent = name; mxCap.style.visibility = 'hidden';   /* おおきな ことばが きえてから、ちいさく のこす */
+    mxLater(function () { mxCap.style.visibility = ''; }, reduce ? 750 : 1300);
+    mxNew.hidden = !first;
+    mxRes.hidden = false;
+    mx.phase = 'result';
+    mxAnim(mxRes.firstElementChild, [
+      { transform: 'translateY(45%) scale(.2)', opacity: 0 },
+      { transform: 'translateY(-4%) scale(1.14)', opacity: 1, offset: 0.6 },
+      { transform: 'none', opacity: 1 }
+    ], { duration: reduce ? 200 : 560, easing: 'ease-out' });
+    popSound(); tone(784, 0.2, 'triangle', 0.18, 1175);
+    var ry = centerIn(mxResImg, fxMix);
+    burst(fxMix, ry.x, ry.y, { n: first ? 16 : 8, emoji: ['✨', '⭐', '💫', '🌟'] });
+    bigWord(name, '#FF7A3D', 'clamp(44px, 15vw, 110px)');
+    say(first ? name + '！ はっけん！' : name + '！');
+    if (first) {
+      mx.found[id] = 1; mxSave(); mxRender();
+      arpeggio();
+      if (mxNum() >= MX_TABLE.length && !mx.all) { mx.all = true; mx.celebrate = true; mxSave(); }
+    }
+    mxLater(mxClear, first ? 3600 : 2600);
+  }
+  function mxCelebrate() {
+    mx.celebrate = false;
+    var gen = mx.gen;
+    mxLater(function () {
+      if (gen !== mx.gen) return;
+      bigWord('ぜんぶ はっけん！', '#FF5FA2', 'clamp(36px, 12vw, 90px)');
+      say('ぜんぶ はっけん！');
+      arpeggio(); tone(1319, 0.4, 'triangle', 0.16, 0, 0.4);
+      var r = fxMix.getBoundingClientRect();
+      for (var k = 0; k < 4; k++) burst(fxMix, r.width * (0.2 + 0.2 * k), r.height * (0.3 + 0.1 * (k % 2)), { n: 10, emoji: ['✨', '⭐', '🌟', '🎉'] });
+    }, 300);
+  }
+  function mxClear() {
+    mx.t.forEach(cancel); mx.t = [];
+    var wasResult = mx.phase === 'result';
+    mxIn.innerHTML = '';
+    mx.a = -1; mx.b = -1; mx.phase = 'idle';
+    if (wasResult && !mxRes.hidden) {
+      var a = mxRes.animate([{ opacity: 1 }, { opacity: 0 }], { duration: reduce ? 80 : 220, fill: 'forwards' });
+      mx.fade = a;
+      a.onfinish = function () { if (mx.fade === a) { mx.fade = null; mxRes.hidden = true; try { a.cancel(); } catch (e) {} } };
+    } else mxRes.hidden = true;
+    if (mx.celebrate) mxCelebrate();
+    mxHintSchedule();
+  }
+  function mxReset() {
+    mx.gen++;
+    mxHintCancel();
+    mx.t.forEach(cancel); mx.t = [];
+    mx.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} }); mx.anims = [];
+    if (mx.fade) { try { mx.fade.cancel(); } catch (e) {} mx.fade = null; }
+    mxIn.innerHTML = ''; fxMix.innerHTML = '';
+    mxRes.hidden = true; mxNew.hidden = true;
+    mx.a = -1; mx.b = -1; mx.phase = 'idle'; mx.hintShown = 0;
+  }
+  function mxTouch() { if (mx.phase === 'idle' || mx.phase === 'one') mxHintSchedule(); }
+  MX_BASE.forEach(function (b, i) {
+    var el = document.createElement('button');
+    el.type = 'button'; el.className = 'mx-b'; el.style.setProperty('--c', b[2]);
+    el.setAttribute('aria-label', b[1]); el.dataset.id = b[0];
+    var im = document.createElement('img');
+    im.width = 192; im.height = 192; im.alt = ''; im.draggable = false; im.decoding = 'async'; im.src = 'assets/mix/' + b[0] + '.webp';
+    var lb = document.createElement('span'); lb.textContent = b[1];
+    el.appendChild(im); el.appendChild(lb);
+    onTap(el, function () { mxTap(i); });
+    mxBtns.push(el); mxTray.appendChild(el);
+  });
+  onTap(mxZone, function () {
+    if (mx.phase === 'result') { mxClear(); tone(520, 0.1, 'triangle', 0.1); }
+    else if (mx.phase === 'one') { mxReset(); mxHintSchedule(); tone(420, 0.1, 'triangle', 0.1); }
+  });
+  games.mix = {
+    el: mxStage,
+    enter: function () {
+      mxReset(); mxRender();
+      mxStage.addEventListener('pointerdown', mxTouch, true);
+      mxHintSchedule();
+    },
+    leave: function () {
+      mxStage.removeEventListener('pointerdown', mxTouch, true);
+      mxReset();
+    }
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var ICO = {
@@ -7094,6 +7401,7 @@
     yubi: 'assets/ico/yubi.webp',
     koro: 'assets/ico/koro.webp',
     neko: 'assets/ico/neko.webp',
+    mix: 'assets/mix/mizu.webp',
     'pg-asobu': 'assets/ico/pg-asobu.webp',
     'pg-manabu': 'assets/ico/pg-manabu.webp',
     'pg-ugokasu': 'assets/ico/pg-ugokasu.webp'
@@ -7123,12 +7431,13 @@
     pinball: { ico: '🎱', lab: 'ピンボール',     c: '#D9D0FF', say: 'ピンボール！' },
     neko:  { ico: '🐱', lab: 'ねこさがし',     c: '#FFD8B0', say: 'ねこさがし！' },
     nami:  { ico: '🌊', lab: 'なみもよう', c: '#BFD8FF', say: 'なみもよう！' },
-    voice: { ico: '🎤', lab: 'ボイスチェンジャー', br: 'ボイス', c: '#EBCBFF', say: 'ぼいすちぇんじゃー！' }
+    voice: { ico: '🎤', lab: 'ボイスチェンジャー', br: 'ボイス', c: '#EBCBFF', say: 'ぼいすちぇんじゃー！' },
+    mix:   { ico: '🧪', lab: 'まぜまぜ',       c: '#FFD3EC', say: 'まぜまぜ！' }
   };
   var HPAGES = [
     { title: 'あそぶ', ico: '🎈', img: 'pg-asobu', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
     { title: 'まなぶ', ico: '🔤', img: 'pg-manabu', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
-    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami'] }
+    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix'] }
   ];
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
   var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmPrev = $('#hm-prev'), hmNext = $('#hm-next');

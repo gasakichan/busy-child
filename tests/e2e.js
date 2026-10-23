@@ -38,15 +38,15 @@ if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ'];
 const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
 async function gotoPage(p, n) {
   const cur = await p.evaluate(() => [0, 1, 2].find(i => !document.querySelector('#hm-p' + i).hidden));
   if (cur !== n) { await p.click('.hm-dot:nth-child(' + (n + 1) + ')'); await sleep(280); }
 }
 async function tapTile(p, lab) {
-  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし' || lab === 'ボイスチェンジャー' || lab === 'なみもよう') ? 2 : PAGE2.has(lab) ? 1 : 0);
+  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし' || lab === 'ボイスチェンジャー' || lab === 'なみもよう' || lab === 'まぜまぜ') ? 2 : PAGE2.has(lab) ? 1 : 0);
   await p.click('.hm-page:not([hidden]) .tile[aria-label="' + lab + '"]');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -154,11 +154,11 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
-    ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')]; return ims.length === 2 && ims.every(i => i.complete && i.naturalWidth > 0); }), tag + ' page3 koro + neko icon images (ドライブ falls back to the 🚗 emoji)');
+    ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')]; return ims.length === 3 && ims.every(i => i.complete && i.naturalWidth > 0); }), tag + ' page3 koro + neko + まぜまぜ icon images (ドライブ falls back to the 🚗 emoji)');
     const t1b = tiles[0];
-    ok(t3.length === 7 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 7 tiles, same size as others ' + JSON.stringify(t3));
-    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy && t3[4].cx === tiles[1].cx && t3[4].cy === tiles[3].cy && t3[5].cx === tiles[2].cx && t3[5].cy === tiles[3].cy && t3[6].cx === tiles[1].cx && t3[6].cy === tiles[6].cy, tag + ' page3: first row columns 1-3, 4th-6th tiles row 2 columns 1-3, 7th centered on row 3');
-    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
+    ok(t3.length === 8 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 8 tiles, same size as others ' + JSON.stringify(t3));
+    ok(t3[0].cy === tiles[0].cy && t3[1].cy === tiles[0].cy && t3[2].cy === tiles[0].cy && t3[0].cx === tiles[0].cx && t3[1].cx === tiles[1].cx && t3[2].cx === tiles[2].cx && t3[3].cx === tiles[0].cx && t3[3].cy === tiles[3].cy && t3[4].cx === tiles[1].cx && t3[4].cy === tiles[3].cy && t3[5].cx === tiles[2].cx && t3[5].cy === tiles[3].cy && t3[6].cx === tiles[0].cx && t3[6].cy === tiles[6].cy && t3[7].cx === tiles[1].cx && t3[7].cy === tiles[6].cy, tag + ' page3: first row columns 1-3, 4th-6th tiles row 2 columns 1-3, 7th/8th on row 3 columns 1-2');
+    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう,まぜまぜ' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible(), tag + ' page3 ▶ hidden, ◀ shown, speaks');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
@@ -174,7 +174,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 26; i++) {
       await tapTile(p, LAB[i]); await sleep(i === 8 ? 500 : 380);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
@@ -1039,7 +1039,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 23 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (23 rows)');
+      ok(await p.locator('.st-row.zero').count() === 24 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (24 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2263,10 +2263,126 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 
 
+  /* ---------- まぜまぜラボ ---------- */
+  T('mix', async (br) => {
+    const vp = { width: 360, height: 740 };
+    const p = await newPage(br, vp, { deny: true });
+    const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const MX = () => p.evaluate(() => ({ phase: __mx.phase, a: __mx.a, b: __mx.b, found: Object.keys(__mx.found).length, all: __mx.all, hint: __mx.hintShown, hintT: __mx.hintT, hids: __mx.hintIds.length, nt: __mx.t.length, na: __mx.anims.length, inPot: document.querySelector('#mx-in').children.length, res: !document.querySelector('#mx-res').hidden, cap: document.querySelector('#mx-cap').textContent, isNew: !document.querySelector('#mx-new').hidden, src: document.querySelector('#mx-res-img').getAttribute('src'), imgOk: document.querySelector('#mx-res-img').complete && document.querySelector('#mx-res-img').naturalWidth > 0, fx: document.querySelector('#fx-mix').children.length, hintCls: document.querySelectorAll('.mx-b.hint').length }));
+    const tap = id => p.click('.mx-b[data-id="' + id + '"]');
+    const word = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    const EXP = [
+      ['hi', 'hi', 'ohisama', 'おひさま'], ['hi', 'mizu', 'yuge', 'ゆげ'], ['hi', 'tsuchi', 'osara', 'おさら'], ['hi', 'kaze', 'kikyu', 'ききゅう'], ['hi', 'tane', 'popcorn', 'ぽっぷこーん'], ['hi', 'yuki', 'mizutamari', 'みずたまり'],
+      ['mizu', 'mizu', 'umi', 'うみ'], ['mizu', 'tsuchi', 'doro', 'どろ'], ['mizu', 'kaze', 'nami', 'なみ'], ['mizu', 'tane', 'me', 'め'], ['mizu', 'yuki', 'koori', 'こおり'],
+      ['tsuchi', 'tsuchi', 'yama', 'やま'], ['tsuchi', 'kaze', 'suna', 'すな'], ['tsuchi', 'tane', 'hana', 'はな'], ['tsuchi', 'yuki', 'yukiyama', 'ゆきやま'],
+      ['kaze', 'kaze', 'fusen', 'ふうせん'], ['kaze', 'tane', 'tanpopo', 'たんぽぽ'], ['kaze', 'yuki', 'yukinohana', 'ゆきのはな'],
+      ['tane', 'tane', 'ki', 'き'], ['tane', 'yuki', 'yukiusagi', 'ゆきうさぎ'], ['yuki', 'yuki', 'yukidaruma', 'ゆきだるま']];
+    await tapTile(p, 'まぜまぜ'); await sleep(500);
+    ok(await p.locator('#stage-mix').isVisible() && await p.locator('#hm-p2').isHidden(), 'mix: tile on page 3 opens まぜまぜ');
+    ok((await says(p)).some(x => x.t === 'まぜまぜ！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), 'mix: speaks まぜまぜ！, shared 🏠, no adult button');
+    const tb = await p.evaluate(() => [...document.querySelectorAll('.mx-b')].map(b => { const r = b.getBoundingClientRect(), i = b.querySelector('img'); return { id: b.dataset.id, w: r.width, h: r.height, l: r.left, r: r.right, b: r.bottom, ok: i.complete && i.naturalWidth > 0 && i.getAttribute('width') === '192' }; }));
+    ok(tb.length === 6 && tb.map(t => t.id).join() === 'hi,mizu,tsuchi,kaze,tane,yuki' && tb.every(t => t.w >= 80 && t.h >= 80 && t.l >= 0 && t.r <= 360 && t.b <= 740 && t.ok), 'mix: 6 ingredient buttons, >=80px, inside 360px, images loaded ' + JSON.stringify(tb.map(t => [Math.round(t.w), Math.round(t.h)])));
+    ok(await p.evaluate(() => document.querySelector('#mx-count').textContent) === 'みつけた 0 / 21', 'mix: counter starts at 0 / 21');
+    await p.screenshot({ path: SP + '/mix-a.png' });
+    // hint: with one ingredient in the pot and no touching for ~6s, a glow appears
+    await tap('hi'); await sleep(600);
+    let m = await MX();
+    ok(m.phase === 'one' && m.a === 0 && m.inPot === 1, 'mix: first tap puts one ingredient in the pot ' + JSON.stringify([m.phase, m.inPot]));
+    ok((await says(p)).some(x => x.t === 'ひ'), 'mix: speaks the ingredient name');
+    await p.screenshot({ path: SP + '/mix-b.png' });
+    ok(await until(async () => (await MX()).hint >= 1, 8500), 'mix: ~6s without touching -> hint glow on an undiscovered ingredient');
+    await clearSays(p);
+    // second tap (same ingredient is fine) -> mixing, taps during mixing are ignored
+    await tap('hi'); await sleep(100);
+    m = await MX();
+    ok(m.phase === 'mixing', 'mix: second tap starts mixing');
+    await sleep(500);
+    for (let k = 0; k < 8; k++) await tap(k % 2 ? 'mizu' : 'yuki');
+    ok(await until(async () => (await MX()).phase === 'result', 3000), 'mix: result appears');
+    m = await MX();
+    ok(m.cap === 'おひさま' && /assets\/mix\/ohisama\.webp$/.test(m.src) && m.imgOk && m.res && m.isNew && m.found === 1 && m.inPot === 0, 'mix: ひ+ひ = おひさま, image shown, はっけん badge, counter 1 ' + JSON.stringify([m.cap, m.src, m.found]));
+    ok((await word()) === 'おひさま', 'mix: bigword shows おひさま');
+    ok((await says(p)).some(x => x.t === 'おひさま！ はっけん！'), 'mix: speaks the name (hiragana) with はっけん！');
+    ok(await p.evaluate(() => document.querySelector('#mx-count').textContent) === 'みつけた 1 / 21', 'mix: counter 1 / 21');
+    await sleep(300);
+    await p.screenshot({ path: SP + '/mix-c.png' });
+    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth && document.querySelector('#stage-mix').scrollWidth <= document.querySelector('#stage-mix').clientWidth), 'mix: no horizontal scroll at 360px');
+    // spam during mixing did not break: still exactly one result and the pot is empty
+    ok(m.phase === 'result', 'mix: taps while mixing were ignored');
+    // tapping an ingredient while the result is shown clears it and starts a new one
+    await tap('kaze'); await sleep(450);
+    m = await MX();
+    ok(m.phase === 'one' && m.a === 3 && m.inPot === 1, 'mix: tapping during the result clears it and starts a new mix ' + JSON.stringify([m.phase, m.a, m.inPot]));
+    await sleep(1000);
+    ok(!(await MX()).res, 'mix: old result hidden after a new tap');
+    // tap the pot area to empty it
+    await p.mouse.click(180, 300); await sleep(100);
+    m = await MX();
+    ok(m.phase === 'idle' && m.inPot === 0 && m.a === -1, 'mix: tapping the pot empties it');
+    // auto clear
+    await tap('tane'); await sleep(450); await tap('tane');
+    ok(await until(async () => (await MX()).phase === 'result', 3000), 'mix: たね+たね result');
+    ok(await until(async () => (await MX()).phase === 'idle', 5000), 'mix: result clears by itself and the pot is empty again');
+    ok(await until(async () => !(await MX()).res, 1000) && (await MX()).inPot === 0, 'mix: after auto clear the result is hidden');
+    await sleep(400);
+    // every combination returns its result, in either order
+    let bad = [];
+    for (let i = 0; i < EXP.length; i++) {
+      const [a, b, id, name] = EXP[i];
+      const [x, y] = i % 2 ? [b, a] : [a, b];
+      await tap(x); await sleep(60); await tap(y);
+      const got = await until(async () => (await MX()).phase === 'result' && (await MX()).cap === name, 4000);
+      const r = await MX();
+      if (!got || !new RegExp('assets/mix/' + id + '\\.webp$').test(r.src) || !r.imgOk) bad.push([a, b, r.cap, r.src]);
+      if (i === 10) await p.screenshot({ path: SP + '/mix-d.png' });
+    }
+    ok(bad.length === 0, 'mix: all 21 combinations (alternating order) return the expected result ' + JSON.stringify(bad));
+    m = await MX();
+    ok(m.found === 21 && m.all === true, 'mix: 21 discovered, all flag set ' + JSON.stringify([m.found, m.all]));
+    const sv = await p.evaluate(() => { try { return JSON.parse(localStorage.getItem('ponpon.mix.v1')); } catch (e) { return null; } });
+    ok(sv && sv.f.length === 21 && sv.all === true, 'mix: discoveries saved to localStorage');
+    ok(await p.evaluate(() => document.querySelector('#mx-count').textContent) === 'みつけた 21 / 21', 'mix: counter 21 / 21');
+    // 21st: celebration once, after the result clears
+    ok(await until(async () => (await says(p)).some(x => x.t === 'ぜんぶ はっけん！'), 6000), 'mix: ぜんぶ はっけん！ is spoken');
+    ok(await until(async () => (await word()) === 'ぜんぶ はっけん！', 1500) || (await says(p)).filter(x => x.t === 'ぜんぶ はっけん！').length === 1, 'mix: ぜんぶ はっけん！ shown big');
+    // a repeat is not new
+    await tap('mizu'); await sleep(60); await tap('hi');
+    ok(await until(async () => (await MX()).phase === 'result', 3000), 'mix: みず+ひ (reverse order) gives a result');
+    m = await MX();
+    ok(m.cap === 'ゆげ' && !m.isNew && m.found === 21, 'mix: reverse order gives ゆげ, no はっけん badge on a repeat');
+    await sleep(5000);
+    ok((await says(p)).filter(x => x.t === 'ぜんぶ はっけん！').length === 1, 'mix: ぜんぶ はっけん！ only once');
+    ok(await until(async () => (await MX()).phase === 'idle', 4000), 'mix: back to idle');
+    // everything found: no more hints
+    const h0 = (await MX()).hint; await sleep(6600);
+    ok((await MX()).hint === h0, 'mix: no hints once everything is discovered');
+    // landscape
+    await p.setViewportSize({ width: 740, height: 360 }); await sleep(500);
+    const ls = await p.evaluate(() => ({ b: [...document.querySelectorAll('.mx-b')].map(b => { const r = b.getBoundingClientRect(); return r.width >= 80 && r.height >= 80 && r.right <= innerWidth && r.bottom <= innerHeight + 1; }), hs: document.documentElement.scrollWidth > innerWidth, pot: document.querySelector('#mx-pot').getBoundingClientRect().height }));
+    ok(ls.b.length === 6 && ls.b.every(Boolean) && !ls.hs && ls.pot > 60, 'mix: landscape 740x360 buttons >=80px, no hscroll, pot visible ' + JSON.stringify([ls.hs, Math.round(ls.pot)]));
+    await p.screenshot({ path: SP + '/mix-land.png' });
+    await p.setViewportSize(vp); await sleep(400);
+    // leave cleans everything
+    await tap('yuki'); await sleep(450);
+    await p.click('#homebtn'); await sleep(150);
+    m = await MX();
+    ok(m.phase === 'idle' && m.hintT === 0 && m.hids === 0 && m.nt === 0 && m.na === 0 && m.inPot === 0 && m.fx === 0 && m.hintCls === 0 && !m.res, 'mix: leaving clears timers, animations and state ' + JSON.stringify(m));
+    ok(await p.locator('#hm-p2').isVisible() && await p.locator('#stage-mix').isHidden(), 'mix: 🏠 returns to page 3');
+    await sleep(6800);
+    m = await MX();
+    ok(m.hint === 0 && m.hintCls === 0 && m.nt === 0 && m.phase === 'idle', 'mix: nothing fires after leaving');
+    // re-enter keeps the discoveries
+    await tapTile(p, 'まぜまぜ'); await sleep(300);
+    ok(await p.evaluate(() => document.querySelector('#mx-count').textContent) === 'みつけた 21 / 21' && (await MX()).phase === 'idle', 'mix: re-enter starts fresh but keeps discoveries');
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0, 'mix: no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;

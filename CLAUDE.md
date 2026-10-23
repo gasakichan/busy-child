@@ -24,8 +24,8 @@ E2E はブロックごとに別プロセス・別 browser で独立に走る（`
 - ホームは 3×3 のページ式。タイル定義は `TD`（アイコン・名前・色・読み上げ）、ページ割りは `HPAGES`（あそぶ／まなぶ／うごかす）。ページを増やすときはマークアップの `#hm-p*` とドット、`hmEls` も増やす。
 - 共通ヘルパー: `say()`（日本語の読み上げ）、`sayEn()`（英語。カタカナにフォールバックする）、`bigWord()`（話した言葉を大きく表示）、`tone()`（効果音）、`holdButton()`（長押しボタン）。
 - 大人用の設定はホームの ⚙️（1.5 秒長押し）の `openSettings()` に集約。ゲーム画面には大人用ボタンを置かない。
-- localStorage: `ponpon.settings.v1` / `ponpon.family.v1` / `ponpon.stickers.v1` / `ponpon.stats.v1`。必ず try/catch で囲む。音なし・声なしは保存しない。
-- イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）、`assets/stk/`（シールちょうのシール、`STK_IMG`。白フチ込み 256px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
+- localStorage: `ponpon.settings.v1` / `ponpon.family.v1` / `ponpon.stickers.v1` / `ponpon.stats.v1` / `ponpon.mix.v1`（まぜまぜの はっけんずみ）。必ず try/catch で囲む。音なし・声なしは保存しない。
+- イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）、`assets/mix/`（まぜまぜの もと6つ＋できもの21、192px。マゼンタ背景のシートから `python3 tools/make-mix.py 出力dir シート1 シート2 シート3` で切り出し）、`assets/stk/`（シールちょうのシール、`STK_IMG`。白フチ込み 256px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
 - カメラ検出（おみせやさん）は `/* camdet:begin */`〜`/* camdet:end */` の純粋関数。単体テストはこの範囲を抜き出して実行する。
 
 ## 守ること
