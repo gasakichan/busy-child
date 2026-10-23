@@ -7443,7 +7443,7 @@
   var SN_COLS = [
     { say: 'きいろの すな', hex: '#F6D168' }, { say: 'ぴんくの すな', hex: '#FF9EC4' }, { say: 'みどりの すな', hex: '#8EDB7C' },
     { say: 'おれんじの すな', hex: '#FFA95C' }, { say: 'むらさきの すな', hex: '#B58CF0' }, { say: 'しろの すな', hex: '#FBF6EC' }, { say: 'あかの すな', hex: '#F0605A' }];
-  var SN = { cell: 3.5, maxCells: 42000, hz: 120, maxSteps: 4, amp: 85 * Math.PI / 180, period: 4, minEmit: 0.5, disp: 5, grav: 900, out: 140, maxParts: 400, rate: { sand: 3, water: 4 }, sayGap: 700 };
+  var SN = { cell: 3.5, maxCells: 42000, hz: 60, maxSteps: 4, tilt: 15 * Math.PI / 180, period: 5.5, minEmit: 0.5, disp: 8, grav: 450, out: 90, maxParts: 400, rate: { sand: 4, water: 6 }, sayGap: 700 };
   function snPal(hex, mul) {
     var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
     return mul.map(function (m) { return ((255 << 24) | ((Math.min(255, b * m) | 0) << 16) | ((Math.min(255, g * m) | 0) << 8) | (Math.min(255, r * m) | 0)) >>> 0; });
@@ -7453,7 +7453,7 @@
   var SN_PAL = SN_COLS.map(function (c) { return snPal(c.hex, SN_NZ.concat(SN_NZ.map(function (k) { return k * 0.78; }))); });
   var SN_WATER = snPal('#4FAEF5', SN_NZ).concat(snPal('#A6DEFF', [1]));
   var sn = { on: false, raf: 0, last: 0, simT: 0, acc: 0, W: 0, H: 0, dpr: 1, cs: 3.5, gw: 0, gh: 0, ox: 0, oy: 0, t: null, c: null, st: null, stamp: 0, flip: false,
-    img: null, buf: null, off: null, offCtx: null, geo: null, ch: { tx: 0, ty: 0, dx: 0, dy: 1, nx: 1, ny: 0, vx: 0, vy: 0 },
+    img: null, buf: null, off: null, offCtx: null, geo: null, ch: { px: 0, tx: 0, ty: 0, dx: 0, dy: 1, nx: 1, ny: 0, vx: 0, vy: 0 },
     hold: { sand: 0, water: 0 }, until: { sand: 0, water: 0 }, emitted: { sand: false, water: false }, lastSnd: { sand: 0, water: 0 }, ci: 0, emitCi: 0, parts: [],
     sandN: 0, waterN: 0, colN: [0, 0, 0, 0, 0, 0, 0], drain: 0, drainT: 0, open: 0, lastSay: -1e9, ang: 0, frames: 0 };
   /* ゆか と かべ と しょうがいぶつ の かたち（ぜんぶ はこの おおきさに たいする ひりつ。px） */
@@ -7462,7 +7462,7 @@
     var len = Math.min(0.40 * Wg, 0.20 * Hg / si), th = Math.max(2.4 * cs, 0.03 * Wg);
     var cupD = 0.13 * Hg, cupW = Math.min(0.26 * Wg, 2.6 * cupD), cx = 0.5 * Wg, cy = 0.74 * Hg;
     var lowL = { x: 0.47 * Wg, y: 0.47 * Hg }, lowR = { x: 0.53 * Wg, y: 0.67 * Hg };
-    var gap = Math.max(22, Math.min(40, 0.06 * Wg)), pl = Math.max(0.19 * Hg, 40);
+    var gap = Math.max(22, Math.min(40, 0.06 * Wg)), pl = Math.max(0.09 * Hg, 34);
     return {
       Wg: Wg, Hg: Hg, th: th, wallPx: Math.max(4 * cs, 0.045 * Wg), floorPx: Math.max(3 * cs, 0.028 * Hg),
       segs: [
@@ -7471,7 +7471,7 @@
         { x1: cx - cupW / 2, y1: cy, x2: cx - cupW / 2, y2: cy + cupD, col: '#FFB59E' },
         { x1: cx - cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy + cupD, col: '#FFB59E' },
         { x1: cx + cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy, col: '#FFB59E' }],
-      px: 0.5 * Wg, py: Math.max(0.045 * Hg, 14), L: pl, gap: gap, half: gap / 2 - 6
+      px: 0.5 * Wg, py: Math.max(0.045 * Hg, 14), L: pl, amp: Math.max(0, 0.5 * Wg - Math.max(4 * cs, 0.045 * Wg) - gap / 2 - 12), gap: gap, half: gap / 2 - 6
     };
   }
   function snSegDist(px, py, x1, y1, x2, y2) {
@@ -7518,12 +7518,13 @@
     sn.parts.length = 0; sn.drain = 0; sn.drainT = 0; sn.open = 0; sn.sandN = sn.waterN = 0; sn.colN = [0, 0, 0, 0, 0, 0, 0]; sn.lastSay = -1e9;
     snBtnColor(); snBtnSand.classList.remove('on'); snBtnWater.classList.remove('on');
   }
-  /* ディスペンサー: しじく から したむき 2ほんのバー。ふれはば ±85°（せいげんは）。ch に さきっぽ と むき と せんそく を いれる */
+  /* ディスペンサー: うえの レールを ひだりみぎに スライド（かべちかくまで）。うごく ほうへ すこし かたむく（±15°）。ch に さきっぽ と むき と そくど を いれる */
   function snChute(tm) {
-    var g = sn.geo, w = 2 * Math.PI / SN.period, a = SN.amp * Math.sin(w * tm), da = SN.amp * w * Math.cos(w * tm), ch = sn.ch;
+    var g = sn.geo, w = 2 * Math.PI / SN.period, ch = sn.ch, a = SN.tilt * Math.cos(w * tm);
     sn.ang = a;
+    ch.px = g.px + g.amp * Math.sin(w * tm);
     ch.dx = Math.sin(a); ch.dy = Math.cos(a); ch.nx = Math.cos(a); ch.ny = -Math.sin(a);
-    ch.tx = g.px + ch.dx * g.L; ch.ty = g.py + ch.dy * g.L; ch.vx = ch.nx * g.L * da; ch.vy = ch.ny * g.L * da;
+    ch.tx = ch.px + ch.dx * g.L; ch.ty = g.py + ch.dy * g.L; ch.vx = g.amp * w * Math.cos(w * tm); ch.vy = 0;
     return ch;
   }
   function snActive(k) { return !!sn.hold[k] || sn.simT < sn.until[k]; }
@@ -7665,8 +7666,9 @@
       });
     }
     /* ディスペンサー */
-    var ch = sn.ch, px = g.px, py = g.py, gp = g.gap / 2;
-    snPlank(ctx, px - 9, -4, 18, py + 4); ctx.strokeStyle = SN_INK; ctx.lineWidth = 3; ctx.strokeRect(px - 9, -4, 18, py + 4);
+    var ch = sn.ch, px = ch.px, py = g.py, gp = g.gap / 2;
+    snPlank(ctx, wp, py - 7, Wg - 2 * wp, 14); ctx.strokeStyle = SN_INK; ctx.lineWidth = 3; ctx.strokeRect(wp, py - 7, Wg - 2 * wp, 14);
+    snPlank(ctx, px - 20, py - 12, 40, 24); ctx.strokeRect(px - 20, py - 12, 40, 24);
     [-1, 1].forEach(function (sd) {
       var sx = px + ch.nx * sd * gp, sy = py + ch.ny * sd * gp;
       snLine(ctx, sx, sy, sx + ch.dx * g.L, sy + ch.dy * g.L, 15, SN_INK);
@@ -7677,8 +7679,8 @@
       snLine(ctx, sx, sy, sx + ch.dx * g.L, sy + ch.dy * g.L, 8, '#FF9CBB');
     });
     snLine(ctx, px - ch.nx * gp, py - ch.ny * gp, px + ch.nx * gp, py + ch.ny * gp, 8, '#FF9CBB');
-    ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI * 2); ctx.fillStyle = '#FFD66B'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = SN_INK; ctx.stroke();
-    ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fillStyle = SN_INK; ctx.fill();
+    ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI * 2); ctx.fillStyle = '#FFD66B'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = SN_INK; ctx.stroke();
+    ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fillStyle = SN_INK; ctx.fill();
     ctx.restore();
   }
   function snPress(kind, id) {

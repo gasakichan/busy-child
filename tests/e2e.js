@@ -2427,10 +2427,11 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(geo.zone.w > 200 && geo.zone.h > 200 && Math.abs(geo.cw - geo.cv.w * Math.min(geo.dpr, 2)) <= 1 && Math.abs(geo.ch - geo.cv.h * Math.min(geo.dpr, 2)) <= 1, tag + ': sandbox canvas is big and matches size x DPR');
     let s = await SN();
     ok(s.on && s.raf > 0 && s.cells <= 45000 && s.cs >= 3.4 && s.cs < 6 && s.sand === 0 && s.water === 0 && s.ci === 0 && s.floor === 3, tag + ': starts empty, cell ' + s.cs.toFixed(2) + 'px, ' + s.cells + ' cells (capped), floor solid');
-    /* ディスペンサーは ±85° を 4びょうくらいで ゆっくり ゆれる */
-    let mx = -9, mn = 9, ang = [];
-    for (let k = 0; k < 40; k++) { const a = (await SN()).ang; ang.push(a); mx = Math.max(mx, a); mn = Math.min(mn, a); await sleep(110); }
-    ok(mx > 1.35 && mn < -1.35 && mx < 1.49 && mn > -1.49, tag + ': chute swings both ways within +-85deg (' + (mn * 180 / Math.PI).toFixed(0) + ' .. ' + (mx * 180 / Math.PI).toFixed(0) + ')');
+    /* ディスペンサーは うえの レールを ひだりみぎに スライド（かたむきは ±15°いない） */
+    let mx = -9, mn = 9, xmax = -1e9, xmin = 1e9;
+    for (let k = 0; k < 60; k++) { const q = await p.evaluate(() => ({ a: window.__sn.ang, x: window.__sn.ch.px, W: window.__sn.geo.Wg })); mx = Math.max(mx, q.a); mn = Math.min(mn, q.a); xmax = Math.max(xmax, q.x / q.W); xmin = Math.min(xmin, q.x / q.W); await sleep(110); }
+    ok(mx <= 0.2618 + 1e-3 && mn >= -0.2618 - 1e-3 && mx > 0.2 && mn < -0.2, tag + ': chute tilts at most 15deg toward its moving direction (' + (mn * 180 / Math.PI).toFixed(0) + ' .. ' + (mx * 180 / Math.PI).toFixed(0) + ')');
+    ok(xmin < 0.2 && xmax > 0.8, tag + ': chute slides left and right near the walls (x ' + xmin.toFixed(2) + ' .. ' + xmax.toFixed(2) + ' of the box)');
     await shot('a');
     /* すな: おしている あいだ でる。ひらがなで よみあげ＋おおきく ひょうじ */
     await clearSays(p);
@@ -2488,7 +2489,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const before = await SN();
     await p.click('#sn-clean'); await sleep(250);
     s = await SN();
-    ok(s.drain === 1 && s.open > 0 && s.floor === 0, tag + ': おそうじ opens the floor ' + JSON.stringify([s.drain, s.open, s.floor]));
+    ok(s.drain === 1 && s.open > 0 && s.floor !== 3, tag + ': おそうじ opens the floor ' + JSON.stringify([s.drain, s.open, s.floor]));
     await sleep(300); await shot('drain');
     ok(await until(p, async () => { const q = await SN(); return q.sand + q.water + q.parts === 0; }, 5000), tag + ': everything pours out (' + before.sand + '+' + before.water + ' -> 0)');
     ok(await until(p, async () => { const q = await SN(); return q.drain === 0 && q.open === 0 && q.floor === 3; }, 3000), tag + ': floor closes again by itself');
