@@ -7247,10 +7247,15 @@
     };
     a.oncancel = function () { fly.remove(); };
   }
+  var MX_HOLD = 3000;
   function mxTap(i) {
     audio();
     if (mx.phase === 'mixing') return;
-    if (mx.phase === 'result') mxClear();
+    if (mx.phase === 'result') {
+      /* でた ものを 3びょうは のこす（れんだしても きえない） */
+      if (Date.now() - mx.resAt < MX_HOLD) { bounce(mxBtns[i], 6); return; }
+      mxClear();
+    }
     mxHintCancel();
     var b = mxBtns[i];
     bounce(b, 6);
@@ -7296,7 +7301,7 @@
     mxLater(function () { mxCap.style.visibility = ''; }, reduce ? 750 : 1300);
     mxNew.hidden = !first;
     mxRes.hidden = false;
-    mx.phase = 'result';
+    mx.phase = 'result'; mx.resAt = Date.now();
     mxAnim(mxRes.firstElementChild, [
       { transform: 'translateY(45%) scale(.2)', opacity: 0 },
       { transform: 'translateY(-4%) scale(1.14)', opacity: 1, offset: 0.6 },
@@ -7312,7 +7317,7 @@
       arpeggio();
       if (mxNum() >= MX_TABLE.length && !mx.all) { mx.all = true; mx.celebrate = true; mxSave(); }
     }
-    mxLater(mxClear, first ? 3600 : 2600);
+    mxLater(mxClear, first ? 3600 : MX_HOLD);
   }
   function mxCelebrate() {
     mx.celebrate = false;

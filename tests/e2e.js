@@ -2309,10 +2309,15 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth && document.querySelector('#stage-mix').scrollWidth <= document.querySelector('#stage-mix').clientWidth), 'mix: no horizontal scroll at 360px');
     // spam during mixing did not break: still exactly one result and the pot is empty
     ok(m.phase === 'result', 'mix: taps while mixing were ignored');
-    // tapping an ingredient while the result is shown clears it and starts a new one
+    // spamming ingredients during the first 3s keeps the result on screen
+    for (let k = 0; k < 5; k++) { await tap('kaze'); await sleep(100); }
+    m = await MX();
+    ok(m.phase === 'result' && m.res && m.cap === 'おひさま' && m.inPot === 0, 'mix: ingredient taps within 3s do not clear the result ' + JSON.stringify([m.phase, m.res, m.cap]));
+    // after the hold, tapping an ingredient clears it and starts a new one
+    await p.evaluate(() => { __mx.resAt = Date.now() - 3100; });
     await tap('kaze'); await sleep(450);
     m = await MX();
-    ok(m.phase === 'one' && m.a === 3 && m.inPot === 1, 'mix: tapping during the result clears it and starts a new mix ' + JSON.stringify([m.phase, m.a, m.inPot]));
+    ok(m.phase === 'one' && m.a === 3 && m.inPot === 1, 'mix: tapping after the hold clears the result and starts a new mix ' + JSON.stringify([m.phase, m.a, m.inPot]));
     await sleep(1000);
     ok(!(await MX()).res, 'mix: old result hidden after a new tap');
     // tap the pot area to empty it
@@ -2330,6 +2335,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     for (let i = 0; i < EXP.length; i++) {
       const [a, b, id, name] = EXP[i];
       const [x, y] = i % 2 ? [b, a] : [a, b];
+      await p.evaluate(() => { __mx.resAt = 0; });
       await tap(x); await sleep(60); await tap(y);
       const got = await until(async () => (await MX()).phase === 'result' && (await MX()).cap === name, 4000);
       const r = await MX();
