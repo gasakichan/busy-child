@@ -2309,12 +2309,15 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth && document.querySelector('#stage-mix').scrollWidth <= document.querySelector('#stage-mix').clientWidth), 'mix: no horizontal scroll at 360px');
     // spam during mixing did not break: still exactly one result and the pot is empty
     ok(m.phase === 'result', 'mix: taps while mixing were ignored');
-    // spamming ingredients during the first 3s keeps the result on screen
-    for (let k = 0; k < 5; k++) { await tap('kaze'); await sleep(100); }
+    // spamming ingredients during the first 1.5s keeps the result on screen
+    await p.mouse.click(180, 300); await sleep(500);   // fresh start (the first result may already be clearing)
+    await tap('tsuchi'); await sleep(450); await tap('tsuchi');
+    ok(await until(async () => (await MX()).phase === 'result', 3000), 'mix: つち+つち result');
+    for (let k = 0; k < 5; k++) { await p.click('.mx-b[data-id="kaze"]', { force: true }); await sleep(100); }
     m = await MX();
-    ok(m.phase === 'result' && m.res && m.cap === 'おひさま' && m.inPot === 0, 'mix: ingredient taps within 3s do not clear the result ' + JSON.stringify([m.phase, m.res, m.cap]));
+    ok(m.phase === 'result' && m.res && m.cap === 'やま' && m.inPot === 0, 'mix: ingredient taps within 1.5s do not clear the result ' + JSON.stringify([m.phase, m.res, m.cap]));
     // after the hold, tapping an ingredient clears it and starts a new one
-    await p.evaluate(() => { __mx.resAt = Date.now() - 3100; });
+    await p.evaluate(() => { __mx.resAt = Date.now() - 1600; });
     await tap('kaze'); await sleep(450);
     m = await MX();
     ok(m.phase === 'one' && m.a === 3 && m.inPot === 1, 'mix: tapping after the hold clears the result and starts a new mix ' + JSON.stringify([m.phase, m.a, m.inPot]));

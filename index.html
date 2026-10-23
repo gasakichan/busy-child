@@ -7247,12 +7247,12 @@
     };
     a.oncancel = function () { fly.remove(); };
   }
-  var MX_HOLD = 3000;
+  var MX_HOLD = 1500;
   function mxTap(i) {
     audio();
     if (mx.phase === 'mixing') return;
     if (mx.phase === 'result') {
-      /* でた ものを 3びょうは のこす（れんだしても きえない） */
+      /* でた ものを 1.5びょうは のこす（れんだしても きえない） */
       if (Date.now() - mx.resAt < MX_HOLD) { bounce(mxBtns[i], 6); return; }
       mxClear();
     }
@@ -7317,7 +7317,7 @@
       arpeggio();
       if (mxNum() >= MX_TABLE.length && !mx.all) { mx.all = true; mx.celebrate = true; mxSave(); }
     }
-    mxLater(mxClear, first ? 3600 : MX_HOLD);
+    mxLater(mxClear, first ? 3600 : 2600);
   }
   function mxCelebrate() {
     mx.celebrate = false;
