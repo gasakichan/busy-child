@@ -2430,7 +2430,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     /* ディスペンサーは うえの レールを ひだりみぎに スライド（かたむきは ±15°いない） */
     let mx = -9, mn = 9, xmax = -1e9, xmin = 1e9;
     for (let k = 0; k < 60; k++) { const q = await p.evaluate(() => ({ a: window.__sn.ang, x: window.__sn.ch.px, W: window.__sn.geo.Wg })); mx = Math.max(mx, q.a); mn = Math.min(mn, q.a); xmax = Math.max(xmax, q.x / q.W); xmin = Math.min(xmin, q.x / q.W); await sleep(110); }
-    ok(mx <= 0.2618 + 1e-3 && mn >= -0.2618 - 1e-3 && mx > 0.2 && mn < -0.2, tag + ': chute tilts at most 15deg toward its moving direction (' + (mn * 180 / Math.PI).toFixed(0) + ' .. ' + (mx * 180 / Math.PI).toFixed(0) + ')');
+    ok(mx === 0 && mn === 0, tag + ': chute never tilts, always points straight down (' + mn + ' .. ' + mx + ')');
     ok(xmin < 0.2 && xmax > 0.8, tag + ': chute slides left and right near the walls (x ' + xmin.toFixed(2) + ' .. ' + xmax.toFixed(2) + ' of the box)');
     await shot('a');
     /* すな: おしている あいだ でる。ひらがなで よみあげ＋おおきく ひょうじ */
@@ -2438,7 +2438,12 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const col0 = (await SN()).bg;
     const sb = await p.locator('#sn-sand').boundingBox();
     await p.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); await p.mouse.down(); await sleep(300);
-    ok((await says(p)).some(x => x.t === 'きいろの すな') && (await big()) === 'きいろの すな', tag + ': speaks きいろの すな and shows it big (' + await big() + ')');
+    ok((await says(p)).length === 0 && (await big()) === '', tag + ': pressing すな says nothing and shows no big word');
+    const em = [];
+    for (let k = 0; k < 12; k++) { em.push(await p.evaluate(() => { const q = window.__sn, m = q.em; return m && { ok: m.x0 >= m.cx - m.half - 0.01 && m.x1 <= m.cx + m.half + 0.01 && m.y0 >= m.ty && m.y1 <= m.ty + 4, cx: m.cx, ty: m.ty, x0: m.x0, x1: m.x1, y0: m.y0, y1: m.y1, hf: m.half }; })); await sleep(90); }
+    ok(em.every(m => m && m.ok), tag + ': grains start between the two bars, just below the tip ' + JSON.stringify(em.find(m => !m || !m.ok) || em[0]));
+    const fall = await p.evaluate(() => { const q = window.__sn; return q.parts.length ? Math.max.apply(null, q.parts.map(p => Math.abs(p.vx))) * q.cs : 0; });
+    ok(fall < 4, tag + ': grains drop straight down, no sideways speed from the cart (' + fall.toFixed(1) + 'px/s)');
     await sleep(1200);
     s = await SN();
     ok(s.hs > 0 && s.sand + s.parts > 100 && s.water === 0, tag + ': holding すな makes sand ' + s.sand + '+' + s.parts + ' in flight');
@@ -2453,11 +2458,10 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     s = await SN();
     ok(s.sand > n0 + 60, tag + ': a short tap still pours for about 0.5s (' + n0 + ' -> ' + s.sand + ')');
     ok(s.col[0] > 50 && s.col[1] > 20, tag + ': first grains yellow, second press pink (layers by colour) ' + JSON.stringify(s.col));
-    ok((await says(p)).some(x => x.t === 'ぴんくの すな'), tag + ': second press speaks ぴんくの すな');
     /* れんだは よみあげを まびく */
     await clearSays(p);
     for (let k = 0; k < 6; k++) { await p.mouse.down(); await p.mouse.up(); await sleep(60); }
-    ok((await says(p)).length <= 2, tag + ': rapid tapping thins out the speech (' + (await says(p)).length + ')');
+    ok((await says(p)).length === 0, tag + ': rapid tapping says nothing');
     await sleep(1200);
     ok((await SN()).ci === (1 + 1 + 6) % 7, tag + ': every press advances the colour (7 colours cycle)');
     /* そこまで ながれが とどく */
@@ -2468,7 +2472,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await clearSays(p);
     const wb = await p.locator('#sn-water').boundingBox();
     await p.mouse.move(wb.x + wb.width / 2, wb.y + wb.height / 2); await p.mouse.down(); await sleep(300);
-    ok((await says(p)).some(x => x.t === 'みず') && (await big()) === 'みず', tag + ': speaks みず and shows it big');
+    ok((await says(p)).length === 0 && (await big()) === '', tag + ': pressing みず says nothing and shows no big word');
     await sleep(2200);
     s = await SN();
     ok(s.hw > 0 && s.water + s.parts > 100, tag + ': holding みず makes water ' + s.water);

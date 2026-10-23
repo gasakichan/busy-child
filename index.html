@@ -7443,7 +7443,7 @@
   var SN_COLS = [
     { say: 'きいろの すな', hex: '#F6D168' }, { say: 'ぴんくの すな', hex: '#FF9EC4' }, { say: 'みどりの すな', hex: '#8EDB7C' },
     { say: 'おれんじの すな', hex: '#FFA95C' }, { say: 'むらさきの すな', hex: '#B58CF0' }, { say: 'しろの すな', hex: '#FBF6EC' }, { say: 'あかの すな', hex: '#F0605A' }];
-  var SN = { cell: 3.5, maxCells: 42000, hz: 60, maxSteps: 4, tilt: 15 * Math.PI / 180, period: 5.5, minEmit: 0.5, disp: 8, grav: 450, out: 90, maxParts: 400, rate: { sand: 4, water: 6 }, sayGap: 700 };
+  var SN = { cell: 3.5, maxCells: 42000, hz: 60, maxSteps: 4, period: 5.5, minEmit: 0.5, disp: 8, grav: 450, out: 90, maxParts: 400, rate: { sand: 4, water: 6 } };
   function snPal(hex, mul) {
     var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
     return mul.map(function (m) { return ((255 << 24) | ((Math.min(255, b * m) | 0) << 16) | ((Math.min(255, g * m) | 0) << 8) | (Math.min(255, r * m) | 0)) >>> 0; });
@@ -7455,7 +7455,7 @@
   var sn = { on: false, raf: 0, last: 0, simT: 0, acc: 0, W: 0, H: 0, dpr: 1, cs: 3.5, gw: 0, gh: 0, ox: 0, oy: 0, t: null, c: null, st: null, stamp: 0, flip: false,
     img: null, buf: null, off: null, offCtx: null, geo: null, ch: { px: 0, tx: 0, ty: 0, dx: 0, dy: 1, nx: 1, ny: 0, vx: 0, vy: 0 },
     hold: { sand: 0, water: 0 }, until: { sand: 0, water: 0 }, emitted: { sand: false, water: false }, lastSnd: { sand: 0, water: 0 }, ci: 0, emitCi: 0, parts: [],
-    sandN: 0, waterN: 0, colN: [0, 0, 0, 0, 0, 0, 0], drain: 0, drainT: 0, open: 0, lastSay: -1e9, ang: 0, frames: 0 };
+    sandN: 0, waterN: 0, colN: [0, 0, 0, 0, 0, 0, 0], drain: 0, drainT: 0, open: 0, ang: 0, em: null, frames: 0 };
   /* ゆか と かべ と しょうがいぶつ の かたち（ぜんぶ はこの おおきさに たいする ひりつ。px） */
   function snGeoMake() {
     var cs = sn.cs, Wg = sn.gw * cs, Hg = sn.gh * cs, rad = 32 * Math.PI / 180, co = Math.cos(rad), si = Math.sin(rad);
@@ -7515,16 +7515,16 @@
   function snBtnColor() { snBtnSand.style.setProperty('--c', SN_COLS[sn.ci].hex); }
   function snReset() {
     sn.simT = 0; sn.acc = 0; sn.last = 0; sn.ci = 0; sn.emitCi = 0; sn.hold.sand = sn.hold.water = 0; sn.until.sand = sn.until.water = 0;
-    sn.parts.length = 0; sn.drain = 0; sn.drainT = 0; sn.open = 0; sn.sandN = sn.waterN = 0; sn.colN = [0, 0, 0, 0, 0, 0, 0]; sn.lastSay = -1e9;
+    sn.parts.length = 0; sn.drain = 0; sn.drainT = 0; sn.open = 0; sn.sandN = sn.waterN = 0; sn.colN = [0, 0, 0, 0, 0, 0, 0];
     snBtnColor(); snBtnSand.classList.remove('on'); snBtnWater.classList.remove('on');
   }
-  /* ディスペンサー: うえの レールを ひだりみぎに スライド（かべちかくまで）。うごく ほうへ すこし かたむく（±15°）。ch に さきっぽ と むき と そくど を いれる */
+  /* ディスペンサー: うえの レールを ひだりみぎに スライド（かべちかくまで）。いつも まっすぐ した むき（かたむけない）。ch に さきっぽ と むき を いれる。えがく のと だす のは おなじ ch を つかう */
   function snChute(tm) {
-    var g = sn.geo, w = 2 * Math.PI / SN.period, ch = sn.ch, a = SN.tilt * Math.cos(w * tm);
-    sn.ang = a;
+    var g = sn.geo, w = 2 * Math.PI / SN.period, ch = sn.ch;
+    sn.ang = 0;
     ch.px = g.px + g.amp * Math.sin(w * tm);
-    ch.dx = Math.sin(a); ch.dy = Math.cos(a); ch.nx = Math.cos(a); ch.ny = -Math.sin(a);
-    ch.tx = ch.px + ch.dx * g.L; ch.ty = g.py + ch.dy * g.L; ch.vx = g.amp * w * Math.cos(w * tm); ch.vy = 0;
+    ch.dx = 0; ch.dy = 1; ch.nx = 1; ch.ny = 0;
+    ch.tx = ch.px + ch.dx * g.L; ch.ty = g.py + ch.dy * g.L; ch.vx = 0; ch.vy = 0;
     return ch;
   }
   function snActive(k) { return !!sn.hold[k] || sn.simT < sn.until[k]; }
@@ -7532,10 +7532,14 @@
   function snEmit(kind) {
     var ch = sn.ch, g = sn.geo, cs = sn.cs, gw = sn.gw, gh = sn.gh, ix = Math.floor(ch.tx / cs), iy = Math.floor(ch.ty / cs);
     if (ix < 0 || ix >= gw || iy < 0 || iy >= gh || sn.t[iy * gw + ix] !== 0) return;
+    var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
     for (var k = 0; k < SN.rate[kind] && sn.parts.length < SN.maxParts; k++) {
-      var u = (Math.random() * 2 - 1) * g.half;
-      sn.parts.push({ x: (ch.tx + ch.nx * u) / cs, y: (ch.ty + ch.ny * u) / cs, vx: (ch.dx * SN.out + ch.vx) / cs, vy: (ch.dy * SN.out + ch.vy) / cs, k: kind === 'sand' ? 1 : 2, c: kind === 'sand' ? sn.emitCi : 0 });
+      /* バーの あいだ（ch.px ± half）の ちょうど したから まっすぐ おとす（よこ そくどは のせない） */
+      var px = ch.px + (Math.random() * 2 - 1) * g.half, py = ch.ty + 9 + Math.random() * 2;   /* バーの さきっぽ（ふち こみ）の すぐ した */
+      x0 = Math.min(x0, px / cs); x1 = Math.max(x1, px / cs); y0 = Math.min(y0, py / cs); y1 = Math.max(y1, py / cs);
+      sn.parts.push({ x: px / cs, y: py / cs, vx: (Math.random() - 0.5) * 6 / cs, vy: SN.out / cs, k: kind === 'sand' ? 1 : 2, c: kind === 'sand' ? sn.emitCi : 0 });
     }
+    sn.em = { cx: ch.px / cs, ty: ch.ty / cs, half: g.half / cs, x0: x0, x1: x1, y0: y0, y1: y1 };
     sn.emitted[kind] = true;
   }
   function snDeposit(p) {
@@ -7648,6 +7652,9 @@
     var bg = ctx.createLinearGradient(0, 0, 0, Hg); bg.addColorStop(0, '#FFF8E6'); bg.addColorStop(1, '#FFE9BE');
     ctx.fillStyle = bg; ctx.fillRect(0, 0, Wg, Hg);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(sn.off, 0, 0, Wg, Hg);
+    /* とんでいる つぶも セルと おなじ おおきさ・いろで えがく（これが ないと バーの したから でて こない ように みえる） */
+    var cs = sn.cs;
+    sn.parts.forEach(function (p) { ctx.fillStyle = p.k === 1 ? SN_COLS[p.c].hex : '#4FAEF5'; ctx.fillRect(Math.floor(p.x) * cs, Math.floor(p.y) * cs, cs, cs); });
     g.segs.forEach(function (s) { snLine(ctx, s.x1, s.y1, s.x2, s.y2, g.th + 7, SN_INK); });
     g.segs.forEach(function (s) { snLine(ctx, s.x1, s.y1, s.x2, s.y2, g.th, s.col); });
     g.segs.forEach(function (s) { snLine(ctx, s.x1, s.y1, s.x2, s.y2, Math.max(2, g.th * 0.22), 'rgba(255,255,255,.55)'); });
@@ -7688,9 +7695,7 @@
     audio();
     sn.hold[kind] = id + 1; sn.until[kind] = Math.max(sn.until[kind], sn.simT + SN.minEmit);
     (kind === 'sand' ? snBtnSand : snBtnWater).classList.add('on');
-    var now = performance.now(), text, col;
-    if (kind === 'sand') { sn.emitCi = sn.ci; text = SN_COLS[sn.ci].say; col = SN_COLS[sn.ci].hex; } else { text = 'みず'; col = '#35A7FF'; }
-    if (now - sn.lastSay > SN.sayGap) { sn.lastSay = now; say(text); bigWord(text, col); }
+    if (kind === 'sand') sn.emitCi = sn.ci;   /* ことばは なし。ボタンの いろで つぎの いろが わかる */
   }
   /* はなしたら すなは つぎの いろへ（ボタンの いろも かわる） */
   function snRelease(kind) {
