@@ -7459,10 +7459,12 @@
   /* ゆか と かべ と しょうがいぶつ の かたち（ぜんぶ はこの おおきさに たいする ひりつ。px） */
   function snGeoMake() {
     var cs = sn.cs, Wg = sn.gw * cs, Hg = sn.gh * cs, rad = 32 * Math.PI / 180, co = Math.cos(rad), si = Math.sin(rad);
-    var len = Math.min(0.40 * Wg, 0.20 * Hg / si), th = Math.max(2.4 * cs, 0.03 * Wg);
-    var cupD = 0.13 * Hg, cupW = Math.min(0.26 * Wg, 2.6 * cupD), cx = 0.5 * Wg, cy = 0.74 * Hg;
-    var lowL = { x: 0.47 * Wg, y: 0.47 * Hg }, lowR = { x: 0.53 * Wg, y: 0.67 * Hg };
-    var gap = Math.max(22, Math.min(40, 0.06 * Wg)), pl = Math.max(0.09 * Hg, 34);
+    var th = Math.max(2.4 * cs, 0.03 * Wg), gap = Math.max(22, Math.min(40, 0.06 * Wg)), pl = Math.max(0.09 * Hg, 34);
+    /* レールは 🏠（したはし 68px）より した（ひだりはしに きても かさならない）。しょうがいぶつは シュートの さきっぽ より した の はんいに わりつける */
+    var py = Math.max(0.045 * Hg, 90), y0 = py + pl + 18, fy = function (f) { return y0 + (f - 0.27) / 0.73 * (Hg - y0); };
+    var cupD = 0.13 * Hg, cupW = Math.min(0.26 * Wg, 2.6 * cupD), cx = 0.5 * Wg, cy = fy(0.74);
+    var lowL = { x: 0.47 * Wg, y: fy(0.47) }, lowR = { x: 0.53 * Wg, y: fy(0.67) };
+    var len = Math.min(0.40 * Wg, 0.20 * Hg / si, (lowL.y - y0) / si);
     return {
       Wg: Wg, Hg: Hg, th: th, wallPx: Math.max(4 * cs, 0.045 * Wg), floorPx: Math.max(3 * cs, 0.028 * Hg),
       segs: [
@@ -7471,7 +7473,7 @@
         { x1: cx - cupW / 2, y1: cy, x2: cx - cupW / 2, y2: cy + cupD, col: '#FFB59E' },
         { x1: cx - cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy + cupD, col: '#FFB59E' },
         { x1: cx + cupW / 2, y1: cy + cupD, x2: cx + cupW / 2, y2: cy, col: '#FFB59E' }],
-      px: 0.5 * Wg, py: Math.max(0.045 * Hg, 14), L: pl, ext: Math.max(20, gap / 2 + 8), amp: Math.max(0, 0.5 * Wg - 84 - Math.max(20, gap / 2 + 8)),   /* 🏠（左上 12+56px）の したに もぐらない はんい */ gap: gap, half: gap / 2 - 6
+      px: 0.5 * Wg, py: py, L: pl, ext: Math.max(20, gap / 2 + 8), amp: Math.max(0, 0.5 * Wg - Math.max(4 * cs, 0.045 * Wg) - gap / 2 - 12), gap: gap, half: gap / 2 - 6
     };
   }
   function snSegDist(px, py, x1, y1, x2, y2) {
