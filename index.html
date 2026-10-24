@@ -7893,8 +7893,35 @@
         kiEll(c, x, y, rx * 0.42, ry * 0.44, '#FFF7E6'); kiEll(c, x, y, rx * 0.24, ry * 0.26, '#F0C47A');
       } }
   ];
+  /* ---- えの よみこみ（まだ よめて いないあいだは、したの てがき の えで ひょうじ） ---- */
+  ['ninjin', 'kyuri', 'banana', 'sausage', 'roll'].forEach(function (n, i) { KI_FOODS[i].art = n; });
+  var KI_ART = { started: false, food: {}, sec: {}, knife: null, pot: null, plate: null };
+  /* きりくちの たかさ: がぞうの アルファから はかった、よこの いち u（0..1 を 64 こに わけた）ごとの うえ・した（がぞうの たかさに たいする わりあい）。にんじんの はっぱの ぶぶんは くびれの たかさで うめてある */
+  var KI_PROF = {"ninjin":[[0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.312,0.284,0.202,0.15,0.114,0.09,0.075,0.066,0.062,0.061,0.063,0.069,0.073,0.08,0.086,0.094,0.102,0.11,0.119,0.127,0.136,0.144,0.153,0.163,0.171,0.18,0.19,0.199,0.208,0.217,0.227,0.236,0.245,0.255,0.265,0.274,0.284,0.295,0.305,0.316,0.326,0.337,0.348,0.36,0.372,0.386,0.4,0.419,0.444,0.487,0.557],[0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.731,0.761,0.842,0.892,0.927,0.949,0.966,0.976,0.983,0.986,0.989,0.989,0.983,0.983,0.982,0.977,0.974,0.971,0.966,0.964,0.957,0.954,0.948,0.943,0.939,0.933,0.928,0.924,0.916,0.911,0.904,0.899,0.891,0.885,0.878,0.872,0.864,0.857,0.849,0.841,0.833,0.823,0.814,0.806,0.796,0.783,0.77,0.753,0.729,0.69,0.621]],"kyuri":[[0.317,0.238,0.214,0.201,0.133,0.088,0.055,0.033,0.021,0.014,0.014,0.018,0.025,0.036,0.05,0.066,0.08,0.094,0.102,0.094,0.114,0.148,0.157,0.167,0.176,0.161,0.165,0.198,0.206,0.212,0.214,0.217,0.221,0.22,0.2,0.209,0.228,0.222,0.221,0.214,0.214,0.187,0.166,0.186,0.186,0.158,0.141,0.158,0.15,0.137,0.124,0.111,0.092,0.056,0.061,0.059,0.05,0.041,0.042,0.051,0.065,0.09,0.126,0.188,0.293],[0.393,0.474,0.502,0.577,0.646,0.694,0.727,0.752,0.77,0.785,0.799,0.812,0.824,0.834,0.845,0.854,0.865,0.875,0.884,0.901,0.917,0.907,0.914,0.92,0.927,0.931,0.938,0.945,0.945,0.957,0.984,0.98,0.959,0.959,0.959,0.959,0.957,0.952,0.952,0.945,0.961,0.968,0.938,0.931,0.924,0.917,0.912,0.922,0.9,0.882,0.87,0.858,0.845,0.831,0.815,0.797,0.785,0.783,0.747,0.716,0.685,0.647,0.597,0.523,0.414]],"banana":[[0.121,0.073,0.04,0.02,0.011,0.023,0.102,0.173,0.186,0.193,0.204,0.218,0.237,0.256,0.276,0.295,0.313,0.329,0.342,0.354,0.365,0.374,0.38,0.387,0.39,0.395,0.4,0.403,0.405,0.405,0.405,0.41,0.41,0.41,0.405,0.405,0.403,0.4,0.395,0.39,0.386,0.379,0.373,0.365,0.356,0.347,0.337,0.327,0.315,0.302,0.288,0.275,0.26,0.244,0.229,0.213,0.199,0.185,0.173,0.165,0.161,0.157,0.159,0.191,0.269],[0.169,0.219,0.293,0.522,0.607,0.667,0.713,0.75,0.782,0.811,0.835,0.855,0.874,0.89,0.905,0.917,0.929,0.939,0.947,0.955,0.961,0.967,0.971,0.976,0.981,0.981,0.986,0.988,0.99,0.99,0.99,0.99,0.99,0.99,0.986,0.986,0.981,0.981,0.976,0.971,0.967,0.963,0.956,0.95,0.941,0.933,0.923,0.912,0.902,0.888,0.875,0.859,0.841,0.822,0.801,0.779,0.752,0.724,0.692,0.655,0.614,0.565,0.506,0.431,0.343]],"sausage":[[0.41,0.224,0.199,0.217,0.182,0.114,0.071,0.044,0.026,0.017,0.014,0.019,0.022,0.03,0.038,0.047,0.056,0.063,0.069,0.078,0.084,0.09,0.097,0.104,0.106,0.111,0.118,0.118,0.124,0.125,0.125,0.127,0.132,0.132,0.132,0.13,0.125,0.125,0.122,0.118,0.118,0.111,0.105,0.104,0.097,0.09,0.084,0.076,0.069,0.062,0.056,0.046,0.038,0.03,0.028,0.028,0.033,0.047,0.071,0.112,0.176,0.222,0.201,0.224,0.41],[0.476,0.552,0.569,0.574,0.679,0.744,0.788,0.819,0.843,0.862,0.878,0.889,0.899,0.91,0.918,0.928,0.935,0.942,0.946,0.952,0.958,0.962,0.965,0.971,0.972,0.973,0.979,0.979,0.979,0.979,0.986,0.986,0.986,0.986,0.986,0.982,0.979,0.979,0.979,0.978,0.972,0.972,0.966,0.965,0.958,0.957,0.95,0.944,0.938,0.931,0.922,0.913,0.902,0.892,0.88,0.865,0.846,0.822,0.793,0.747,0.685,0.58,0.569,0.552,0.476]],"roll":[[0.478,0.296,0.189,0.124,0.08,0.049,0.03,0.017,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.011,0.015,0.015,0.015,0.015,0.015,0.015,0.015,0.015,0.015,0.015,0.015,0.015,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.025,0.03,0.038,0.059,0.094,0.154,0.254,0.411],[0.594,0.757,0.851,0.91,0.945,0.968,0.981,0.988,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.987,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.985,0.984,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.98,0.975,0.975,0.975,0.968,0.948,0.911,0.851,0.746,0.581]]};
+  function kiProfile(name) {
+    var t = KI_PROF[name][0], b = KI_PROF[name][1], n = t.length - 1;
+    return function (u) {
+      var f = Math.max(0, Math.min(1, u)) * n, i = Math.min(n - 1, Math.floor(f)), k = f - i;
+      return { top: t[i] + (t[i + 1] - t[i]) * k, bot: b[i] + (b[i + 1] - b[i]) * k };
+    };
+  }
+  function kiLoadArt() {
+    if (KI_ART.started) return; KI_ART.started = true;
+    function ld(src, cb) { var im = new Image(); im.onload = function () { try { cb(im); } catch (e) {} }; im.src = src; }
+    KI_FOODS.forEach(function (F) {
+      ld('assets/kiru/' + F.art + '.webp', function (im) { KI_ART.food[F.id] = { im: im, prof: kiProfile(F.art) }; });
+      ld('assets/kiru/sec-' + F.art + '.webp', function (im) { KI_ART.sec[F.id] = im; });
+    });
+    ld('assets/kiru/pot.webp', function (im) { KI_ART.pot = im; });
+    ld('assets/kiru/plate.webp', function (im) { KI_ART.plate = im; });
+    /* ほうちょう: ブレードの さきの いち（がぞうの ざひょう）と、ひだりした→みぎうえ の じくの ながさ。assets/kiru/knife.webp から はかった ちょくせつ の あたい */
+    ld('assets/kiru/knife.webp', function (im) { KI_ART.knife = { im: im, ax: 239 * im.width / 256, ay: 16 * im.width / 256, len: 287 * im.width / 256 }; });
+  }
+  function kiArt(F) { var f = KI_ART.food[F.id]; return f && KI_ART.sec[F.id] ? f : null; }
+  function kiCf(F, u) { return kiArt(F) ? 0 : F.cf(u); }
+  function kiFH(A, L, T) { var nat = L * A.im.height / A.im.width; return Math.min(T * 1.3, Math.max(nat, Math.min(T, nat * 1.6))); }
   var ki = { on: false, raf: 0, last: 0, frames: 0, t: 0, W: 0, H: 0, dpr: 1, lay: null, fi: 0, F: null, name: '', pieces: [], cuts: 0, phase: 'none', pt: 0,
-    slide: 0, knife: { x: 0, tx: 0, t: 9, d: 0 }, landed: [], done: 0, tm: [], pops: 0, hops: 0 };
+    slide: 0, knife: { x: 0, tx: 0, t: 9, d: 0 }, landed: [], done: 0, tm: [], pops: 0, hops: 0, FH: 100 };
   function kiLayout() {
     var W = ki.W, H = ki.H, land = W > H * 1.25, bw, bh, bx, by, T, s, kh;
     bw = land ? Math.min(W * 0.66 - 24, 520) : Math.min(W - 24, 560);
@@ -7904,7 +7931,7 @@
     bx = land ? (W * 0.66 - bw) / 2 : (W - bw) / 2;
     var byMin = 8 + kh + 14 - (bh - T) / 2;
     by = land ? Math.max(byMin, (H - bh) / 2) : Math.max(byMin, H * 0.2);
-    var L = bw * 0.8, cy = by + bh / 2 + 2;
+    var L = bw * 0.82, cy = by + bh / 2 + 2;
     var cw, cx, ccy;
     if (land) { var rx0 = bx + bw; cw = Math.min(W - rx0 - 60, 250); cx = rx0 + (W - rx0) / 2; ccy = Math.max(by + bh * 0.5, H * 0.55); }
     else { cw = Math.min(W * 0.62, 260); cx = W / 2; ccy = (by + bh + H) / 2 + 4; }
@@ -7959,7 +7986,10 @@
   }
   function kiSlotXY(j) {
     var l = ki.lay, sl = kiSlots(6)[j], w = l.cw;
+    var pg = ki.F.pot ? kiPot(l) : null, pt = !ki.F.pot ? kiPlate(l) : null;
+    if (pg) return { x: l.cx + sl[0] * w * 0.9, y: pg.ocy + 4 + sl[1] * w * 0.3, sc: 0.46, rot: 0 };
     if (ki.F.pot) return { x: l.cx + sl[0] * w, y: l.cy - w * 0.62 / 2 + w * 0.62 * 0.17 + 8 + sl[1] * w * 0.3, sc: 0.5, rot: 0 };
+    if (pt) return { x: l.cx + sl[0] * w * 0.9, y: pt.icy + sl[1] * w * 0.45, sc: Math.min(0.55, w / 420 * 1.3), rot: 0 };
     return { x: l.cx + sl[0] * w, y: l.cy + sl[1] * w * 0.55 - 6, sc: Math.min(0.55, w / 420 * 1.3), rot: 0 };
   }
   function kiUpdate(dt) {
@@ -8006,7 +8036,22 @@
     for (i = N; i >= 0; i--) { u = pts[i]; c.lineTo(u * L, (F.cf(u) + F.hf(u)) * T); }
     c.closePath();
   }
+  function kiDrawPieceImg(c, A, S, L, a, b, first, last, face) {
+    var im = A.im, iw = im.width, ih = im.height, FH = ki.FH, so = Math.max(3, FH * 0.04), pr;
+    c.drawImage(im, a * iw, 0, (b - a) * iw, ih, a * L, -FH / 2, (b - a) * L, FH);
+    c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+    if (!first) {
+      pr = A.prof(a + 0.004); c.beginPath(); c.moveTo(a * L, -FH / 2 + pr.top * FH); c.lineTo(a * L, -FH / 2 + pr.bot * FH);
+      c.lineWidth = so; c.strokeStyle = KI_INK; c.stroke();
+    }
+    if (face && !last) {
+      pr = A.prof(b - 0.004); var y0 = -FH / 2 + pr.top * FH, hh = (pr.bot - pr.top) * FH, rx = Math.max(7, hh * 0.15);
+      c.drawImage(S, b * L - rx, y0, rx * 2, hh);
+    }
+    c.restore();
+  }
   function kiDrawPiece(c, F, T, L, a, b, first, last, face) {
+    var A = kiArt(F); if (A) return kiDrawPieceImg(c, A, KI_ART.sec[F.id], L, a, b, first, last, face);
     var x0 = a * L, x1 = b * L, so = Math.max(4, T * 0.05), xs = first ? -0.4 * L : x0, xe = last ? 1.4 * L : x1;
     c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
     c.beginPath(); c.rect(xs, -T * 2, xe - xs, T * 4); c.clip();
@@ -8037,7 +8082,16 @@
     kiEll(c, l.bx + l.bw - 30, l.by + l.bh - 26, 11, 11, '#C99B62', KI_INK, 4);
     c.restore();
   }
+  function kiKnifeImg(c, l, k, K) {
+    var s = l.s, hover = l.fy - ki.FH / 2 - 14, down = l.fy + ki.FH * 0.45;
+    var d = k.t < 0.07 ? Math.pow(k.t / 0.07, 2) : k.t < 0.24 ? 1 - Math.pow((k.t - 0.07) / 0.17, 0.8) : 0;
+    d = Math.max(0, Math.min(1, d));
+    var bob = d === 0 && !reduce ? Math.sin(ki.t * 2.4) * 3 : 0, yb = hover + (down - hover) * d + bob;
+    var sc = 142 * s / K.len;
+    c.save(); c.translate(k.x, yb); c.rotate(Math.PI * 0.75); c.scale(sc, sc); c.drawImage(K.im, -K.ax, -K.ay); c.restore();
+  }
   function kiKnife(c, l, k) {
+    if (KI_ART.knife) return kiKnifeImg(c, l, k, KI_ART.knife);
     var s = l.s, bw = 60 * s, bh = 86 * s, hw = 24 * s, hh = 52 * s, hover = l.fy - l.T / 2 - 14, down = l.fy + l.T * 0.52;
     var d = k.t < 0.07 ? Math.pow(k.t / 0.07, 2) : k.t < 0.24 ? 1 - Math.pow((k.t - 0.07) / 0.17, 0.8) : 0;
     d = Math.max(0, Math.min(1, d));
@@ -8054,8 +8108,25 @@
     c.lineWidth = 5; c.strokeStyle = KI_INK; c.stroke();
     c.restore();
   }
+  function kiPot(l) {
+    var im = KI_ART.pot; if (!im) return null;
+    var pw = l.cw * 1.1, ph = pw * im.height / im.width, k = pw / im.width, x = l.cx - pw / 2, y = l.cy - ph / 2;
+    return { x: x, y: y, w: pw, h: ph, ocx: x + 128 * k, ocy: y + 60 * k, orx: 70 * k, ory: 29 * k };
+  }
+  function kiPlate(l) {
+    var im = KI_ART.plate; if (!im) return null;
+    var pw = l.cw * 1.04, ph = pw * im.height / im.width;
+    return { x: l.cx - pw / 2, y: l.cy - ph / 2, w: pw, h: ph, icy: l.cy - ph * 0.04 };
+  }
   function kiContainer(c, l, back) {
-    var F = ki.F, w = l.cw, cx = l.cx, cy = l.cy;
+    var F = ki.F, w = l.cw, cx = l.cx, cy = l.cy, g = F.pot ? kiPot(l) : kiPlate(l);
+    if (g) {
+      if (back) {
+        if (!F.pot) kiEll(c, cx, cy + g.h * 0.36, g.w * 0.5, g.h * 0.16, 'rgba(90,58,40,.16)');
+        c.drawImage(F.pot ? KI_ART.pot : KI_ART.plate, g.x, g.y, g.w, g.h);
+      }
+      return;
+    }
     c.save(); c.lineJoin = 'round';
     if (F.pot) {
       var h = w * 0.62, ry = h * 0.17, top = cy - h / 2 + ry;
@@ -8080,19 +8151,23 @@
   function kiDraw() {
     var c = kiCtx, l = ki.lay; if (!l) return;
     c.setTransform(ki.dpr, 0, 0, ki.dpr, 0, 0); c.clearRect(0, 0, ki.W, ki.H);
-    var F = ki.F, T = l.T, L = l.L, P = ki.pieces, i, p, n = P.length;
+    var F = ki.F, T = l.T, L = l.L, P = ki.pieces, i, p, n = P.length, A = kiArt(F);
+    if (A) ki.FH = kiFH(A, L, T);
     kiBoard(c, l);
     kiContainer(c, l, true);
     /* コンテナの なかの ざいりょう */
     var inFlight = [];
     c.save();
-    if (F.pot) {
+    var pg = F.pot ? kiPot(l) : null;
+    if (pg) {
+      c.beginPath(); c.rect(pg.ocx - pg.orx, 0, pg.orx * 2, pg.ocy); c.ellipse(pg.ocx, pg.ocy, pg.orx, pg.ory, 0, 0, Math.PI * 2); c.clip();
+    } else if (F.pot) {
       var h = l.cw * 0.62, ry = h * 0.17, top = l.cy - h / 2 + ry;
       c.beginPath(); c.rect(0, 0, ki.W, top + 2); c.ellipse(l.cx, top + 2, l.cw / 2 - 12, ry - 6, 0, 0, Math.PI * 2); c.clip();
     }
     for (i = 0; i < n; i++) {
       p = P[i]; if (!p.hop || !p.hop.done) continue;
-      var sl = p.hop.to; c.save(); c.translate(sl.x, sl.y); c.scale(sl.sc, sl.sc); c.translate(-(p.a + p.b) / 2 * L, -F.cf((p.a + p.b) / 2) * T);
+      var sl = p.hop.to; c.save(); c.translate(sl.x, sl.y); c.scale(sl.sc, sl.sc); c.translate(-(p.a + p.b) / 2 * L, -kiCf(F, (p.a + p.b) / 2) * T);
       kiDrawPiece(c, F, T, L, p.a, p.b, i === 0, i === n - 1, true); c.restore();
     }
     c.restore();
@@ -8109,7 +8184,7 @@
     inFlight.forEach(function (i) {
       p = P[i]; var h = p.hop, e = Math.min(1, h.t / (reduce ? 0.25 : 0.6)), ee = e * e * (3 - 2 * e), to = h.to;
       var x = h.x + (to.x - h.x) * ee, y = h.y + l.fy + (to.y - (h.y + l.fy)) * ee - Math.sin(Math.PI * e) * (reduce ? 20 : 90 * l.s), sc = 1 + (to.sc - 1) * ee;
-      var mid = (p.a + p.b) / 2; c.save(); c.translate(x, y); c.rotate(Math.sin(e * Math.PI) * 0.4); c.scale(sc, sc); c.translate(-mid * L, -F.cf(mid) * T);
+      var mid = (p.a + p.b) / 2; c.save(); c.translate(x, y); c.rotate(Math.sin(e * Math.PI) * 0.4); c.scale(sc, sc); c.translate(-mid * L, -kiCf(F, mid) * T);
       kiDrawPiece(c, F, T, L, p.a, p.b, i === 0, i === n - 1, i < n - 1); c.restore();
     });
     kiKnife(c, l, ki.knife);
@@ -8130,6 +8205,7 @@
   games.kiru = {
     el: kiStage,
     enter: function () {
+      kiLoadArt();
       ki.on = true; ki.W = 0; ki.lay = null; ki.done = 0; ki.pops = 0; ki.t = 0; ki.last = 0; ki.slide = 0; kiFx.innerHTML = '';
       kiSize();
       if (!ki.lay) { ki.W = 800; ki.H = 600; ki.dpr = 1; kiLayout(); ki.W = 0; }
@@ -8173,7 +8249,14 @@
     yubi: 'assets/ico/yubi.webp',
     koro: 'assets/ico/koro.webp',
     neko: 'assets/ico/neko.webp',
-    mix: 'assets/mix/mizu.webp'
+    mix: 'assets/ico/mix.webp',
+    drive: 'assets/ico/drive.webp',
+    piano: 'assets/ico/piano.webp',
+    pinball: 'assets/ico/pinball.webp',
+    voice: 'assets/ico/voice.webp',
+    nami: 'assets/ico/nami.webp',
+    suna: 'assets/ico/suna.webp',
+    kiru: 'assets/ico/kiru.webp'
   };
   var TD = {
     sky:   { ico: '🎈', lab: 'ふうせん',       c: '#9FDCFF', say: 'ふうせん！' },

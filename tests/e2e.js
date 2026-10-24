@@ -162,12 +162,13 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
-    ok(await p.evaluate(() => { const ims = [...document.querySelectorAll('.hm-page:not([hidden]) .tile .ico-img')]; return ims.length === 3 && ims.every(i => i.complete && i.naturalWidth > 0); }), tag + ' page3 koro + neko + まぜまぜ icon images (ドライブ falls back to the 🚗 emoji)');
+    await sleep(150);
+    ok(await icoChk(), tag + ' page3: every tile has a loaded image icon');
     const t1b = tiles[0];
     ok(t3.length === 9 && t3.every(t => t.ok && t.w === t1b.w && t.h === t1b.h && !t.clip), tag + ' page3: 9 tiles, same size as others ' + JSON.stringify(t3));
     ok(t3.every((t, k) => t.cx === tiles[k].cx && t.cy === tiles[k].cy), tag + ' page3: 3x3 grid in the same positions as page1');
-    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう,まぜまぜ,すなば' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
-    ok((await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[8].querySelector('.ico').textContent)) === '🏖️', tag + ' page3 すなば tile shows the 🏖️ emoji (no image icon yet)');
+    ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう,まぜまぜ,すなば', tag + ' page3 order');
+    ok(await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].every(t => { const i = t.querySelector('.ico-img'); return i && /assets\/ico\/\w+\.webp$/.test(i.getAttribute('src')); })), tag + ' page3 all tiles use assets/ico images');
     ok(await p.locator('#hm-next').isVisible() && await p.locator('#hm-prev').isVisible(), tag + ' page3: both arrows (not the last page)');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '3ページ' && (await p.evaluate(() => [...document.querySelectorAll('.hm-dot')].map(d => d.getAttribute('aria-label')).join())) === '1ページ,2ページ,3ページ,4ページ', tag + ' page3 dot current, dots labelled 1ページ..4ページ');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
@@ -183,6 +184,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
     ok(t4.length === 1 && t4[0].ok && t4[0].w === tiles[0].w && t4[0].h === tiles[0].h && t4[0].cx === tiles[1].cx && t4[0].cy === tiles[0].cy && !t4[0].clip, tag + ' page4: とんとん alone, centred in the top row (like the page1 2nd tile), same size ' + JSON.stringify(t4));
+    ok(await icoChk(), tag + ' page4 icon image loaded');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
     const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');

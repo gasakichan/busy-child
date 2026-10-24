@@ -1,5 +1,5 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v7';
+var CACHE = 'ponpon-v8';
 var FONTS = 'ponpon-fonts-v1';
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
   './assets/ani/buta.webp',
@@ -22,6 +22,27 @@ var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.sv
   './assets/ico/find.webp',
   './assets/ico/koro.webp',
   './assets/ico/neko.webp',
+  './assets/ico/drive.webp',
+  './assets/ico/piano.webp',
+  './assets/ico/pinball.webp',
+  './assets/ico/voice.webp',
+  './assets/ico/nami.webp',
+  './assets/ico/mix.webp',
+  './assets/ico/suna.webp',
+  './assets/ico/kiru.webp',
+  './assets/kiru/banana.webp',
+  './assets/kiru/knife.webp',
+  './assets/kiru/kyuri.webp',
+  './assets/kiru/ninjin.webp',
+  './assets/kiru/plate.webp',
+  './assets/kiru/pot.webp',
+  './assets/kiru/roll.webp',
+  './assets/kiru/sausage.webp',
+  './assets/kiru/sec-banana.webp',
+  './assets/kiru/sec-kyuri.webp',
+  './assets/kiru/sec-ninjin.webp',
+  './assets/kiru/sec-roll.webp',
+  './assets/kiru/sec-sausage.webp',
   './assets/ico/num.webp',
   './assets/ico/nurie.webp',
   './assets/ico/paint.webp',
