@@ -734,6 +734,16 @@
   }
   .phdisp span:empty::after { content: "・"; opacity: .25; }
   .phkeys { flex: 1; min-height: 0; padding: 6px 10px 12px; display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); place-items: center; }
+  .pk.z { grid-column: 2; }
+  @media (orientation: landscape) and (max-height: 520px) {
+    .phkeys { grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); padding: 4px 10px 8px; }
+    .pk.z { grid-column: auto; }
+    .phdisp span { height: clamp(52px, 13vh, 80px); }
+    .say2 { min-height: 28px; }
+    .phcall { flex-direction: row; flex-wrap: wrap; align-content: center; gap: 8px 24px; padding: 8px 12px 8px 76px; }
+    .phanimal { width: clamp(110px, 44vh, 220px); font-size: clamp(64px, 26vh, 130px); }
+    .phtext { min-height: 0; flex: 0 1 280px; }
+  }
   .pk {
     width: var(--kb, 80px); height: var(--kb, 80px); border: 0; border-radius: 50%; padding: 0;
     background: var(--c); color: var(--fg); font-size: calc(var(--kb, 80px) * .5); line-height: 1;
@@ -930,6 +940,15 @@
     .ck-face { width: min(52%, calc(100vh - 48px)); }
     .ck-face { width: min(52%, calc(100dvh - 48px)); }
     .ck-side { width: min(44%, 460px); }
+  }
+  @media (orientation: landscape) and (max-height: 520px) {
+    #stage-clock { padding: 8px 8px 8px 76px; gap: 16px; }
+    .ck-face { width: min(46%, calc(100dvh - 20px)); }
+    .ck-side { width: min(50%, 460px); gap: 6px; }
+    .ck-card { min-height: 0; padding: 4px 10px; }
+    .ck-emo { font-size: clamp(32px, 9vh, 48px); }
+    .ck-line { font-size: clamp(15px, 4.4vh, 22px); }
+    .ck-btns { gap: 8px; }
   }
 
   /* ゆびのおうち */
@@ -2988,7 +3007,7 @@
     b.type = 'button'; b.className = 'pk'; b.textContent = String(k);
     var nc = NUMCOL[(k + 9) % 10];
     b.style.setProperty('--c', nc[0]); b.style.setProperty('--fg', nc[1]);
-    if (k === 0) b.style.gridColumn = '2';
+    if (k === 0) b.classList.add('z');
     b.setAttribute('aria-label', PHN[k]);
     onTap(b, function () { phPress(k); });
     phKeys.appendChild(b);
@@ -2996,7 +3015,8 @@
   onTap($('#ph-hang'), function () { phHang(true); });
   function phSize() {
     var w = phKeys.clientWidth - 20, h = phKeys.clientHeight - 18;
-    var kb = Math.max(80, Math.min(150, Math.floor(Math.min(w / 3, h / 4)) - 10));
+    var cols = getComputedStyle(phKeys).gridTemplateColumns.split(' ').length, rows = cols > 3 ? 2 : 4;
+    var kb = Math.max(80, Math.min(150, Math.floor(Math.min(w / cols, h / rows)) - 10));
     phKeys.style.setProperty('--kb', kb + 'px');
   }
   games.phone = {
