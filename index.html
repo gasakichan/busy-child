@@ -112,8 +112,8 @@
   .hm-nav:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
   #hm-prev { grid-column: 1; justify-self: start; }
   #hm-next { grid-column: 3; justify-self: end; }
-  .hm-dots { grid-column: 2; display: flex; gap: 8px; }
-  .hm-dot { width: 52px; height: 52px; border: 0; padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
+  .hm-dots { grid-column: 2; display: flex; gap: 0; min-width: 0; }
+  .hm-dot { flex: 0 1 52px; min-width: 0; width: 52px; height: 52px; border: 0; padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
   .hm-dot::before { content: ""; width: 26px; height: 26px; border-radius: 50%; background: rgba(43, 58, 103, .22); box-shadow: inset 0 0 0 3px rgba(43, 58, 103, .25); }
   .hm-dot[aria-current="true"]::before { background: var(--grape, #7A5CFF); box-shadow: none; width: 32px; height: 32px; }
   @media (min-width: 700px) {
@@ -467,6 +467,8 @@
     .sn-b { height: auto; min-height: 100px; }
     .sn-clean { height: 84px; }
   }
+  #stage-kiru { background: #FFF3DA; }
+  #ki-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-launch {
     position: absolute; z-index: 5; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; padding: 0; border-radius: 50%;
@@ -1213,17 +1215,10 @@
 <div class="stages" id="stages">
   <section class="stage" id="home" aria-label="ホーム">
     <div class="hm-area" id="hm-area">
-      <div class="hm-page" id="hm-p0"></div>
-      <div class="hm-page" id="hm-p1" hidden></div>
-      <div class="hm-page" id="hm-p2" hidden></div>
     </div>
     <div class="hm-bar">
       <button class="hm-nav" id="hm-prev" type="button" aria-label="まえのページ" hidden>◀</button>
-      <div class="hm-dots">
-        <button class="hm-dot" type="button" aria-label="あそぶ" aria-current="true"></button>
-        <button class="hm-dot" type="button" aria-label="まなぶ"></button>
-        <button class="hm-dot" type="button" aria-label="うごかす"></button>
-      </div>
+      <div class="hm-dots" id="hm-dots"></div>
       <button class="hm-nav" id="hm-next" type="button" aria-label="つぎのページ">▶</button>
     </div>
   </section>
@@ -1482,6 +1477,11 @@
       <button class="sn-b" id="sn-water" type="button" aria-label="みず"><span class="ico">💧</span><span class="lab">みず</span></button>
       <button class="sn-clean" id="sn-clean" type="button" aria-label="おそうじ"><span class="ico">🧹</span><span class="lab">おそうじ</span></button>
     </div>
+  </section>
+
+  <section class="stage" id="stage-kiru" aria-label="とんとん" hidden>
+    <canvas id="ki-cv" aria-label="とんとん"></canvas>
+    <div class="fx" id="fx-kiru"></div>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -7800,6 +7800,356 @@
     resize: function () { if (sn.on) snSize(false); }
   };
 
+  /* ---------- とんとん（きる） ---------- */
+  var kiStage = $('#stage-kiru'), kiCv = $('#ki-cv'), kiCtx = kiCv.getContext('2d'), kiFx = $('#fx-kiru');
+  var KI_INK = '#5a3a28', KI_CUTS = 5, KI_MINW = 1 / 7;
+  function kiCap(u, e) { var m = Math.min(u, 1 - u); return m >= e ? 1 : Math.sqrt(Math.max(0, 1 - Math.pow(1 - m / e, 2))); }
+  function kiEll(c, x, y, rx, ry, fill, stroke, lw) {
+    c.beginPath(); c.ellipse(x, y, Math.max(0.1, rx), Math.max(0.1, ry), 0, 0, Math.PI * 2);
+    if (fill) { c.fillStyle = fill; c.fill(); }
+    if (stroke) { c.lineWidth = lw; c.strokeStyle = stroke; c.stroke(); }
+  }
+  function kiRR(c, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.arcTo(x + w, y, x + w, y + r, r); c.lineTo(x + w, y + h - r);
+    c.arcTo(x + w, y + h, x + w - r, y + h, r); c.lineTo(x + r, y + h); c.arcTo(x, y + h, x, y + h - r, r); c.lineTo(x, y + r); c.arcTo(x, y, x + r, y, r); c.closePath();
+  }
+  /* hf: はんぶんの たかさ / cf: ちゅうしんせんの たかさ（どちらも T の ばい）。u は 0..1 */
+  var KI_FOODS = [
+    { id: 'carrot', name: 'にんじん', col: '#E8761C', pot: true, T: 1,
+      hf: function (u) { return 0.5 * (1 - 0.78 * u) * kiCap(u, 0.05); }, cf: function () { return 0; },
+      body: '#FF9D4D', faceOut: '#FF9D4D',
+      extra: function (c, T, L, so) {
+        [[-0.02, -0.24, -0.55], [-0.04, 0.0, 0], [-0.02, 0.24, 0.55]].forEach(function (l) {
+          c.save(); c.translate(l[0] * L, l[1] * T); c.rotate(l[2]);
+          kiEll(c, -T * 0.2, 0, T * 0.24, T * 0.12, '#86D87A', KI_INK, so); c.restore();
+        });
+      },
+      decor: function (c, T, L) {
+        c.strokeStyle = '#E27B2A'; c.lineWidth = Math.max(2, T * 0.025); c.lineCap = 'round';
+        [[0.2, -0.3], [0.35, 0.22], [0.5, -0.2], [0.62, 0.15], [0.78, -0.08]].forEach(function (g) {
+          var hh = 0.5 * (1 - 0.78 * g[0]) * T; c.beginPath(); c.moveTo(g[0] * L, g[1] * hh * 2 - hh * 0.22); c.lineTo(g[0] * L + 8, g[1] * hh * 2 - hh * 0.22); c.stroke();
+        });
+        c.strokeStyle = 'rgba(255,255,255,.45)'; c.lineWidth = T * 0.07;
+        c.beginPath(); c.moveTo(0.03 * L, -T * 0.3); c.lineTo(0.8 * L, -T * 0.07); c.stroke();
+      },
+      face: function (c, x, y, rx, ry) { kiEll(c, x, y, rx * 0.5, ry * 0.5, '#FFE2BA'); kiEll(c, x, y, rx * 0.5, ry * 0.5, null, '#FFC184', 1.5); } },
+    { id: 'cucumber', name: 'きゅうり', col: '#2E9C4A', pot: true, T: 1,
+      hf: function (u) { return 0.45 * (1 + 0.03 * Math.sin(u * 62)) * kiCap(u, 0.07); }, cf: function () { return 0; },
+      body: '#74C96C', faceOut: '#5DB85F',
+      decor: function (c, T, L) {
+        c.fillStyle = '#4EA859';
+        for (var i = 0; i < 16; i++) { var u = 0.06 + i * 0.058, s = i % 2 ? 1 : -1; kiEll(c, u * L, s * T * (0.14 + 0.1 * ((i * 7) % 3) / 2), T * 0.028, T * 0.028, '#4EA859'); }
+        c.strokeStyle = 'rgba(255,255,255,.45)'; c.lineWidth = T * 0.07; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(0.06 * L, -T * 0.3); c.lineTo(0.94 * L, -T * 0.3); c.stroke();
+      },
+      face: function (c, x, y, rx, ry) {
+        kiEll(c, x, y, rx * 0.78, ry * 0.8, '#E5F6CC');
+        for (var i = 0; i < 6; i++) { var a = i * 1.05; kiEll(c, x + Math.cos(a) * rx * 0.4, y + Math.sin(a) * ry * 0.45, rx * 0.12, ry * 0.07, '#B7DE92'); }
+      } },
+    { id: 'banana', name: 'ばなな', col: '#D9A400', pot: false, T: 1,
+      hf: function (u) { return 0.36 * (0.78 + 0.3 * Math.sin(Math.PI * u)) * kiCap(u, 0.11); },
+      cf: function (u) { return 0.26 * (1 - Math.pow(2 * u - 1, 2)) - 0.13; },
+      body: '#FFE25E', faceOut: '#FFE25E',
+      extra: function (c, T, L, so) {
+        kiRR(c, -0.05 * L, -T * 0.24, 0.08 * L, T * 0.2, T * 0.05); c.fillStyle = '#B79B4A'; c.fill(); c.lineWidth = so; c.strokeStyle = KI_INK; c.stroke();
+      },
+      decor: function (c, T, L) {
+        c.strokeStyle = '#EDC13C'; c.lineWidth = T * 0.035; c.lineCap = 'round';
+        for (var s = -1; s <= 1; s += 2) { c.beginPath(); for (var i = 0; i <= 24; i++) { var u = 0.12 + 0.76 * i / 24, hh = 0.36 * (0.78 + 0.3 * Math.sin(Math.PI * u)); var y = (0.26 * (1 - Math.pow(2 * u - 1, 2)) - 0.13 + s * hh * 0.42) * T; i ? c.lineTo(u * L, y) : c.moveTo(u * L, y); } c.stroke(); }
+        c.fillStyle = '#7A5A2A'; c.fillRect(0.955 * L, -T, 0.1 * L, T * 2);
+        c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = T * 0.06;
+        c.beginPath(); for (var j = 0; j <= 20; j++) { var v = 0.1 + 0.8 * j / 20; var yy = (0.26 * (1 - Math.pow(2 * v - 1, 2)) - 0.13 - 0.36 * (0.78 + 0.3 * Math.sin(Math.PI * v)) * 0.62) * T; j ? c.lineTo(v * L, yy) : c.moveTo(v * L, yy); } c.stroke();
+      },
+      face: function (c, x, y, rx, ry) {
+        kiEll(c, x, y, rx * 0.8, ry * 0.82, '#FFF6D0');
+        [[-0.3, -0.3], [0.2, -0.4], [0, 0.05], [-0.25, 0.4], [0.3, 0.3]].forEach(function (d) { kiEll(c, x + d[0] * rx, y + d[1] * ry, rx * 0.08, ry * 0.05, '#B8914A'); });
+      } },
+    { id: 'sausage', name: 'そーせーじ', col: '#C9584A', pot: true, T: 1,
+      hf: function (u) { return 0.4 * kiCap(u, 0.15); }, cf: function () { return 0; },
+      body: '#EE8C7A', faceOut: '#EE8C7A',
+      decor: function (c, T, L) {
+        c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = T * 0.07; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(0.1 * L, -T * 0.22); c.lineTo(0.9 * L, -T * 0.22); c.stroke();
+        c.strokeStyle = '#D9705F'; c.lineWidth = T * 0.03;
+        c.beginPath(); c.moveTo(0.1 * L, T * 0.25); c.lineTo(0.9 * L, T * 0.25); c.stroke();
+      },
+      face: function (c, x, y, rx, ry) {
+        kiEll(c, x, y, rx * 0.8, ry * 0.82, '#FFC6B8');
+        [[-0.3, -0.3], [0.25, -0.35], [0.05, 0.1], [-0.2, 0.4], [0.3, 0.3]].forEach(function (d) { kiEll(c, x + d[0] * rx, y + d[1] * ry, rx * 0.1, ry * 0.06, '#EE9684'); });
+      } },
+    { id: 'roll', name: 'ろーるけーき', col: '#B26A2E', pot: false, T: 1,
+      hf: function (u) { return 0.5 * kiCap(u, 0.03); }, cf: function () { return 0; },
+      body: '#D9A261', faceOut: '#F3CE86',
+      decor: function (c, T, L) {
+        c.fillStyle = '#B97A45'; c.fillRect(0, -T * 0.55, L, T * 0.2);
+        c.fillStyle = '#FFF6E4';
+        for (var i = 0; i < 10; i++) kiEll(c, (0.07 + i * 0.095) * L, -T * 0.45, T * 0.06, T * 0.05, '#FFF6E4');
+        c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = T * 0.05; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(0.05 * L, T * 0.1); c.lineTo(0.95 * L, T * 0.1); c.stroke();
+      },
+      face: function (c, x, y, rx, ry) {
+        kiEll(c, x, y, rx * 0.82, ry * 0.84, '#FFF7E6'); kiEll(c, x, y, rx * 0.6, ry * 0.62, '#F0C47A');
+        kiEll(c, x, y, rx * 0.42, ry * 0.44, '#FFF7E6'); kiEll(c, x, y, rx * 0.24, ry * 0.26, '#F0C47A');
+      } }
+  ];
+  var ki = { on: false, raf: 0, last: 0, frames: 0, t: 0, W: 0, H: 0, dpr: 1, lay: null, fi: 0, F: null, name: '', pieces: [], cuts: 0, phase: 'none', pt: 0,
+    slide: 0, knife: { x: 0, tx: 0, t: 9, d: 0 }, landed: [], done: 0, tm: [], pops: 0, hops: 0 };
+  function kiLayout() {
+    var W = ki.W, H = ki.H, land = W > H * 1.25, bw, bh, bx, by, T, s, kh;
+    bw = land ? Math.min(W * 0.66 - 24, 520) : Math.min(W - 24, 560);
+    bh = Math.max(170, Math.min(bw * 0.56, H * (land ? 0.46 : 0.36)));
+    T = Math.max(108, Math.min(bh * 0.6, bh * 0.72));
+    s = Math.max(0.75, Math.min(1.25, bh / 188)); kh = 142 * s;
+    bx = land ? (W * 0.66 - bw) / 2 : (W - bw) / 2;
+    var byMin = 8 + kh + 14 - (bh - T) / 2;
+    by = land ? Math.max(byMin, (H - bh) / 2) : Math.max(byMin, H * 0.2);
+    var L = bw * 0.8, cy = by + bh / 2 + 2;
+    var cw, cx, ccy;
+    if (land) { var rx0 = bx + bw; cw = Math.min(W - rx0 - 60, 250); cx = rx0 + (W - rx0) / 2; ccy = Math.max(by + bh * 0.5, H * 0.55); }
+    else { cw = Math.min(W * 0.62, 260); cx = W / 2; ccy = (by + bh + H) / 2 + 4; }
+    ki.lay = { land: land, bx: bx, by: by, bw: bw, bh: bh, T: T, L: L, fx0: bx + (bw - L) / 2, fy: cy, s: s, kh: kh, cx: cx, cy: ccy, cw: cw };
+  }
+  function kiSize() {
+    var r = kiStage.getBoundingClientRect(), W = Math.round(r.width), H = Math.round(r.height);
+    if (W < 50 || H < 50) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (W === ki.W && H === ki.H && dpr === ki.dpr && ki.lay) return;
+    kiCv.width = Math.round(W * dpr); kiCv.height = Math.round(H * dpr);
+    ki.W = W; ki.H = H; ki.dpr = dpr; kiLayout();
+  }
+  function kiStart(i) {
+    ki.fi = i % KI_FOODS.length; ki.F = KI_FOODS[ki.fi]; ki.name = ki.F.name;
+    ki.pieces = [{ a: 0, b: 1, ox: 0, vx: 0, oy: 0, vy: 0, hold: 0, hop: null }];
+    ki.cuts = 0; ki.landed = []; ki.phase = 'in'; ki.pt = 0; ki.knife.t = 9; ki.hops = 0;
+    ki.knife.x = ki.knife.tx = ki.lay ? ki.lay.bx + ki.lay.bw / 2 : 0;
+    ki.tm.push(later(function () { if (ki.on) { say(ki.name); bigWord(ki.name, ki.F.col); } }, 350));
+  }
+  function kiPieceAt(p) { var l = ki.lay; return { x0: l.fx0 + p.a * l.L + p.ox, x1: l.fx0 + p.b * l.L + p.ox }; }
+  function kiWidest() { var w = -1, k = 0; ki.pieces.forEach(function (p, i) { if (p.b - p.a > w + 1e-9) { w = p.b - p.a; k = i; } }); return k; }
+  function kiCut(x) {
+    if (!ki.on || ki.phase !== 'cut' || !ki.lay) return;
+    var P = ki.pieces, l = ki.lay, idx = -1, cutAt = 0, i, r;
+    var first = kiPieceAt(P[0]), last = kiPieceAt(P[P.length - 1]);
+    if (x >= first.x0 && x <= last.x1) {
+      var bd = 1e9;
+      for (i = 0; i < P.length; i++) { r = kiPieceAt(P[i]); var d = x < r.x0 ? r.x0 - x : x > r.x1 ? x - r.x1 : 0; if (d < bd) { bd = d; idx = i; } }
+      cutAt = (x - P[idx].ox - l.fx0) / l.L;
+    }
+    if (idx >= 0 && (cutAt - P[idx].a < KI_MINW || P[idx].b - cutAt < KI_MINW)) idx = -1;
+    if (idx < 0) { idx = kiWidest(); cutAt = (P[idx].a + P[idx].b) / 2; }
+    var p = P[idx], hh = 0.07;
+    var p1 = { a: p.a, b: cutAt, ox: p.ox, vx: p.vx, oy: p.oy, vy: -90, hold: hh, hop: null }, p2 = { a: cutAt, b: p.b, ox: p.ox, vx: p.vx, oy: p.oy, vy: -90, hold: hh, hop: null };
+    P.splice(idx, 1, p1, p2);
+    ki.cuts++;
+    var k = ki.knife; k.x = k.tx = Math.max(l.bx, Math.min(l.bx + l.bw, x)); k.t = 0;
+    tone(150, 0.1, 'sine', 0.28, 70); tone(1900, 0.06, 'triangle', 0.05, 900, 0.03);
+    kiPop(k.x, l.by + l.bh * 0.5 - l.T * 0.5 - l.kh * 0.9);
+    if (ki.cuts >= KI_CUTS) { ki.phase = 'settle'; ki.pt = 0; }
+  }
+  function kiPop(x, y) {
+    ki.pops++;
+    floatWord(kiFx, Math.max(60, Math.min(ki.W - 60, x + 8)), Math.max(40, y), 'とん！');
+  }
+  function kiSlots(n) {
+    /* コンテナの なかの おちつきさき（コンテナ中心からの ひりつ） */
+    var F = ki.F;
+    if (F.pot) return [[-0.15, -0.14], [0.15, -0.14], [0.0, -0.22], [-0.3, 0.04], [0.0, 0.07], [0.3, 0.04]].slice(0, n);
+    return [[-0.3, -0.12], [0.0, -0.16], [0.3, -0.12], [-0.2, 0.1], [0.1, 0.12], [0.36, 0.08]].slice(0, n);
+  }
+  function kiSlotXY(j) {
+    var l = ki.lay, sl = kiSlots(6)[j], w = l.cw;
+    if (ki.F.pot) return { x: l.cx + sl[0] * w, y: l.cy - w * 0.62 / 2 + w * 0.62 * 0.17 + 8 + sl[1] * w * 0.3, sc: 0.5, rot: 0 };
+    return { x: l.cx + sl[0] * w, y: l.cy + sl[1] * w * 0.55 - 6, sc: Math.min(0.55, w / 420 * 1.3), rot: 0 };
+  }
+  function kiUpdate(dt) {
+    var l = ki.lay, P = ki.pieces, n = P.length, i, p;
+    ki.t += dt; ki.pt += dt; ki.knife.t += dt;
+    var cdamp = reduce ? 40 : 11, G = Math.max(8, l.T * 0.09);
+    for (i = 0; i < n; i++) {
+      p = P[i]; if (p.hop) continue;
+      if (p.hold > 0) { p.hold -= dt; continue; }
+      var tx = (i - (n - 1) / 2) * G, sub = Math.min(dt, 0.03);
+      p.vx += ((tx - p.ox) * 240 - p.vx * cdamp) * sub; p.ox += p.vx * sub;
+      p.vy += ((0 - p.oy) * 320 - p.vy * 14) * sub; p.oy += p.vy * sub;
+    }
+    if (ki.phase === 'in') {
+      var dur = reduce ? 0.01 : 0.55; ki.slide = 1 - Math.min(1, ki.pt / dur); ki.slide = ki.slide * ki.slide;
+      if (ki.pt >= dur) { ki.slide = 0; ki.phase = 'cut'; ki.pt = 0; }
+    } else if (ki.phase === 'settle') {
+      if (ki.pt > (reduce ? 0.2 : 0.55)) { ki.phase = 'hop'; ki.pt = 0; P.forEach(function (q) { q.hop = null; }); }
+    } else if (ki.phase === 'hop') {
+      var stag = reduce ? 0.08 : 0.22, hd = reduce ? 0.25 : 0.6, allDone = true;
+      for (i = 0; i < n; i++) {
+        p = P[i]; var st = i * stag;
+        if (p.hop && p.hop.done) continue;
+        allDone = false;
+        if (ki.pt < st) continue;
+        if (!p.hop) { var r = kiPieceAt(p); p.hop = { x: (r.x0 + r.x1) / 2, y: l.fy + l.T * 0 + p.oy, t: 0, done: false, to: kiSlotXY(i) }; }
+        p.hop.t += dt;
+        if (p.hop.t >= hd) { p.hop.done = true; ki.landed.push(i); ki.hops++; tone(520 + i * 80, 0.12, 'triangle', 0.12); }
+      }
+      if (allDone) { ki.phase = 'cheer'; ki.pt = 0; ki.done++; ki.cheered = false; }
+    } else if (ki.phase === 'cheer') {
+      if (!ki.cheered && ki.pt > 0.2) {
+        ki.cheered = true; say('できた！'); bigWord('できた！', '#E8761C'); arpeggio();
+        burst(kiFx, l.cx, l.cy - 20, { n: 10, emoji: ['✨', '⭐'] }); burst(kiFx, l.bx + l.bw * 0.3, l.by + 10, { n: 6, emoji: ['✨'] }); burst(kiFx, l.bx + l.bw * 0.7, l.by + 10, { n: 6, emoji: ['✨'] });
+      }
+      if (ki.pt > 1.6) kiStart(ki.fi + 1);
+    }
+  }
+  /* ---- えを かく ---- */
+  function kiBodyPath(c, F, T, L) {
+    var N = 56, i, u, pts = [];
+    c.beginPath();
+    for (i = 0; i <= N; i++) { u = 0.5 - 0.5 * Math.cos(Math.PI * i / N); pts.push(u); c.lineTo(u * L, (F.cf(u) - F.hf(u)) * T); }
+    for (i = N; i >= 0; i--) { u = pts[i]; c.lineTo(u * L, (F.cf(u) + F.hf(u)) * T); }
+    c.closePath();
+  }
+  function kiDrawPiece(c, F, T, L, a, b, first, last, face) {
+    var x0 = a * L, x1 = b * L, so = Math.max(4, T * 0.05), xs = first ? -0.4 * L : x0, xe = last ? 1.4 * L : x1;
+    c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+    c.beginPath(); c.rect(xs, -T * 2, xe - xs, T * 4); c.clip();
+    if (first && F.extra) F.extra(c, T, L, so);
+    kiBodyPath(c, F, T, L); c.fillStyle = F.body; c.fill();
+    if (F.decor) { c.save(); kiBodyPath(c, F, T, L); c.clip(); F.decor(c, T, L); c.restore(); }
+    kiBodyPath(c, F, T, L); c.lineWidth = so; c.strokeStyle = KI_INK; c.stroke();
+    if (!first) { var u0 = a, hh = F.hf(u0) * T, cc = F.cf(u0) * T; c.beginPath(); c.moveTo(x0, cc - hh); c.lineTo(x0, cc + hh); c.stroke(); }
+    c.restore();
+    if (face && !last) {
+      var cy = F.cf(b) * T, ry = F.hf(b) * T - so * 0.3, rx = Math.max(9, Math.min(18, T * 0.14));
+      kiEll(c, x1, cy, rx, ry, F.faceOut, KI_INK, so);
+      F.face(c, x1, cy, rx, ry);
+    }
+  }
+  function kiBoard(c, l) {
+    c.save(); c.lineJoin = 'round';
+    kiRR(c, l.bx + 4, l.by + 10, l.bw, l.bh, 28); c.fillStyle = 'rgba(90,58,40,.16)'; c.fill();
+    kiRR(c, l.bx, l.by, l.bw, l.bh, 28); c.fillStyle = '#EBC891'; c.fill();
+    c.save(); kiRR(c, l.bx, l.by, l.bw, l.bh, 28); c.clip();
+    c.fillStyle = '#F5DDB2'; c.fillRect(l.bx, l.by, l.bw, l.bh * 0.12);
+    c.strokeStyle = '#D9AF74'; c.lineWidth = 3; c.lineCap = 'round';
+    [[0.22, 0.12], [0.5, 0.2], [0.78, 0.1]].forEach(function (g, k) {
+      c.beginPath(); c.moveTo(l.bx + l.bw * 0.05, l.by + l.bh * g[0]); c.bezierCurveTo(l.bx + l.bw * 0.3, l.by + l.bh * (g[0] - 0.05), l.bx + l.bw * 0.6, l.by + l.bh * (g[0] + 0.06), l.bx + l.bw * (0.9 + k * 0.02), l.by + l.bh * g[0]); c.stroke();
+    });
+    c.restore();
+    kiRR(c, l.bx, l.by, l.bw, l.bh, 28); c.lineWidth = 6; c.strokeStyle = KI_INK; c.stroke();
+    kiEll(c, l.bx + l.bw - 30, l.by + l.bh - 26, 11, 11, '#C99B62', KI_INK, 4);
+    c.restore();
+  }
+  function kiKnife(c, l, k) {
+    var s = l.s, bw = 60 * s, bh = 86 * s, hw = 24 * s, hh = 52 * s, hover = l.fy - l.T / 2 - 14, down = l.fy + l.T * 0.52;
+    var d = k.t < 0.07 ? Math.pow(k.t / 0.07, 2) : k.t < 0.24 ? 1 - Math.pow((k.t - 0.07) / 0.17, 0.8) : 0;
+    d = Math.max(0, Math.min(1, d));
+    var bob = d === 0 && !reduce ? Math.sin(ki.t * 2.4) * 3 : 0, yb = hover + (down - hover) * d + bob, x = k.x;
+    c.save(); c.lineJoin = 'round';
+    /* もちて（きの いろ）: ブレードの うしろ がわ（ひだり）に よせる */
+    var hx = x - bw / 2 + 6 * s;
+    kiRR(c, hx, yb - bh - hh + 10 * s, hw, hh, 11 * s); c.fillStyle = '#D79A62'; c.fill(); c.lineWidth = 5; c.strokeStyle = KI_INK; c.stroke();
+    kiEll(c, hx + hw / 2, yb - bh - hh * 0.62 + 10 * s, 3.8 * s, 3.8 * s, '#8A5A38'); kiEll(c, hx + hw / 2, yb - bh - hh * 0.2 + 10 * s, 3.8 * s, 3.8 * s, '#8A5A38');
+    /* ブレード: せなかは まっすぐ、さきは まるい */
+    c.beginPath(); c.moveTo(x - bw / 2, yb - bh); c.lineTo(x + bw / 2 - 18 * s, yb - bh); c.quadraticCurveTo(x + bw / 2, yb - bh, x + bw / 2, yb - bh + 18 * s);
+    c.lineTo(x + bw / 2, yb - 16 * s); c.quadraticCurveTo(x + bw / 2, yb, x + bw / 2 - 16 * s, yb); c.lineTo(x - bw / 2 + 10 * s, yb); c.quadraticCurveTo(x - bw / 2, yb, x - bw / 2, yb - 10 * s); c.closePath();
+    c.fillStyle = '#DCE9F4'; c.fill(); c.save(); c.clip(); c.fillStyle = '#C3D5E6'; c.fillRect(x - bw / 2, yb - bh, 12 * s, bh); c.restore();
+    c.lineWidth = 5; c.strokeStyle = KI_INK; c.stroke();
+    c.restore();
+  }
+  function kiContainer(c, l, back) {
+    var F = ki.F, w = l.cw, cx = l.cx, cy = l.cy;
+    c.save(); c.lineJoin = 'round';
+    if (F.pot) {
+      var h = w * 0.62, ry = h * 0.17, top = cy - h / 2 + ry;
+      if (back) {
+        kiRR(c, cx - w / 2 - 14, top + h * 0.08, 20, h * 0.16, 7); c.fillStyle = '#8FA6BE'; c.fill(); c.lineWidth = 4.5; c.strokeStyle = KI_INK; c.stroke();
+        kiRR(c, cx + w / 2 - 6, top + h * 0.08, 20, h * 0.16, 7); c.fillStyle = '#8FA6BE'; c.fill(); c.stroke();
+        kiRR(c, cx - w / 2, top, w, cy + h / 2 - top, h * 0.2); c.fillStyle = '#A9C4DE'; c.fill(); c.lineWidth = 6; c.stroke();
+        kiEll(c, cx - w * 0.26, top + h * 0.45, w * 0.05, h * 0.16, 'rgba(255,255,255,.45)');
+        kiEll(c, cx, top, w / 2 - 2, ry, '#E8F0F8', KI_INK, 6);
+        kiEll(c, cx, top + 2, w / 2 - 12, ry - 6, '#7E92A8');
+      } else {
+        c.beginPath(); c.ellipse(cx, top, w / 2 - 2, ry, 0, 0, Math.PI); c.lineWidth = 6; c.strokeStyle = KI_INK; c.stroke();
+      }
+    } else if (back) {
+      var ph = w * 0.4;
+      kiEll(c, cx, cy + 6, w / 2 + 2, ph / 2 + 2, 'rgba(90,58,40,.16)');
+      kiEll(c, cx, cy, w / 2, ph / 2, '#F8F5EE', KI_INK, 6);
+      kiEll(c, cx, cy, w * 0.38, ph * 0.36, '#FFFFFF', '#DAD3C4', 3);
+    }
+    c.restore();
+  }
+  function kiDraw() {
+    var c = kiCtx, l = ki.lay; if (!l) return;
+    c.setTransform(ki.dpr, 0, 0, ki.dpr, 0, 0); c.clearRect(0, 0, ki.W, ki.H);
+    var F = ki.F, T = l.T, L = l.L, P = ki.pieces, i, p, n = P.length;
+    kiBoard(c, l);
+    kiContainer(c, l, true);
+    /* コンテナの なかの ざいりょう */
+    var inFlight = [];
+    c.save();
+    if (F.pot) {
+      var h = l.cw * 0.62, ry = h * 0.17, top = l.cy - h / 2 + ry;
+      c.beginPath(); c.rect(0, 0, ki.W, top + 2); c.ellipse(l.cx, top + 2, l.cw / 2 - 12, ry - 6, 0, 0, Math.PI * 2); c.clip();
+    }
+    for (i = 0; i < n; i++) {
+      p = P[i]; if (!p.hop || !p.hop.done) continue;
+      var sl = p.hop.to; c.save(); c.translate(sl.x, sl.y); c.scale(sl.sc, sl.sc); c.translate(-(p.a + p.b) / 2 * L, -F.cf((p.a + p.b) / 2) * T);
+      kiDrawPiece(c, F, T, L, p.a, p.b, i === 0, i === n - 1, true); c.restore();
+    }
+    c.restore();
+    kiContainer(c, l, false);
+    /* まないたの うえ */
+    c.save(); c.translate(ki.slide * (ki.W - l.fx0 + 40), 0);
+    for (i = n - 1; i >= 0; i--) {
+      p = P[i]; if (p.hop) { if (!p.hop.done) inFlight.push(i); continue; }
+      c.save(); c.translate(l.fx0 + p.ox, l.fy + p.oy);
+      kiDrawPiece(c, F, T, L, p.a, p.b, i === 0, i === n - 1, i < n - 1); c.restore();
+    }
+    c.restore();
+    /* とんでいる さいちゅう */
+    inFlight.forEach(function (i) {
+      p = P[i]; var h = p.hop, e = Math.min(1, h.t / (reduce ? 0.25 : 0.6)), ee = e * e * (3 - 2 * e), to = h.to;
+      var x = h.x + (to.x - h.x) * ee, y = h.y + l.fy + (to.y - (h.y + l.fy)) * ee - Math.sin(Math.PI * e) * (reduce ? 20 : 90 * l.s), sc = 1 + (to.sc - 1) * ee;
+      var mid = (p.a + p.b) / 2; c.save(); c.translate(x, y); c.rotate(Math.sin(e * Math.PI) * 0.4); c.scale(sc, sc); c.translate(-mid * L, -F.cf(mid) * T);
+      kiDrawPiece(c, F, T, L, p.a, p.b, i === 0, i === n - 1, i < n - 1); c.restore();
+    });
+    kiKnife(c, l, ki.knife);
+  }
+  function kiFrame(ts) {
+    if (!ki.on) { ki.raf = 0; return; }
+    ki.raf = requestAnimationFrame(kiFrame);
+    var dt = ki.last ? Math.min(0.05, (ts - ki.last) / 1000) : 1 / 60;
+    ki.last = ts; ki.frames++;
+    kiSize(); if (!ki.lay) return;
+    kiUpdate(dt); kiDraw();
+  }
+  function kiDown(e) {
+    e.preventDefault(); audio();
+    var r = kiCv.getBoundingClientRect(); kiCut(e.clientX - r.left);
+  }
+  function kiCtl(e) { e.preventDefault(); }
+  games.kiru = {
+    el: kiStage,
+    enter: function () {
+      ki.on = true; ki.W = 0; ki.lay = null; ki.done = 0; ki.pops = 0; ki.t = 0; ki.last = 0; ki.slide = 0; kiFx.innerHTML = '';
+      kiSize();
+      if (!ki.lay) { ki.W = 800; ki.H = 600; ki.dpr = 1; kiLayout(); ki.W = 0; }
+      kiStart(0);
+      kiCv.addEventListener('pointerdown', kiDown); kiCv.addEventListener('contextmenu', kiCtl);
+      if (ki.raf) cancelAnimationFrame(ki.raf);
+      ki.raf = requestAnimationFrame(kiFrame);
+    },
+    leave: function () {
+      ki.on = false;
+      if (ki.raf) { cancelAnimationFrame(ki.raf); ki.raf = 0; }
+      ki.tm.forEach(cancel); ki.tm = [];
+      kiCv.removeEventListener('pointerdown', kiDown); kiCv.removeEventListener('contextmenu', kiCtl);
+      kiFx.innerHTML = '';
+      ki.pieces = []; ki.landed = []; ki.cuts = 0; ki.phase = 'none';
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: function () { if (ki.on) kiSize(); }
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var ICO = {
@@ -7823,10 +8173,7 @@
     yubi: 'assets/ico/yubi.webp',
     koro: 'assets/ico/koro.webp',
     neko: 'assets/ico/neko.webp',
-    mix: 'assets/mix/mizu.webp',
-    'pg-asobu': 'assets/ico/pg-asobu.webp',
-    'pg-manabu': 'assets/ico/pg-manabu.webp',
-    'pg-ugokasu': 'assets/ico/pg-ugokasu.webp'
+    mix: 'assets/mix/mizu.webp'
   };
   var TD = {
     sky:   { ico: '🎈', lab: 'ふうせん',       c: '#9FDCFF', say: 'ふうせん！' },
@@ -7855,27 +8202,39 @@
     nami:  { ico: '🌊', lab: 'なみもよう', c: '#BFD8FF', say: 'なみもよう！' },
     voice: { ico: '🎤', lab: 'ボイスチェンジャー', br: 'ボイス', c: '#EBCBFF', say: 'ぼいすちぇんじゃー！' },
     mix:   { ico: '🧪', lab: 'まぜまぜ',       c: '#FFD3EC', say: 'まぜまぜ！' },
-    suna:  { ico: '🏖️', lab: 'すなば',         c: '#FFE6B8', say: 'すなば！' }
+    suna:  { ico: '🏖️', lab: 'すなば',         c: '#FFE6B8', say: 'すなば！' },
+    kiru:  { ico: '🥕', lab: 'とんとん',       c: '#FFD6B0', say: 'とんとん！' }
   };
-  var HPAGES = [
-    { title: 'あそぶ', ico: '🎈', img: 'pg-asobu', ids: ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker'] },
-    { title: 'まなぶ', ico: '🔤', img: 'pg-manabu', ids: ['touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi'] },
-    { title: 'うごかす', ico: '🤸', img: 'pg-ugokasu', ids: ['koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix', 'suna'] }
-  ];
+  // ホームの並び。新しいゲームは最後に足す（9 個ずつ自動でページになる）
+  var HORDER = ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker',
+    'touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi',
+    'koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix', 'suna',
+    'kiru'];
+  var HPER = 9, HN = Math.ceil(HORDER.length / HPER);
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
-  var hmEls = [$('#hm-p0'), $('#hm-p1'), $('#hm-p2')], hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
-  var hmDots = [].slice.call(document.querySelectorAll('.hm-dot'));
-  HPAGES.forEach(function (pg, i) {
-    pg.ids.forEach(function (id) {
-      var t = TD[id], b = document.createElement('button');
-      b.type = 'button'; b.className = 'tile'; b.style.setProperty('--c', t.c);
-      b.setAttribute('aria-label', t.lab);
-      b.innerHTML = '<span class="ico">' + (ICO[id] ? '<img class="ico-img" src="' + ICO[id] + '" alt="" decoding="async" draggable="false">' : (t.html || t.ico)) + '</span><span class="lab">' + (t.br ? t.lab.replace(t.br, t.br + '<br class="pbr">') : t.lab) + '</span>';
-      b.addEventListener('click', function () {
-        audio(); go(id); say(t.say); tone(660, 0.12, 'triangle', 0.1);
-      });
-      hmEls[i].appendChild(b);
+  var hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
+  var hmEls = [], hmDots = [];
+  (function () {
+    var area = $('#hm-area'), dots = $('#hm-dots');
+    for (var i = 0; i < HN; i++) {
+      var pgEl = document.createElement('div');
+      pgEl.className = 'hm-page'; pgEl.id = 'hm-p' + i; pgEl.hidden = i !== 0;
+      area.appendChild(pgEl); hmEls.push(pgEl);
+      var d = document.createElement('button');
+      d.className = 'hm-dot'; d.type = 'button'; d.setAttribute('aria-label', (i + 1) + 'ページ');
+      if (i === 0) d.setAttribute('aria-current', 'true');
+      dots.appendChild(d); hmDots.push(d);
+    }
+  })();
+  HORDER.forEach(function (id, k) {
+    var t = TD[id], b = document.createElement('button');
+    b.type = 'button'; b.className = 'tile'; b.style.setProperty('--c', t.c);
+    b.setAttribute('aria-label', t.lab);
+    b.innerHTML = '<span class="ico">' + (ICO[id] ? '<img class="ico-img" src="' + ICO[id] + '" alt="" decoding="async" draggable="false">' : (t.html || t.ico)) + '</span><span class="lab">' + (t.br ? t.lab.replace(t.br, t.br + '<br class="pbr">') : t.lab) + '</span>';
+    b.addEventListener('click', function () {
+      audio(); go(id); say(t.say); tone(660, 0.12, 'triangle', 0.1);
     });
+    hmEls[Math.floor(k / HPER)].appendChild(b);
   });
   function hmSettle() {
     if (hmTimer) { clearTimeout(hmTimer); hmTimer = 0; }
@@ -7884,7 +8243,7 @@
     });
   }
   function hmShow(n, speak) {
-    n = Math.max(0, Math.min(HPAGES.length - 1, n));
+    n = Math.max(0, Math.min(HN - 1, n));
     if (n === hmPage) return;
     hmSettle();
     var from = hmEls[hmPage], to = hmEls[n], dir = n > hmPage ? 1 : -1;
@@ -7899,7 +8258,7 @@
     hmRender();
   }
   function hmRender() {
-    hmPrev.hidden = hmPage === 0; hmNext.hidden = hmPage === HPAGES.length - 1;
+    hmPrev.hidden = hmPage === 0; hmNext.hidden = hmPage === HN - 1;
     hmDots.forEach(function (d, i) { if (i === hmPage) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); });
   }
   hmPrev.addEventListener('click', function () { audio(); hmShow(hmPage - 1); });

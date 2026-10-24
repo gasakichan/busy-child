@@ -28,6 +28,7 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['games.nami = {', 'window.__namiHits = circleHits; games.nami = {'],
   ['var nm = {', 'var nm = window.__nm = {'],
   ['var sn = {', 'var sn = window.__sn = {'],
+  ['var ki = {', 'var ki = window.__ki = {'],
   ['games.neko = {', 'window.__nkStart = nkStart; window.__nkMake = nkMake; window.__nkPR = nkPR; window.__nkCatR = nkCatR; games.neko = {'],
   ['var vc = {', 'var vc = window.__vc = {'],
   ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr }; games.voice = {'],
@@ -39,15 +40,21 @@ if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば'];
-const PAGE2 = new Set(['いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち']);
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん'];
+// ホームの並び（index.html の HORDER と同じ。9 個ずつでページ）
+const HLABS = ['ふうせん','どうぶつ','おえかき','いないいないばあ','もしもし','でんしゃ','おみせやさん','ぬりえ','シールちょう',
+  'いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち',
+  'ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば',
+  'とんとん'];
+const NPAGES = Math.ceil(HLABS.length / 9);
+const pageOf = lab => Math.floor(HLABS.indexOf(lab) / 9);
 async function gotoPage(p, n) {
-  const cur = await p.evaluate(() => [0, 1, 2].find(i => !document.querySelector('#hm-p' + i).hidden));
+  const cur = await p.evaluate(() => [...document.querySelectorAll('.hm-page')].findIndex(e => !e.hidden));
   if (cur !== n) { await p.click('.hm-dot:nth-child(' + (n + 1) + ')'); await sleep(280); }
 }
 async function tapTile(p, lab) {
-  await gotoPage(p, (lab === 'ころころボール' || lab === 'ドライブ' || lab === 'ピアノ' || lab === 'ピンボール' || lab === 'ねこさがし' || lab === 'ボイスチェンジャー' || lab === 'なみもよう' || lab === 'まぜまぜ' || lab === 'すなば') ? 2 : PAGE2.has(lab) ? 1 : 0);
+  await gotoPage(p, pageOf(lab));
   await p.click('.hm-page:not([hidden]) .tile[aria-label="' + lab + '"]');
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -150,8 +157,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     ok(await p.locator('#hm-p1').isVisible() && await p.locator('#hm-p0').isHidden(), tag + ' dot jumps to page2');
     await p.click('.hm-dot:nth-child(1)'); await sleep(320);
-    // ---- page 3 (うごかす) ----
-    ok(await p.locator('.hm-dot').count() === 3, tag + ' 3 page dots');
+    // ---- page 3 ----
+    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (28 games, 9 per page)');
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
@@ -161,8 +168,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(t3.every((t, k) => t.cx === tiles[k].cx && t.cy === tiles[k].cy), tag + ' page3: 3x3 grid in the same positions as page1');
     ok((await p.evaluate(() => [...document.querySelectorAll('.hm-page:not([hidden]) .tile')].map(t => t.getAttribute('aria-label')).join())) === 'ころころボール,ドライブ,ピアノ,ピンボール,ねこさがし,ボイスチェンジャー,なみもよう,まぜまぜ,すなば' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[1].querySelector('.ico').textContent)) === '🚗' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[2].querySelector('.ico').textContent)) === '🎹' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[3].querySelector('.ico').textContent)) === '🎱' && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[4].querySelector('.ico-img') !== null) && (await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[5].querySelector('.ico').textContent)) === '🎤'), tag + ' page3 order + ドライブ 🚗, ピアノ 🎹, ピンボール 🎱, ねこさがし (image icon), ボイスチェンジャー 🎤');
     ok((await p.evaluate(() => document.querySelectorAll('.hm-page:not([hidden]) .tile')[8].querySelector('.ico').textContent)) === '🏖️', tag + ' page3 すなば tile shows the 🏖️ emoji (no image icon yet)');
-    ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible(), tag + ' page3 ▶ hidden, ◀ shown, speaks');
-    ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === 'うごかす', tag + ' page3 dot current');
+    ok(await p.locator('#hm-next').isVisible() && await p.locator('#hm-prev').isVisible(), tag + ' page3: both arrows (not the last page)');
+    ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '3ページ' && (await p.evaluate(() => [...document.querySelectorAll('.hm-dot')].map(d => d.getAttribute('aria-label')).join())) === '1ページ,2ページ,3ページ,4ページ', tag + ' page3 dot current, dots labelled 1ページ..4ページ');
     const sc3 = await scrollInfo(); ok(!sc3.h && !sc3.v, tag + ' page3 no scroll');
     if (tag === '390x844') await p.screenshot({ path: SP + '/home-p3.png' });
     // swipe 2 -> 1 -> back ; arrows across 3 pages
@@ -172,11 +179,18 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hm-p2').isVisible() && await p.locator('#hm-p1').isHidden(), tag + ' swipe left p2 -> p3');
     await p.mouse.move(ab.x + 100, y0); await p.mouse.down(); await p.mouse.move(ab.x + 300, y0 + 5, { steps: 5 }); await p.mouse.up(); await sleep(330);
     ok(await p.locator('#hm-p1').isVisible(), tag + ' swipe right p3 -> p2');
+    // ---- page 4 (last): とんとん alone ----
+    await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
+    const t4 = await tileInfo();
+    ok(t4.length === 1 && t4[0].ok && t4[0].w === tiles[0].w && t4[0].h === tiles[0].h && t4[0].cx === tiles[1].cx && t4[0].cy === tiles[0].cy && !t4[0].clip, tag + ' page4: とんとん alone, centred in the top row (like the page1 2nd tile), same size ' + JSON.stringify(t4));
+    ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
+    ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
+    const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');
     await p.click('.hm-dot:nth-child(1)'); await sleep(320);
     let sc = await scrollInfo(); ok(!sc.h && !sc.v, tag + ' home no scroll');
     const hb = await p.locator('#setbtn').boundingBox();
     ok(await p.locator('#setbtn').isVisible() && hb.width >= 55 && !(await p.locator('#mute').count()), tag + ' home has ⚙️ (' + hb.width + 'px), no 🔊');
-    for (let i = 0; i < 27; i++) {
+    for (let i = 0; i < IDS.length; i++) {
       await tapTile(p, LAB[i]); await sleep(i === 8 ? 500 : 380);
       const sel = '#stage-' + IDS[i];
       const vis = await p.locator(sel).isVisible();
@@ -1056,7 +1070,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 25 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (25 rows)');
+      ok(await p.locator('.st-row.zero').count() === 26 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (26 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2527,10 +2541,95 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.context().close();
   });
 
+  /* ---------- とんとん（きる） ---------- */
+  TV('kiru', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }], async (br, vp) => {
+    const tag = 'kiru ' + vp.width + 'x' + vp.height, land = vp.width > vp.height, cyc = vp.width === 390;
+    const shot = n => p.screenshot({ path: SP + '/kiru-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true });
+    const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const KI = () => p.evaluate(() => { const k = window.__ki, l = k.lay; return { on: k.on, raf: k.raf, frames: k.frames, n: k.pieces.length, phase: k.phase, name: k.name, fi: k.fi, cuts: k.cuts, hops: k.hops, lay: l && { bx: l.bx, by: l.by, bw: l.bw, bh: l.bh, T: l.T, L: l.L, fx0: l.fx0, fy: l.fy, cx: l.cx, cy: l.cy, cw: l.cw }, pops: k.pops }; });
+    const tapX = async (x, y) => { const b = await p.locator('#ki-cv').boundingBox(); await p.mouse.click(b.x + x, b.y + (y === undefined ? 100 : y)); };
+    const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    await tapTile(p, 'とんとん'); await sleep(600);
+    ok(await p.locator('#stage-kiru').isVisible() && await p.locator('#hm-p3').isHidden() && await p.locator('#ki-cv').isVisible(), tag + ': tile on page 4 opens とんとん');
+    const geo = await p.evaluate(() => { const c = document.querySelector('#ki-cv'), r = c.getBoundingClientRect(); return { w: r.width, h: r.height, l: r.left, r: r.right, hs: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth, cw: c.width, dpr: devicePixelRatio, iw: innerWidth }; });
+    ok(geo.l >= 0 && geo.r <= geo.iw + 0.5 && !geo.hs && geo.w > 300 && Math.abs(geo.cw - geo.w * Math.min(geo.dpr, 2)) <= 1, tag + ': canvas fits the viewport, no hscroll, matches size x DPR ' + JSON.stringify(geo));
+    ok(await until(p, async () => (await KI()).phase === 'cut', 3000), tag + ': food slides in then waits for cuts');
+    let k = await KI();
+    const L = k.lay;
+    ok(k.n === 1 && k.name === 'にんじん' && k.fi === 0, tag + ': starts with にんじん, 1 piece');
+    ok(L.T >= 100 && L.L / L.bw >= 0.75 && L.L / L.bw <= 0.85 && L.bx >= 0 && L.bx + L.bw <= vp.width && L.by >= 0 && L.by + L.bh <= vp.height, tag + ': food >=100px high, 75-85% of the board, board inside the screen ' + JSON.stringify([Math.round(L.T), Math.round(L.L), Math.round(L.bw)]));
+    ok(await until(p, async () => (await says(p)).some(x => x.t === 'にんじん'), 3000) && await until(p, async () => (await big()) === 'にんじん', 3000), tag + ': says にんじん and shows it big');
+    await shot('a');
+    /* 5かい タップ: 1 -> 6 */
+    await clearSays(p);
+    const xs = [0.5, 0.25, 0.75, 0.12, 0.88].map(f => L.fx0 + f * L.L);
+    for (let i = 0; i < 5; i++) {
+      await tapX(xs[i], L.fy); await sleep(i === 2 ? 420 : 160);
+      k = await KI();
+      ok(k.n === i + 2 && k.cuts === i + 1, tag + ': cut ' + (i + 1) + ' -> ' + k.n + ' pieces');
+      if (i === 2) await shot('b');
+    }
+    ok(k.pops === 5 && (await says(p)).length === 0, tag + ': a 「とん！」 pop per cut, no speech per cut (pops ' + k.pops + ')');
+    await tapX(L.fx0 + 0.3 * L.L, L.fy); await sleep(100);
+    ok((await KI()).n === 6, tag + ': taps during the done animation are ignored');
+    await sleep(400); await shot('c');
+    ok(await until(p, async () => (await KI()).phase === 'hop', 2000), tag + ': pieces start to hop');
+    await sleep(500); await shot('hop');
+    ok(await until(p, async () => (await says(p)).some(x => x.t === 'できた！') && (await big()) === 'できた', 6000), tag + ': できた！ spoken and shown big');
+    await sleep(300); await shot('done');
+    ok(await until(p, async () => { const q = await KI(); return q.fi === 1 && q.name === 'きゅうり' && q.n === 1 && (q.phase === 'cut' || q.phase === 'in'); }, 6000), tag + ': next food (きゅうり) slides in, 1 piece');
+    ok(await until(p, async () => (await says(p)).some(x => x.t === 'きゅうり'), 3000), tag + ': says きゅうり');
+    ok(await until(p, async () => (await KI()).phase === 'cut', 2000), tag + ': ready to cut again');
+    /* おなじ ばしょを れんだ: かならず すすむ */
+    for (let i = 0; i < 5; i++) { await tapX(L.fx0 + 0.5 * L.L, L.fy); await sleep(150); const q = await KI(); if (q.n !== i + 2) { ok(false, tag + ': same-spot tap ' + (i + 1) + ' -> ' + q.n); } }
+    k = await KI();
+    ok(k.n === 6 && k.cuts === 5, tag + ': tapping the same spot 5 times still gives 6 pieces');
+    const sizes = await p.evaluate(() => window.__ki.pieces.map(q => q.b - q.a));
+    ok(sizes.every(w => w > 0.05) && Math.abs(sizes.reduce((a, b) => a + b, 0) - 1) < 1e-6, tag + ': pieces cover the food, none vanishingly thin ' + sizes.map(w => w.toFixed(2)).join());
+    /* ちかくの はじ・ざいりょうの そと */
+    if (cyc) {
+      ok(await until(p, async () => (await KI()).fi === 2 && (await KI()).phase === 'cut', 12000), tag + ': 3rd food ばなな');
+      ok((await KI()).name === 'ばなな', tag + ': name ばなな');
+      await tapX(L.bx + 3, L.by + L.bh - 5); await sleep(150);
+      ok((await KI()).n === 2, tag + ': tapping the board outside the food still cuts');
+      await tapX(L.bx + L.bw + 1 > vp.width ? vp.width - 2 : L.bx + L.bw - 3, 8); await sleep(150);
+      ok((await KI()).n === 3, tag + ': tapping far from the food (screen top) still cuts');
+      await tapX(L.fx0 + 0.2 * L.L, L.fy); await sleep(150); await tapX(L.fx0 + 0.8 * L.L, L.fy); await sleep(150); await tapX(L.fx0 + 0.6 * L.L, L.fy); await sleep(150);
+      ok((await KI()).n === 6, tag + ': banana 6 pieces'); await sleep(900); await shot('banana');
+      ok(await until(p, async () => (await KI()).fi === 3 && (await KI()).phase === 'cut', 12000), tag + ': 4th food そーせーじ');
+      for (const f of [0.5, 0.3, 0.7, 0.15, 0.85]) { await tapX(L.fx0 + f * L.L, L.fy); await sleep(150); }
+      await sleep(900); await shot('sausage');
+      ok(await until(p, async () => (await KI()).fi === 4 && (await KI()).phase === 'cut', 12000), tag + ': 5th food ろーるけーき');
+      for (const f of [0.5, 0.3, 0.7, 0.15, 0.85]) { await tapX(L.fx0 + f * L.L, L.fy); await sleep(150); }
+      await sleep(600); await shot('roll');
+      ok(await until(p, async () => (await KI()).phase === 'hop', 3000), tag + ': roll cake hops'); await sleep(1500); await shot('roll-done');
+      ok(await until(p, async () => (await KI()).fi === 0 && (await KI()).phase !== 'cheer', 12000), tag + ': after ろーるけーき the rotation loops to にんじん');
+    }
+    /* かいてん */
+    await p.setViewportSize({ width: vp.height, height: vp.width }); await sleep(900);
+    const rot = await p.evaluate(() => { const k = window.__ki, l = k.lay; return { w: k.W, h: k.H, ok: l.bx >= 0 && l.bx + l.bw <= k.W && l.by >= 0 && l.by + l.bh <= k.H && l.cx - l.cw / 2 >= 0 && l.cx + l.cw / 2 <= k.W && l.cy + l.cw * 0.31 <= k.H, T: l.T, hs: document.documentElement.scrollWidth > innerWidth }; });
+    ok(rot.ok && !rot.hs && rot.T >= 100, tag + ': rotated layout fits ' + JSON.stringify(rot));
+    await shot('rot');
+    await p.setViewportSize(vp); await sleep(900);
+    /* でる */
+    await p.click('#homebtn'); await sleep(200);
+    const l1 = await KI(); await sleep(500); const l2 = await KI();
+    ok(!l1.on && l1.raf === 0 && l2.frames === l1.frames && l1.n === 0, tag + ': leaving stops the loop and clears pieces ' + JSON.stringify([l1.on, l1.raf, l1.frames, l2.frames]));
+    ok(await p.locator('#hm-p3').isVisible() && await p.locator('#stage-kiru').isHidden(), tag + ': 🏠 returns to page 4');
+    await tapTile(p, 'とんとん'); await sleep(500);
+    const re = await KI();
+    ok(re.on && re.n === 1 && re.fi === 0 && re.raf > 0, tag + ': re-enter starts again with にんじん');
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
@@ -2598,6 +2697,7 @@ async function runAll(argv) {
   if (failBlocks.length) { console.log('\nFAILED blocks: ' + failBlocks.join(', ')); return 1; }
   console.log('\nALL OK');
   return 0;
+
 }
 
 if (WORKER) runWorker(process.argv[3]);
