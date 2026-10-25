@@ -8119,47 +8119,62 @@
     kiEll(c, l.bx + l.bw - 30, l.by + l.bh - 26, 11, 11, '#C99B62', KI_INK, 4);
     c.restore();
   }
-  /* ほうちょうの うごき: ふだんは まないたの すぐ したに ねている（てが ひだり・さきが みぎ・は が した）。タップで きった ばしょの うえへ さっと とんで、とんと きって、もとの ばしょに もどる。
-     ポーズ = さきの いち (x, y) と かたむき a（0=ねている 1=たてに かまえる）。タップの たびに、いまの ポーズから あたらしく はじめる（きるのは すぐ。うごきは またせない）。 */
-  var KI_TIN = 0.1, KI_TCH = 0.24, KI_TRET = 0.12;
-  function kiKnifeRest(l) { return { x: l.bx + l.bw - 30, y: l.by + l.bh + 16 + 30 * l.s, a: 0 }; }
+  /* ほうちょうの うごき: ふだんは まないたの すぐ したに ねている（てが ひだり・さきが みぎ・は が した）。タップで きった ばしょへ さっと とんで、たてに なる
+     （まないたの てまえから みおろした ように、もちてが した・ブレードが うえ。ブレードが たべものを よこぎる）。ちょっと おおきく かまえてから、とんと おさえて、もとの ばしょに もどる。
+     ポーズ = さきの いち (x, y)・かたむき a（0=ねている 1=たて）・おおきさ m・かげ sh（1=かまえ 0=おさえた）。タップの たびに、いまの ポーズから あたらしく はじめる（きるのは すぐ。うごきは またせない）。 */
+  var KI_TIN = 0.1, KI_TCH = 0.24, KI_TRET = 0.12, KI_RAISE = 1.12;
+  function kiKnifeRest(l) { return { x: l.bx + l.bw - 30, y: l.by + l.bh + 16 + 30 * l.s, a: 0, m: 1, sh: 0 }; }
+  /* ブレードの ながさ（m=1 のとき）と、じくの よこの ずれ（ブレードの まんなかが じくから どれだけ はなれて いるか） */
+  function kiBladeLen(l) { return (KI_ART.knife ? 0.63 * 142 : 86) * l.s; }
+  function kiKnifeVOff(l) { return KI_ART.knife ? 12 * 142 * l.s / KI_ART.knife.len : 0; }
+  /* ブレードが たべものの ぜんたいの たかさを おおう おおきさ */
+  function kiKnifeMV(l) { return Math.max(1, ki.FH * 1.08 / kiBladeLen(l)); }
+  /* たての ポーズ: ブレードの まんなかが きる ばしょ（x, まないたの たべものの まんなか）に くる */
+  function kiKnifeVert(l, x, m, sh) { return { x: x + kiKnifeVOff(l) * m, y: l.fy - kiBladeLen(l) * m / 2, a: 1, m: m, sh: sh }; }
   function kiKnifePose(l, k) {
     var rest = kiKnifeRest(l), t = k.t, tin = reduce ? 0 : KI_TIN, tret = reduce ? 0 : KI_TRET;
-    var hover = l.fy - ki.FH / 2 - 14, down = l.fy + ki.FH * 0.45, f = k.from || rest;
-    function lerp(p, q, e) { return { x: p.x + (q.x - p.x) * e, y: p.y + (q.y - p.y) * e, a: p.a + (q.a - p.a) * e }; }
+    var mv = kiKnifeMV(l), f = k.from || rest;
+    function lerp(p, q, e) { return { x: p.x + (q.x - p.x) * e, y: p.y + (q.y - p.y) * e, a: p.a + (q.a - p.a) * e, m: p.m + (q.m - p.m) * e, sh: p.sh + (q.sh - p.sh) * e }; }
     function ease(u) { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }
-    var up = { x: k.x, y: hover, a: 1 };
+    var up = kiKnifeVert(l, k.x, mv * KI_RAISE, 1);
     if (t < tin) return lerp(f, up, ease(t / tin));
-    var tc = t - tin;
+    var tc = t - tin, q, sh;
     if (tc < KI_TCH) {
-      var d = tc < 0.07 ? Math.pow(tc / 0.07, 2) : 1 - Math.pow((tc - 0.07) / 0.17, 0.8);
-      d = Math.max(0, Math.min(1, d));
-      return { x: k.x, y: hover + (down - hover) * d, a: 1 };
+      /* 0〜0.07: かまえから ぎゅっと おさえる（おおきさ 1.12→1、かげ ぎゅっ）。そのあと ちょっと はずんで おさまる */
+      if (tc < 0.07) { var s1 = Math.pow(tc / 0.07, 2); q = KI_RAISE - (KI_RAISE - 1) * s1; sh = 1 - s1; }
+      else { var bt = (tc - 0.07) / 0.08; q = 1 - (bt < 1 ? 0.035 * Math.sin(Math.PI * bt) : 0); sh = 0; }
+      return kiKnifeVert(l, k.x, mv * q, sh);
     }
     var tr = tc - KI_TCH;
-    if (tr < tret) return lerp(up, rest, ease(tr / tret));
+    if (tr < tret) return lerp(kiKnifeVert(l, k.x, mv, 0), rest, ease(tr / tret));
     return rest;
   }
-  function kiKnifeBox(P, len, vmin, vmax) {
-    var r = P.a * 0.5 * Math.PI + 0.25 * Math.PI, ang = r + 0.75 * Math.PI, ux = Math.cos(ang), uy = Math.sin(ang), vx = Math.cos(ang - 0.5 * Math.PI), vy = Math.sin(ang - 0.5 * Math.PI);
-    /* v: せなか がわが ー、は がわが ＋（ねている ときは せなかが うえ、はが した） */
+  function kiKnifeBox(P, len, vmin, vmax, bl) {
+    /* ang: さきから もちての ほうへ むかう むき（ねている=ひだり、たて=した）。v: せなか がわが ー、は がわが ＋ */
+    var ang = Math.PI * (1 - 0.5 * P.a), ux = Math.cos(ang), uy = Math.sin(ang), vx = Math.cos(ang - 0.5 * Math.PI), vy = Math.sin(ang - 0.5 * Math.PI);
     var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
     [[0, vmin], [len, vmin], [0, vmax], [len, vmax]].forEach(function (q) {
       var x = P.x + ux * q[0] + vx * q[1], y = P.y + uy * q[0] + vy * q[1];
       x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
     });
-    ki.kbox = { x0: x0, y0: y0, x1: x1, y1: y1, a: P.a, x: P.x, y: P.y };
+    ki.kbox = { x0: x0, y0: y0, x1: x1, y1: y1, a: P.a, m: P.m, sh: P.sh, x: P.x, y: P.y, bx: P.x + ux * bl, by: P.y + uy * bl, hx: P.x + ux * len, hy: P.y + uy * len, bl: bl };
+  }
+  /* かげ: かまえている ときは ふわっと はなれて、おさえた ときは ぴたっと くっつく */
+  function kiKnifeShadow(c, P) {
+    var sh = P.sh * Math.min(1, P.a * 1.5), d = ki.dpr;
+    c.shadowColor = 'rgba(70,40,25,' + (0.16 + 0.2 * sh).toFixed(3) + ')';
+    c.shadowBlur = (2 + 9 * sh) * d; c.shadowOffsetX = (1 + 5 * sh) * d; c.shadowOffsetY = (2 + 9 * sh) * d;
   }
   function kiKnifeImg(c, l, k, K) {
-    var P = kiKnifePose(l, k), sc = 142 * l.s / K.len, r = Math.PI * (0.25 + 0.5 * P.a);
-    kiKnifeBox(P, 142 * l.s, -61 * sc, 37 * sc);
-    c.save(); c.translate(P.x, P.y); c.rotate(r); c.scale(sc, sc); c.drawImage(K.im, -K.ax, -K.ay); c.restore();
+    var P = kiKnifePose(l, k), sc = 142 * l.s / K.len * P.m, r = Math.PI * (0.25 - 0.5 * P.a);
+    kiKnifeBox(P, 142 * l.s * P.m, -61 * sc, 37 * sc, kiBladeLen(l) * P.m);
+    c.save(); kiKnifeShadow(c, P); c.translate(P.x, P.y); c.rotate(r); c.scale(sc, sc); c.drawImage(K.im, -K.ax, -K.ay); c.restore();
   }
   function kiKnife(c, l, k) {
     if (KI_ART.knife) return kiKnifeImg(c, l, k, KI_ART.knife);
     var s = l.s, bw = 60 * s, bh = 86 * s, hw = 24 * s, hh = 52 * s, P = kiKnifePose(l, k), x = 0, yb = 0;
-    kiKnifeBox(P, bh + hh, -30 * s, 30 * s);
-    c.save(); c.translate(P.x, P.y); c.rotate(Math.PI * (P.a * 0.5 - 0.5)); c.lineJoin = 'round';
+    kiKnifeBox(P, (bh + hh) * P.m, -30 * s * P.m, 30 * s * P.m, kiBladeLen(l) * P.m);
+    c.save(); kiKnifeShadow(c, P); c.translate(P.x, P.y); c.rotate(Math.PI * (1.5 - 0.5 * P.a)); c.scale(P.m, P.m); c.lineJoin = 'round';
     /* もちて（きの いろ）: ブレードの うしろ がわ（ひだり）に よせる */
     var hx = x - bw / 2 + 6 * s;
     kiRR(c, hx, yb - bh - hh + 10 * s, hw, hh, 11 * s); c.fillStyle = '#D79A62'; c.fill(); c.lineWidth = 5; c.strokeStyle = KI_INK; c.stroke();

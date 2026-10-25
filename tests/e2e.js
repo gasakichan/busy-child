@@ -2571,7 +2571,19 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await clearSays(p);
     const xs = [0.5, 0.25, 0.75, 0.12, 0.88].map(f => L.fx0 + f * L.L);
     for (let i = 0; i < 5; i++) {
-      await tapX(xs[i], L.fy); await sleep(i === 2 ? 150 : 160);
+      await tapX(xs[i], L.fy);
+      if (i === 0) {
+        /* おさえた しゅんかん（ブレードが たて: もちてが した・さきが うえ、たべものの たかさを よこぎり、きる x に まんなか）。しゃしんの ために すこし とめる */
+        const mid = await p.evaluate(() => new Promise(res => { const q = window.__ki, t0 = performance.now(); (function f() { const b = q.kbox;
+          if (b && b.a > 0.999 && b.sh < 0.3) { window.__kfz = setInterval(() => { q.knife.t = Math.min(q.knife.t, 0.25); }, 4); res(Object.assign({}, b, { FH: q.FH, fy: q.lay.fy, W: q.W, H: q.H })); }
+          else if (performance.now() - t0 > 1000) res(null); else requestAnimationFrame(f); })(); }));
+        await sleep(60); await shot('mid');
+        await p.evaluate(() => { clearInterval(window.__kfz); });
+        ok(mid && Math.abs(mid.hx - mid.x) < 1 && mid.hy > mid.by + 5 && mid.by > mid.y, tag + ': mid-chop the knife is vertical, handle end below the blade end ' + JSON.stringify(mid && [mid.x, mid.y, mid.bx, mid.by, mid.hx, mid.hy].map(Math.round)));
+        ok(mid && mid.y <= mid.fy - mid.FH / 2 && mid.by >= mid.fy + mid.FH / 2 && mid.bl >= mid.FH, tag + ': the blade spans the whole food height ' + JSON.stringify(mid && [mid.y, mid.by, mid.fy - mid.FH / 2, mid.fy + mid.FH / 2, mid.bl].map(Math.round)));
+        ok(mid && mid.x0 <= xs[0] && mid.x1 >= xs[0] && Math.abs((mid.x0 + mid.x1) / 2 - xs[0]) < 2 && mid.x0 >= 0 && mid.x1 <= mid.W && mid.y1 <= mid.H, tag + ': the blade is centred on the cut x, inside the screen ' + JSON.stringify(mid && [mid.x0, mid.x1, xs[0], mid.y1].map(Math.round)));
+      }
+      await sleep(i === 2 ? 150 : i === 0 ? 100 : 160);
       k = await KI();
       ok(k.n === i + 2 && k.cuts === i + 1, tag + ': cut ' + (i + 1) + ' -> ' + k.n + ' pieces');
       if (i === 2) await shot('b');
