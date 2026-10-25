@@ -591,6 +591,15 @@
   .paypanel { flex: 0 0 auto; height: var(--shelfh); min-width: 0; padding: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
   /* .paypanel より後に置く（先にあると上書きされて、よこむきで せまく なる） */
   @media (min-aspect-ratio: 1/1) { .shelf, .paypanel { flex: 1 1 0; height: auto; padding-top: 12px; } }
+  /* ひくい よこがめん（スマホよこ）: 4 だんだと 80px に とどかないので、3 れつ × 3 だんに して たなを すこし ひろく */
+  @media (min-aspect-ratio: 1/1) and (max-height: 420px) {
+    .shelf { flex-grow: 1.25; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 8px 8px 8px 4px; }
+    .prod .pe { font-size: 34px; }
+    .prod .pe, .prod .pn { left: 0; top: -8px; }
+    .prod .pn { font-size: 13px; }
+    .prod .tag { right: 4px; bottom: 4px; font-size: 12px; padding: 0 5px 0 9px; }
+    .lcd .l1 { font-size: 21px; }
+  }
   .paystat { flex: 0 0 auto; text-align: center; font-size: clamp(16px, 4.6vw, 24px); font-weight: 800; color: var(--ink); min-height: 1.3em; }
   .coins { flex: 1; min-height: 0; position: relative; }
   /* おかねの山（おもちゃのお金。本物のデザインは写さない） */
@@ -738,13 +747,13 @@
   .phkeys { flex: 1; min-height: 0; padding: 6px 10px 12px; display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); place-items: center; }
   .pk.z { grid-column: 2; }
   @media (orientation: landscape) and (max-height: 520px) {
-    .phkeys { grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); padding: 4px 10px 8px; }
+    /* ひくい よこがめん: すうじの まどを 🏠 の よこに あげて、キーの 2 だんぶんの たかさを あける */
+    #stage-phone { padding-top: 12px; padding-top: calc(12px + env(safe-area-inset-top)); }
+    .phdisp { padding: 0 76px; }
+    .phkeys { grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); padding: 4px 10px 8px; row-gap: 6px; }
     .pk.z { grid-column: auto; }
     .phdisp span { height: clamp(52px, 13vh, 80px); }
     .say2 { min-height: 28px; }
-    .phcall { flex-direction: row; flex-wrap: wrap; align-content: center; gap: 8px 24px; padding: 8px 12px 8px 76px; }
-    .phanimal { width: clamp(110px, 44vh, 220px); font-size: clamp(64px, 26vh, 130px); }
-    .phtext { min-height: 0; flex: 0 1 280px; }
   }
   .pk {
     width: var(--kb, 80px); height: var(--kb, 80px); border: 0; border-radius: 50%; padding: 0;
@@ -757,6 +766,13 @@
   .phtext { min-height: 3.6em; text-align: center; font-size: clamp(22px, 6vw, 36px); line-height: 1.25; white-space: pre-line; }
   .hang { width: 96px; height: 96px; border-radius: 50%; border: 0; background: #F2463C; font-size: 48px; line-height: 1; box-shadow: 0 6px 0 var(--shadow); display: grid; place-items: center; }
   .hang:active { transform: translateY(3px); }
+  /* でんわの がめん（ひくい よこがめん）: どうぶつ・ことば・🔴 を よこに ならべる。.phcall より後に置く（先だと上書きされる） */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .phcall { flex-direction: row; gap: 14px; padding: 8px 14px; }
+    .phanimal { flex: 0 0 auto; width: clamp(110px, 40vh, 220px); font-size: clamp(64px, 24vh, 130px); }
+    .phtext { min-height: 0; min-width: 0; flex: 0 1 auto; font-size: clamp(20px, 7.5vh, 34px); }
+    .hang { flex: 0 0 auto; }
+  }
 
   /* かたちはめ */
   #stage-shape { background: #E6EEFF; display: flex; flex-direction: column; padding-top: var(--top); --S: clamp(80px, min(26vw, 14vh), 150px); }
@@ -3022,6 +3038,7 @@
   games.phone = {
     el: phStage,
     enter: function () { phBusy = false; phDigits = []; renderDigits(); phCall.hidden = true; phSay.textContent = ''; phSize(); },
+    resize: phSize,
     leave: function () { phIds.forEach(cancel); phIds = []; phCall.hidden = true; phBusy = false; phDigits = []; renderDigits(); },
     resize: phSize
   };
