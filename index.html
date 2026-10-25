@@ -7933,10 +7933,17 @@
     bx = land ? (W * 0.66 - bw) / 2 : (W - bw) / 2;
     var byMin = 8 + kh + 14 - (bh - T) / 2;
     by = land ? Math.max(byMin, (H - bh) / 2) : Math.max(byMin, H * 0.2);
+    /* ほうちょうは まないたの したに ねる。ひくい がめん（よこむき）では ほうちょうを ちいさくして おさめる */
+    for (var pass = 0; pass < 2; pass++) {
+      var sFit = (H - 4 - 16 - by - bh) / 49;
+      if (sFit >= s) break;
+      s = Math.max(0.6, sFit); kh = 142 * s; byMin = 8 + kh + 14 - (bh - T) / 2;
+      by = land ? Math.max(byMin, (H - bh) / 2) : Math.max(byMin, H * 0.2);
+    }
     var L = bw * 0.82, cy = by + bh / 2 + 2;
     var cw, cx, ccy;
     if (land) { var rx0 = bx + bw; cw = Math.min(W - rx0 - 60, 250); cx = rx0 + (W - rx0) / 2; ccy = Math.max(by + bh * 0.5, H * 0.55); }
-    else { cw = Math.min(W * 0.62, 260); cx = W / 2; ccy = (by + bh + H) / 2 + 4; }
+    else { cw = Math.min(W * 0.62, 260); cx = W / 2; ccy = (by + bh + H) / 2 + 4 + 22; }
     ki.lay = { land: land, bx: bx, by: by, bw: bw, bh: bh, T: T, L: L, fx0: bx + (bw - L) / 2, fy: cy, s: s, kh: kh, cx: cx, cy: ccy, cw: cw };
   }
   function kiSize() {
@@ -7950,7 +7957,7 @@
   function kiStart(i) {
     ki.fi = i % KI_FOODS.length; ki.F = KI_FOODS[ki.fi]; ki.name = ki.F.name;
     ki.pieces = [{ a: 0, b: 1, ox: 0, vx: 0, oy: 0, vy: 0, hold: 0, hop: null }];
-    ki.cuts = 0; ki.landed = []; ki.phase = 'in'; ki.pt = 0; ki.knife.t = 9; ki.hops = 0;
+    ki.cuts = 0; ki.landed = []; ki.phase = 'in'; ki.pt = 0; ki.knife.t = 9; ki.knife.from = null; ki.hops = 0;
     ki.knife.x = ki.knife.tx = ki.lay ? ki.lay.bx + ki.lay.bw / 2 : 0;
     ki.tm.push(later(function () { if (ki.on) { say(ki.name); bigWord(ki.name, ki.F.col); } }, 350));
   }
@@ -7971,7 +7978,7 @@
     var p1 = { a: p.a, b: cutAt, ox: p.ox, vx: p.vx, oy: p.oy, vy: -90, hold: hh, hop: null }, p2 = { a: cutAt, b: p.b, ox: p.ox, vx: p.vx, oy: p.oy, vy: -90, hold: hh, hop: null };
     P.splice(idx, 1, p1, p2);
     ki.cuts++;
-    var k = ki.knife; k.x = k.tx = Math.max(l.bx, Math.min(l.bx + l.bw, x)); k.t = 0;
+    var k = ki.knife; k.from = kiKnifePose(l, k); k.x = k.tx = Math.max(l.bx, Math.min(l.bx + l.bw, x)); k.t = 0;
     tone(150, 0.1, 'sine', 0.28, 70); tone(1900, 0.06, 'triangle', 0.05, 900, 0.03);
     kiPop(k.x, l.by + l.bh * 0.5 - l.T * 0.5 - l.kh * 0.9);
     if (ki.cuts >= KI_CUTS) { ki.phase = 'settle'; ki.pt = 0; }
@@ -8112,21 +8119,47 @@
     kiEll(c, l.bx + l.bw - 30, l.by + l.bh - 26, 11, 11, '#C99B62', KI_INK, 4);
     c.restore();
   }
+  /* ほうちょうの うごき: ふだんは まないたの すぐ したに ねている（てが ひだり・さきが みぎ・は が した）。タップで きった ばしょの うえへ さっと とんで、とんと きって、もとの ばしょに もどる。
+     ポーズ = さきの いち (x, y) と かたむき a（0=ねている 1=たてに かまえる）。タップの たびに、いまの ポーズから あたらしく はじめる（きるのは すぐ。うごきは またせない）。 */
+  var KI_TIN = 0.1, KI_TCH = 0.24, KI_TRET = 0.12;
+  function kiKnifeRest(l) { return { x: l.bx + l.bw - 30, y: l.by + l.bh + 16 + 30 * l.s, a: 0 }; }
+  function kiKnifePose(l, k) {
+    var rest = kiKnifeRest(l), t = k.t, tin = reduce ? 0 : KI_TIN, tret = reduce ? 0 : KI_TRET;
+    var hover = l.fy - ki.FH / 2 - 14, down = l.fy + ki.FH * 0.45, f = k.from || rest;
+    function lerp(p, q, e) { return { x: p.x + (q.x - p.x) * e, y: p.y + (q.y - p.y) * e, a: p.a + (q.a - p.a) * e }; }
+    function ease(u) { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }
+    var up = { x: k.x, y: hover, a: 1 };
+    if (t < tin) return lerp(f, up, ease(t / tin));
+    var tc = t - tin;
+    if (tc < KI_TCH) {
+      var d = tc < 0.07 ? Math.pow(tc / 0.07, 2) : 1 - Math.pow((tc - 0.07) / 0.17, 0.8);
+      d = Math.max(0, Math.min(1, d));
+      return { x: k.x, y: hover + (down - hover) * d, a: 1 };
+    }
+    var tr = tc - KI_TCH;
+    if (tr < tret) return lerp(up, rest, ease(tr / tret));
+    return rest;
+  }
+  function kiKnifeBox(P, len, vmin, vmax) {
+    var r = P.a * 0.5 * Math.PI + 0.25 * Math.PI, ang = r + 0.75 * Math.PI, ux = Math.cos(ang), uy = Math.sin(ang), vx = Math.cos(ang - 0.5 * Math.PI), vy = Math.sin(ang - 0.5 * Math.PI);
+    /* v: せなか がわが ー、は がわが ＋（ねている ときは せなかが うえ、はが した） */
+    var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    [[0, vmin], [len, vmin], [0, vmax], [len, vmax]].forEach(function (q) {
+      var x = P.x + ux * q[0] + vx * q[1], y = P.y + uy * q[0] + vy * q[1];
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    });
+    ki.kbox = { x0: x0, y0: y0, x1: x1, y1: y1, a: P.a, x: P.x, y: P.y };
+  }
   function kiKnifeImg(c, l, k, K) {
-    var s = l.s, hover = l.fy - ki.FH / 2 - 14, down = l.fy + ki.FH * 0.45;
-    var d = k.t < 0.07 ? Math.pow(k.t / 0.07, 2) : k.t < 0.24 ? 1 - Math.pow((k.t - 0.07) / 0.17, 0.8) : 0;
-    d = Math.max(0, Math.min(1, d));
-    var bob = d === 0 && !reduce ? Math.sin(ki.t * 2.4) * 3 : 0, yb = hover + (down - hover) * d + bob;
-    var sc = 142 * s / K.len;
-    c.save(); c.translate(k.x, yb); c.rotate(Math.PI * 0.75); c.scale(sc, sc); c.drawImage(K.im, -K.ax, -K.ay); c.restore();
+    var P = kiKnifePose(l, k), sc = 142 * l.s / K.len, r = Math.PI * (0.25 + 0.5 * P.a);
+    kiKnifeBox(P, 142 * l.s, -61 * sc, 37 * sc);
+    c.save(); c.translate(P.x, P.y); c.rotate(r); c.scale(sc, sc); c.drawImage(K.im, -K.ax, -K.ay); c.restore();
   }
   function kiKnife(c, l, k) {
     if (KI_ART.knife) return kiKnifeImg(c, l, k, KI_ART.knife);
-    var s = l.s, bw = 60 * s, bh = 86 * s, hw = 24 * s, hh = 52 * s, hover = l.fy - l.T / 2 - 14, down = l.fy + l.T * 0.52;
-    var d = k.t < 0.07 ? Math.pow(k.t / 0.07, 2) : k.t < 0.24 ? 1 - Math.pow((k.t - 0.07) / 0.17, 0.8) : 0;
-    d = Math.max(0, Math.min(1, d));
-    var bob = d === 0 && !reduce ? Math.sin(ki.t * 2.4) * 3 : 0, yb = hover + (down - hover) * d + bob, x = k.x;
-    c.save(); c.lineJoin = 'round';
+    var s = l.s, bw = 60 * s, bh = 86 * s, hw = 24 * s, hh = 52 * s, P = kiKnifePose(l, k), x = 0, yb = 0;
+    kiKnifeBox(P, bh + hh, -30 * s, 30 * s);
+    c.save(); c.translate(P.x, P.y); c.rotate(Math.PI * (P.a * 0.5 - 0.5)); c.lineJoin = 'round';
     /* もちて（きの いろ）: ブレードの うしろ がわ（ひだり）に よせる */
     var hx = x - bw / 2 + 6 * s;
     kiRR(c, hx, yb - bh - hh + 10 * s, hw, hh, 11 * s); c.fillStyle = '#D79A62'; c.fill(); c.lineWidth = 5; c.strokeStyle = KI_INK; c.stroke();

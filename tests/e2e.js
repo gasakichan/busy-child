@@ -2563,15 +2563,20 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(L.T >= 100 && L.L / L.bw >= 0.75 && L.L / L.bw <= 0.85 && L.bx >= 0 && L.bx + L.bw <= vp.width && L.by >= 0 && L.by + L.bh <= vp.height, tag + ': food >=100px high, 75-85% of the board, board inside the screen ' + JSON.stringify([Math.round(L.T), Math.round(L.L), Math.round(L.bw)]));
     ok(await until(p, async () => (await says(p)).some(x => x.t === 'にんじん'), 3000) && await until(p, async () => (await big()) === 'にんじん', 3000), tag + ': says にんじん and shows it big');
     await shot('a');
+    /* ほうちょうは ふだん まないたの したに ねている（まないたと かさならない） */
+    const KB = () => p.evaluate(() => { const b = window.__ki.kbox, l = window.__ki.lay; return b && { x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1, a: b.a, bb: l.by + l.bh, W: window.__ki.W, H: window.__ki.H }; });
+    let kb = await KB();
+    ok(kb && kb.a === 0 && kb.y0 >= kb.bb && kb.x0 >= 0 && kb.x1 <= kb.W && kb.y1 <= kb.H, tag + ': knife rests below the board ' + JSON.stringify(kb && [kb.y0, kb.bb, kb.y1].map(Math.round)));
     /* 5かい タップ: 1 -> 6 */
     await clearSays(p);
     const xs = [0.5, 0.25, 0.75, 0.12, 0.88].map(f => L.fx0 + f * L.L);
     for (let i = 0; i < 5; i++) {
-      await tapX(xs[i], L.fy); await sleep(i === 2 ? 420 : 160);
+      await tapX(xs[i], L.fy); await sleep(i === 2 ? 150 : 160);
       k = await KI();
       ok(k.n === i + 2 && k.cuts === i + 1, tag + ': cut ' + (i + 1) + ' -> ' + k.n + ' pieces');
       if (i === 2) await shot('b');
     }
+    ok(await until(p, async () => { const q = await KB(); return q.a === 0 && q.y0 >= q.bb; }, 1500), tag + ': knife returns to rest after the cuts');
     ok(k.pops === 5 && (await says(p)).length === 0, tag + ': a 「とん！」 pop per cut, no speech per cut (pops ' + k.pops + ')');
     await tapX(L.fx0 + 0.3 * L.L, L.fy); await sleep(100);
     ok((await KI()).n === 6, tag + ': taps during the done animation are ignored');
