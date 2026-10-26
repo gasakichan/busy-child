@@ -1124,7 +1124,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const KO = (p) => p.evaluate(() => window.__ko && ({ mode: __ko.mode, n: __ko.balls.length, round: __ko.round, base: !!__ko.base, bs: !!__ko.bs, total: __ko.total, W: __ko.W, H: __ko.H, u: __ko.u, R: __ko.R, r: __ko.r, holes: __ko.holes.map(h => [h.x, h.y]), balls: __ko.balls.map(b => [b.x, b.y, b.col, !!b.sink]), noEvT: __ko.noEvT }));
     const initFor = ({ perm = null, angle = 0, pin = true, round = 0, sens } = {}) => `(function(){
       window.__koPin = ${pin}; ${round ? 'window.__koRound = ' + round + ';' : ''}
-      ${perm ? "window.__perm = 0; DeviceMotionEvent.requestPermission = function(){ window.__perm++; return Promise.resolve('" + perm + "'); };" : ''}
+      ${perm ? "window.__perm = 0; DeviceMotionEvent.requestPermission = function(){ window.__perm++; return Promise.resolve('" + perm + "'); };" : "if (typeof DeviceMotionEvent !== 'undefined') delete DeviceMotionEvent.requestPermission;"}
       ${angle ? 'Object.defineProperty(screen.orientation, "angle", { get: function(){ return ' + angle + '; } });' : ''}
       ${sens != null ? "try{localStorage.setItem('ponpon.settings.v1', JSON.stringify({koroSens:" + sens + "}));}catch(e){}" : ''}
     })();`;
