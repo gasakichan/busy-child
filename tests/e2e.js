@@ -31,7 +31,7 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['var ki = {', 'var ki = window.__ki = {'],
   ['games.neko = {', 'window.__nkStart = nkStart; window.__nkMake = nkMake; window.__nkPR = nkPR; window.__nkCatR = nkCatR; games.neko = {'],
   ['var vc = {', 'var vc = window.__vc = {'],
-  ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr }; games.voice = {'],
+  ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr, squeeze: vcSqueeze }; games.voice = {'],
   ['var NK_SOLID = {', 'var NK_SOLID = window.__nkSolid = {'],
   ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
@@ -2015,6 +2015,15 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       o.hiThr = (() => { const s = H.vadNew(); for (let i = 0; i < 20; i++) H.vad(s, 0.5, 0.05); return s.thr; })();
       o.ring = H.ring(new Array(20).fill(2048), 48000); o.ring2 = H.ring([100], 48000);
       o.keep = [H.keep(48000, 48000, 0.7), H.keep(48000, 48000, 0), H.keep(1000, 48000, 0.7)];
+      /* vcSqueeze: むおん→おと→むおん→おと→むおん を つくって ちぢめる */
+      const SR = 48000, mk = (parts) => { const n = parts.reduce((s, q) => s + Math.round(q[1] * SR), 0), d = new Float32Array(n); let k = 0; parts.forEach(([amp, sec]) => { const m = Math.round(sec * SR); for (let i = 0; i < m; i++) d[k + i] = amp ? amp * Math.sin(2 * Math.PI * 300 * (k + i) / SR) : 0; k += m; }); return d; };
+      const maxJump = (d) => { let m = 0; for (let i = 1; i < d.length; i++) m = Math.max(m, Math.abs(d[i] - d[i - 1])); return m; };
+      const d1 = mk([[0, 0.3], [0.3, 0.4], [0, 0.5], [0.3, 0.4], [0, 0.6]]), r1 = H.squeeze(d1, SR, 0.05);
+      let head = 0; for (let i = 0; i < Math.round(0.04 * SR); i++) head = Math.max(head, Math.abs(r1[i]));
+      const d2 = mk([[0, 0.3], [0.3, 0.4], [0, 0.2], [0.3, 0.4], [0, 0.6]]), r2 = H.squeeze(d2, SR, 0.05);
+      const d3 = new Float32Array(48000), r3 = H.squeeze(d3, SR, 0.05);
+      const d4 = mk([[0.3, 0.4], [0, 0.5], [0.3, 0.4]]), r4 = H.squeeze(d4, SR, 0.05);
+      o.sq = { len1: r1.length / SR, head, jump1: maxJump(r1), jumpRaw: maxJump(d1), len2: r2.length / SR, same2: r2.length === d2.length, same3: r3 === d3, len4: r4.length / SR, same4: r4 === d4 };
       return o;
     });
     ok(a.A.GAIN_MAX <= 1.6 && a.A.QUIET === 0.7 && a.A.MAXLEN === 6 && a.A.MINV === 0.3 && a.A.PRE === 0.3 && a.A.TAIL >= 0.5, 'voice pure: tuning constants ' + JSON.stringify(a.A));
@@ -2026,6 +2035,13 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(a.noisy.ev.join() === 'start' && a.noisyThr > a.A.THR_MIN && a.noisyThr <= a.A.THR_MAX && a.hiThr === a.A.THR_MAX, 'voice pure: threshold calibrates to ambient noise (' + a.noisyThr.toFixed(3) + ', cap ' + a.hiThr + ') ' + a.noisy.ev);
     ok(a.ring === 12 && a.ring2 === 0, 'voice pure: pre-roll keeps >= 0.3s (' + a.ring + ')');
     ok(a.keep[0] === 21600 && a.keep[1] === 48000 && a.keep[2] === 0, 'voice pure: trailing silence trimmed to 0.15s ' + a.keep);
+    const q = a.sq, want1 = 0.05 + 0.4 + 0.12 + 0.4 + 0.15;
+    ok(a.A.LEAD === 0.05 && a.A.GAP === 0.25 && a.A.GAPKEEP === 0.12 && a.A.FADE === 0.01 && a.A.FRAME === 0.01, 'voice pure: squeeze constants ' + JSON.stringify(a.A));
+    ok(Math.abs(q.len1 - want1) < 0.03 && q.head < 0.01, 'voice pure: squeeze cuts head to ~0.05s, 0.5s pause to ~0.12s, tail to 0.15s (' + q.len1.toFixed(3) + ' vs ' + want1.toFixed(3) + ', head ' + q.head.toFixed(4) + ')');
+    ok(Math.abs(q.len2 - (0.05 + 0.4 + 0.2 + 0.4 + 0.15)) < 0.03, 'voice pure: a 0.2s pause (< 0.25) is not shrunk (' + q.len2.toFixed(3) + ')');
+    ok(q.same3 === true, 'voice pure: all-silent input is returned unchanged');
+    ok(Math.abs(q.len4 - (0.4 + 0.12 + 0.4)) < 0.03, 'voice pure: no head/tail silence -> only the pause shrinks (' + q.len4.toFixed(3) + ')');
+    ok(q.jump1 <= q.jumpRaw * 1.05 + 1e-6, 'voice pure: splice points have no clicks (max jump ' + q.jump1.toFixed(3) + ' vs raw ' + q.jumpRaw.toFixed(3) + ')');
     await p.context().close();
   });
 
@@ -2171,6 +2187,33 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const r = await p.evaluate(() => ({ dur: window.__vc.buf.duration, peak: Math.max.apply(null, Array.from(window.__vc.buf.getChannelData(0)).map(Math.abs)) }));
     ok(r.dur > 0.3 && r.peak > 0.001, 'voice-sp: PCM buffer has sound ' + JSON.stringify(r));
     ok((await AU(p)).last === 'rev' && (await p.evaluate(() => window.__vc.live)) >= 3 && p.errs.length === 0, 'voice-sp: reverse playback ok, no errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  /* ずっときく: さいしょの むおんと まんなかの ポーズ(0.5s)が ちぢめられて さいせいされる */
+  T('voice-trim', async (br) => {
+    const tag = 'voice-trim';
+    const p = await newPage(br, { width: 360, height: 740 }, { voices: JAV, init: FAKEMIC });
+    await p.evaluate(VCFAST);
+    await tapTile(p, 'ボイスチェンジャー');
+    ok(await until(p, async () => (await AU(p)).state === 'auto' && (await AU(p)).ph === 'listen', 3000), tag + ': listening');
+    await sleep(800);
+    const t0 = await p.evaluate(() => { window.__fm.set(0.3); return performance.now(); });
+    await sleep(500); await p.evaluate(() => window.__fm.set(0));
+    await sleep(500); await p.evaluate(() => window.__fm.set(0.3));
+    await sleep(500); const t1 = await p.evaluate(() => { window.__fm.set(0); return performance.now(); });
+    ok(await until(p, async () => (await AU(p)).count === 1, 4000), tag + ': one utterance committed (a 0.5s pause does not split it)');
+    const r = await p.evaluate(() => {
+      const b = window.__vc.buf, d = b.getChannelData(0), sr = b.sampleRate, F = Math.round(sr * 0.01);
+      let head = 0; for (let i = 0; i < Math.round(0.02 * sr); i++) head = Math.max(head, Math.abs(d[i]));
+      let run = 0, best = 0;
+      for (let a = 0; a + F <= d.length; a += F) { let m = 0; for (let i = a; i < a + F; i++) m = Math.max(m, Math.abs(d[i])); if (m < 0.01) { run += 0.01; best = Math.max(best, run); } else run = 0; }
+      return { dur: b.duration, head, best };
+    });
+    const span = (t1 - t0) / 1000;
+    ok(r.dur < span - 0.05 && r.dur < 1.75 && r.dur > 0.9, tag + ': buffer is shorter than the talk span incl. the pause (' + r.dur.toFixed(2) + 's vs ' + span.toFixed(2) + 's)');
+    ok(r.head < 0.05 && r.best < 0.3, tag + ': pre-roll cut, pause shrunk (head peak ' + r.head.toFixed(3) + ', longest quiet ' + r.best.toFixed(2) + 's)');
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
