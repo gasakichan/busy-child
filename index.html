@@ -6877,7 +6877,7 @@
     return out;
   }
   /* オート（ずっときく）: 簡易 VAD。s=状態, rms=短い窓のRMS, dt=その窓の秒数。戻り値 ''=なし 'start' 'end'(かくてい) 'drop'(みじかい) 'max'(さいちょうで きょうせい) */
-  var VC_AUTO = { PRE: 0.3, QUIET: 0.7, MAXLEN: 6, MINV: 0.3, TAIL: 0.5, KEEP: 0.15, CAL: 0.4, MULT: 3, THR_MIN: 0.02, THR_MAX: 0.12, FLOOR_MAX: 0.04, INTRO: 2.5, GAIN_MAX: 1.6, SWITCH_SESSION: true, RETRY_MAX: 3 };
+  var VC_AUTO = { PRE: 0.3, QUIET: 0.7, MAXLEN: 6, MINV: 0.3, TAIL: 0.5, KEEP: 0.15, LEAD: 0.05, GAP: 0.25, GAPKEEP: 0.12, FADE: 0.01, FRAME: 0.01, CAL: 0.4, MULT: 3, THR_MIN: 0.02, THR_MAX: 0.12, FLOOR_MAX: 0.04, INTRO: 2.5, GAIN_MAX: 1.6, SWITCH_SESSION: true, RETRY_MAX: 3 };
   function vcThr(f) { return Math.min(VC_AUTO.THR_MAX, Math.max(VC_AUTO.THR_MIN, f * VC_AUTO.MULT)); }
   function vcVadNew() { return { st: 'idle', floor: 0, thr: VC_AUTO.THR_MIN, cal: 0, calSum: 0, quiet: 0, len: 0 }; }
   function vcVadReset(s) { s.st = 'idle'; s.quiet = 0; s.len = 0; return s; }
@@ -6910,6 +6910,48 @@
   /* おわりの むおんを KEEP びょうだけ のこして きる。ぜんぶの サンプルすう total, quiet=むおんの びょう */
   function vcKeep(total, sr, quiet) {
     return Math.max(0, Math.min(total, total - Math.round(Math.max(0, quiet - VC_AUTO.KEEP) * sr)));
+  }
+  /* さいしょの むおんは LEAD びょうだけ、おわりは KEEP びょうだけ のこし、なかの GAP びょう いじょうの むおんは GAPKEEP びょうに ちぢめる（つなぎめは FADE びょうの フェード）。ぜんぶ むおんなら d を そのまま かえす */
+  function vcSqueeze(d, sr, thr) {
+    var A = VC_AUTO, len = d.length, F = Math.max(1, Math.round(A.FRAME * sr)), nf = Math.ceil(len / F), lim = thr * 0.6, loud = [], i, j, f0 = -1, f1 = -1;
+    for (i = 0; i < nf; i++) {
+      var a = i * F, b = Math.min(len, a + F), s = 0;
+      for (j = a; j < b; j++) s += d[j] * d[j];
+      var l = b > a && Math.sqrt(s / (b - a)) >= lim;
+      loud.push(l);
+      if (l) { if (f0 < 0) f0 = i; f1 = i; }
+    }
+    if (f0 < 0) return d;
+    var start = Math.max(0, f0 * F - Math.round(A.LEAD * sr));
+    var end = Math.min(len, Math.min(len, (f1 + 1) * F) + Math.round(A.KEEP * sr));
+    var half = Math.round(A.GAPKEEP * sr / 2), minGap = Math.round(A.GAP * sr), fade = Math.max(1, Math.round(A.FADE * sr));
+    var pieces = [], cur = start;                 /* かけら [はじめ, おわり, フェードイン?, フェードアウト?] */
+    var fin = false;
+    i = f0;
+    while (i <= f1) {
+      if (loud[i]) { i++; continue; }
+      var q0 = i; while (i <= f1 && !loud[i]) i++;   /* むおんの ならび [q0, i) */
+      var qs = q0 * F, qe = i * F;
+      if (qe - qs >= minGap) {
+        pieces.push([cur, qs + half, fin, true]);
+        cur = qe - half; fin = true;
+      }
+    }
+    pieces.push([cur, end, fin, false]);
+    var tot = 0; for (i = 0; i < pieces.length; i++) tot += pieces[i][1] - pieces[i][0];
+    if (tot === len) return d;
+    var out = new Float32Array(tot), o = 0;
+    for (i = 0; i < pieces.length; i++) {
+      var p = pieces[i], n = p[1] - p[0];
+      out.set(d.subarray(p[0], p[1]), o);
+      var m = Math.min(fade, n);
+      for (j = 0; j < m; j++) {
+        if (p[2]) out[o + j] *= (j + 1) / (m + 1);
+        if (p[3]) out[o + n - 1 - j] *= (j + 1) / (m + 1);
+      }
+      o += n;
+    }
+    return out;
   }
   /* vc:end */
   var vcStage = $('#stage-voice'), vcIco = $('#vc-ico'), vcMsg = $('#vc-msg'), vcGrid = $('#vc-grid'), vcAuto = $('#vc-auto'), vcAsk = $('#vc-ask'), vcSt = $('#vc-st'), vcBtns = {};
@@ -7120,15 +7162,16 @@
   }
   /* はなしおわり: バッファを かくていしてから、えらんだ こえで さいせい（その あいだ マイクは すてる） */
   function vcAutoCommit(keep) {
-    var au = vc.au, ch = au.ch, c = ac;
+    var au = vc.au, ch = au.ch, c = ac, thr = au.vad.thr;   /* vcAutoClear の まえに しきい値を おぼえる */
     vc.deafUntil = performance.now() + VC_AUTO.TAIL * 1000;
     vcAutoClear();
     var buf = null;
     if (c && keep >= c.sampleRate * 0.15) {
       try {
-        buf = c.createBuffer(1, keep, c.sampleRate);
-        var d = buf.getChannelData(0), o = 0;
+        var d = new Float32Array(keep), o = 0;
         for (var i = 0; i < ch.length && o < keep; i++) { var part = o + ch[i].length > keep ? ch[i].subarray(0, keep - o) : ch[i]; d.set(part, o); o += part.length; }
+        d = vcSqueeze(d, c.sampleRate, thr);   /* さいしょの むおんと まんなかの ながい ポーズを ちぢめる */
+        if (d.length >= c.sampleRate * 0.15) { buf = c.createBuffer(1, d.length, c.sampleRate); buf.getChannelData(0).set(d); }
       } catch (e) { buf = null; }
     }
     if (!buf) { vcAutoPhase('listen'); return; }
