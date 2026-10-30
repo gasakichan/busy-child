@@ -40,13 +40,13 @@ if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき'];
 // ホームの並び（index.html の HORDER と同じ。9 個ずつでページ）
 const HLABS = ['ふうせん','どうぶつ','おえかき','いないいないばあ','もしもし','でんしゃ','おみせやさん','ぬりえ','シールちょう',
   'いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち',
   'ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば',
-  'とんとん'];
+  'とんとん','はみがき'];
 const NPAGES = Math.ceil(HLABS.length / 9);
 const pageOf = lab => Math.floor(HLABS.indexOf(lab) / 9);
 async function gotoPage(p, n) {
@@ -158,7 +158,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hm-p1').isVisible() && await p.locator('#hm-p0').isHidden(), tag + ' dot jumps to page2');
     await p.click('.hm-dot:nth-child(1)'); await sleep(320);
     // ---- page 3 ----
-    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (28 games, 9 per page)');
+    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (29 games, 9 per page)');
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
@@ -180,11 +180,11 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hm-p2').isVisible() && await p.locator('#hm-p1').isHidden(), tag + ' swipe left p2 -> p3');
     await p.mouse.move(ab.x + 100, y0); await p.mouse.down(); await p.mouse.move(ab.x + 300, y0 + 5, { steps: 5 }); await p.mouse.up(); await sleep(330);
     ok(await p.locator('#hm-p1').isVisible(), tag + ' swipe right p3 -> p2');
-    // ---- page 4 (last): とんとん alone ----
+    // ---- page 4 (last): とんとん + はみがき ----
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
-    ok(t4.length === 1 && t4[0].ok && t4[0].w === tiles[0].w && t4[0].h === tiles[0].h && t4[0].cx === tiles[1].cx && t4[0].cy === tiles[0].cy && !t4[0].clip, tag + ' page4: とんとん alone, centred in the top row (like the page1 2nd tile), same size ' + JSON.stringify(t4));
-    ok(await icoChk(), tag + ' page4 icon image loaded');
+    ok(t4.length === 2 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[0].cy === tiles[0].cy, tag + ' page4: とんとん + はみがき in the top row, same size ' + JSON.stringify(t4));
+    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥'; }), tag + ' page4: とんとん icon image loaded, はみがき uses the 🪥 emoji');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
     const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');
@@ -1072,7 +1072,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 26 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (26 rows)');
+      ok(await p.locator('.st-row.zero').count() === 27 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (27 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2688,10 +2688,74 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 
 
+  /* ---------- はみがき ---------- */
+  TV('hami', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+    const tag = 'hami ' + vp.width + 'x' + vp.height, land = vp.width > vp.height, shot = n => p.screenshot({ path: SP + '/hami-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true });
+    const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
+    const dirty = () => p.evaluate(() => document.querySelectorAll('#stage-hami .ha-tooth.dirty').length);
+    const geo = () => p.evaluate(() => { const vw = innerWidth, vh = innerHeight, st = document.querySelector('#stage-hami').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
+      const ts = [...document.querySelectorAll('#stage-hami .ha-tooth')].map(t => { const r = t.getBoundingClientRect(); return { w: r.width, h: r.height, in: r.left >= 0 && r.right <= vw && r.top >= 0 && r.bottom <= vh && r.left >= st.left - 0.5 && r.right <= st.right + 0.5 && r.top >= st.top - 0.5 && r.bottom <= st.bottom + 0.5, ovl: r.left < hb.right && hb.left < r.right && r.top < hb.bottom && hb.top < r.bottom }; });
+      return { n: ts.length, minw: Math.min(...ts.map(t => t.w)), minh: Math.min(...ts.map(t => t.h)), allIn: ts.every(t => t.in), ovl: ts.filter(t => t.ovl).length, cols: window.__ha.cols, rows: window.__ha.rows,
+        hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw || document.querySelector('#stage-hami').scrollWidth > document.querySelector('#stage-hami').clientWidth }; });
+    await tapTile(p, 'はみがき'); await sleep(500);
+    ok(await p.locator('#stage-hami').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens はみがき');
+    ok((await says(p)).some(x => x.t === 'はみがき！') && await until(async () => (await says(p)).some(x => x.t === 'はみがき しよう！'), 1500) && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks はみがき！ then はみがき しよう！, shared 🏠, no adult button');
+    const g = await geo();
+    console.log('info ' + tag + ' teeth ' + g.n + ' (' + g.cols + 'x' + g.rows + ' x2) min tap ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
+    ok(g.n === g.cols * g.rows * 2 && g.n >= 8 && g.minw >= 80 && g.minh >= 80, tag + ': every tooth tap area >= 80x80 ' + JSON.stringify([g.n, g.minw, g.minh]));
+    ok(g.allIn && !g.hs && g.ovl === 0, tag + ': teeth fully inside the viewport, no hscroll, none under 🏠 ' + JSON.stringify(g));
+    const n0 = await dirty();
+    ok(n0 >= 3 && n0 <= 5, tag + ': 3-5 dirty teeth (' + n0 + ')');
+    await shot('a');
+    /* きれいな は: ちいさな きらきら だけ */
+    await clearSays(p);
+    await p.locator('#stage-hami .ha-tooth.clean').first().click();
+    await sleep(100);
+    ok((await dirty()) === n0 && (await says(p)).length === 0 && await p.locator('#fx-hami span').count() > 0, tag + ': clean tooth -> tiny sparkle only, nothing else changes');
+    /* よごれを タップ */
+    await clearSays(p);
+    await p.locator('#stage-hami .ha-tooth.dirty').first().click();
+    await sleep(500);
+    ok((await says(p)).some(x => x.t === 'ごしごし') && (await big()) === 'ごしごし', tag + ': scrub says ごしごし and shows it big');
+    ok(await p.locator('#ha-over .ha-brush').count() === 1 && await p.locator('#ha-over .ha-foam').count() > 0, tag + ': a toothbrush and foam appear during the scrub');
+    await shot('scrub');
+    ok(await until(async () => (await dirty()) === n0 - 1, 3000), tag + ': that tooth becomes clean after the scrub');
+    ok(await p.locator('#ha-over .ha-brush').count() === 0, tag + ': brush is gone afterwards');
+    await shot('one');
+    /* ぜんぶ */
+    while ((await dirty()) > 0) {
+      const t = p.locator('#stage-hami .ha-tooth.dirty:not([data-scrub="1"])');
+      if (await t.count()) { await t.first().click(); }
+      await sleep(250);
+    }
+    ok(await until(async () => (await says(p)).some(x => x.t === 'できた！') && (await big()) === 'できた', 4000), tag + ': all clean -> できた！ spoken and shown big');
+    await sleep(300); await shot('done');
+    ok(await until(async () => (await dirty()) >= 3, 6000), tag + ': a fresh round with new dirt starts by itself');
+    ok(await until(async () => (await says(p)).filter(x => x.t === 'はみがき しよう！').length >= 1, 1500), tag + ': new round says はみがき しよう！ again');
+    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
+    /* ちゅうで ホームへ: こすっている さいちゅうでも かたづく */
+    await p.locator('#stage-hami .ha-tooth.dirty').first().click(); await sleep(300);
+    await p.click('#homebtn'); await sleep(150);
+    ok(await p.locator('#hm-p3').isVisible() && await p.locator('#stage-hami').isHidden(), tag + ': 🏠 returns to page 4');
+    const st = await p.evaluate(() => ({ on: window.__ha.on, tm: window.__ha.tm.length, an: window.__ha.anims.length, teeth: window.__ha.teeth.length, over: document.querySelector('#ha-over').children.length }));
+    ok(!st.on && st.tm === 0 && st.an === 0 && st.teeth === 0 && st.over === 0, tag + ': leave() cleared timers/animations/state ' + JSON.stringify(st));
+    await clearSays(p); await sleep(2000);
+    ok((await says(p)).length === 0 && await p.locator('#fx-hami span').count() === 0, tag + ': nothing keeps running (no speech, no sparkles) after leaving');
+    await tapTile(p, 'はみがき'); await sleep(500);
+    ok((await dirty()) >= 3 && (await geo()).n === g.n, tag + ': re-enter starts a clean new round');
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
