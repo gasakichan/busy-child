@@ -472,17 +472,18 @@
   /* はみがき */
   #stage-hami { background: #FFC8D6; --haink: #5a3a28; }
   .ha-gums {
-    position: absolute; left: 2px; right: 2px; top: 68px; bottom: 6px; z-index: 1;
+    position: absolute; left: 0; right: 0; top: 68px; bottom: 6px; z-index: 1;
     display: flex; flex-direction: column; padding: 2px;
-    background: #FF96B0; border: 3px solid var(--haink); border-radius: 44px;
+    background: #FF96B0; border: 4px solid #E0476B; border-radius: 48px;
     box-shadow: inset 0 6px 0 rgba(255,255,255,.35);
   }
   .ha-half { flex: 1; min-height: 0; display: grid; gap: 0; }
   .ha-gap { flex: none; height: 28px; margin: 0 6px; position: relative; overflow: hidden; background: #C2415F; border-radius: 16px; box-shadow: inset 0 4px 0 rgba(0,0,0,.12); }
   .ha-gap::after { content: ''; position: absolute; left: 50%; bottom: -14px; width: 46%; height: 26px; margin-left: -23%; background: #FF8AA2; border-radius: 50% 50% 0 0; }
-  .ha-tooth { position: relative; display: block; width: 100%; height: 100%; padding: 0; margin: 0; border: 0; background: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  @media (orientation: portrait) { .ha-gap { height: 60px; } .ha-gap::after { height: 44px; width: 56%; margin-left: -28%; } }
+  .ha-tooth { position: relative; display: block; width: calc(100% + 8px); height: 100%; padding: 0; margin: 0 -4px; border: 0; background: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .ha-body {
-    position: absolute; inset: 3px; overflow: hidden; border: 4px solid var(--haink);
+    position: absolute; inset: 3px 5px; overflow: hidden; border: 4px solid var(--haink);
     background: linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 55%, #E6F4FF 100%);
     box-shadow: inset -6px -4px 0 rgba(160,200,235,.28);
   }
@@ -504,7 +505,7 @@
   .ha-brush { position: absolute; left: 0; top: 0; will-change: transform; }
   .ha-brush svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .ha-foam { position: absolute; border-radius: 50%; background: #fff; border: 3px solid #BFE3FF; will-change: transform, opacity; }
-  @media (max-height: 420px) { .ha-gums { top: 68px; bottom: 4px; padding: 2px; border-radius: 30px; } .ha-gap { height: 16px; } }
+  @media (max-height: 420px) { .ha-gums { padding: 2px; border-radius: 30px; border-width: 4px; } .ha-gap { height: 16px; } }
   #pb-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-launch {
     position: absolute; z-index: 5; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; padding: 0; border-radius: 50%;
@@ -8423,13 +8424,12 @@
     '</g><path d="M10 36 V50 M20 36 V52 M30 36 V50 M40 36 V52" stroke="#5a3a28" stroke-width="2" fill="none" opacity=".0"/></svg>';
   function haTm(fn, ms) { var id = later(function () { var i = ha.tm.indexOf(id); if (i >= 0) ha.tm.splice(i, 1); fn(); }, ms); ha.tm.push(id); return id; }
   function haConf() {
-    var r = haGums.getBoundingClientRect(), W = Math.round(r.width), H = Math.round(r.height);
-    if (W < 50 || H < 50) return null;
+    var st = haStage.getBoundingClientRect(), W = Math.round(st.width), AH = Math.round(st.height - 68 - 6);
+    if (W < 50 || AH < 100) return null;
     var gap = haGums.querySelector('.ha-gap').offsetHeight;
-    var inW = W - 10, halfH = (H - 10 - gap) / 2;
-    var cols = 3; if (W >= 480) cols = 6; else if (inW / 4 >= 80) cols = 4;
-    var cw = inW / cols, rows = Math.max(1, Math.min(3, Math.floor(halfH / Math.max(80, cw * 0.95))));
-    return { cols: cols, rows: rows };
+    var inW = W - 12, cols = 4; if (W >= 480) cols = 6; else if (inW / 4 < 64) cols = 3;
+    var cw = inW / cols, th = Math.floor(Math.min(cw * 1.4, (AH - 14 - gap) / 2));
+    return { cols: cols, rows: 1, th: th, total: th * 2 + gap + 14, top: 68 + Math.floor((AH - (th * 2 + gap + 14)) / 2) };
   }
   function haBuild(c) {
     haUp.innerHTML = ''; haLo.innerHTML = ''; ha.teeth = [];
@@ -8470,7 +8470,8 @@
   }
   function haSize() {
     var c = haConf(); if (!c) return;
-    if (c.cols === ha.cols && c.rows === ha.rows && ha.teeth.length) return;
+    haGums.style.top = c.top + 'px'; haGums.style.height = c.total + 'px'; haGums.style.bottom = 'auto';
+    if (c.cols === ha.cols && ha.teeth.length) return;
     haBuild(c); haNewRound(false);
   }
   function haPos(t) {

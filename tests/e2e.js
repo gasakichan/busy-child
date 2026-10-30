@@ -2696,15 +2696,15 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const big = () => p.evaluate(() => { const b = document.querySelector('#bigword'); return b.hidden ? '' : b.textContent; });
     const dirty = () => p.evaluate(() => document.querySelectorAll('#stage-hami .ha-tooth.dirty').length);
     const geo = () => p.evaluate(() => { const vw = innerWidth, vh = innerHeight, st = document.querySelector('#stage-hami').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
-      const ts = [...document.querySelectorAll('#stage-hami .ha-tooth')].map(t => { const r = t.getBoundingClientRect(); return { w: r.width, h: r.height, in: r.left >= 0 && r.right <= vw && r.top >= 0 && r.bottom <= vh && r.left >= st.left - 0.5 && r.right <= st.right + 0.5 && r.top >= st.top - 0.5 && r.bottom <= st.bottom + 0.5, ovl: r.left < hb.right && hb.left < r.right && r.top < hb.bottom && hb.top < r.bottom }; });
-      return { n: ts.length, minw: Math.min(...ts.map(t => t.w)), minh: Math.min(...ts.map(t => t.h)), allIn: ts.every(t => t.in), ovl: ts.filter(t => t.ovl).length, cols: window.__ha.cols, rows: window.__ha.rows,
+      const ts = [...document.querySelectorAll('#stage-hami .ha-tooth')].map(t => { const r = t.getBoundingClientRect(); return { w: r.width, h: r.height, top: r.top, in: r.left >= 0 && r.right <= vw && r.top >= 0 && r.bottom <= vh && r.left >= st.left - 0.5 && r.right <= st.right + 0.5 && r.top >= st.top - 0.5 && r.bottom <= st.bottom + 0.5, ovl: r.left < hb.right && hb.left < r.right && r.top < hb.bottom && hb.top < r.bottom }; });
+      return { n: ts.length, minw: Math.min(...ts.map(t => t.w)), minh: Math.min(...ts.map(t => t.h)), allIn: ts.every(t => t.in), ovl: ts.filter(t => t.ovl).length, cols: window.__ha.cols, rows: window.__ha.rows, maxh: Math.max(...ts.map(t => t.h)), rowsN: new Set(ts.map(t => Math.round(t.top))).size, up: document.querySelectorAll('#ha-up .ha-tooth').length, lo: document.querySelectorAll('#ha-lo .ha-tooth').length,
         hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw || document.querySelector('#stage-hami').scrollWidth > document.querySelector('#stage-hami').clientWidth }; });
     await tapTile(p, 'はみがき'); await sleep(500);
     ok(await p.locator('#stage-hami').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens はみがき');
     ok((await says(p)).some(x => x.t === 'はみがき！') && await until(async () => (await says(p)).some(x => x.t === 'はみがき しよう！'), 1500) && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks はみがき！ then はみがき しよう！, shared 🏠, no adult button');
     const g = await geo();
-    console.log('info ' + tag + ' teeth ' + g.n + ' (' + g.cols + 'x' + g.rows + ' x2) min tap ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
-    ok(g.n === g.cols * g.rows * 2 && g.n >= 8 && g.minw >= 80 && g.minh >= 80, tag + ': every tooth tap area >= 80x80 ' + JSON.stringify([g.n, g.minw, g.minh]));
+    console.log('info ' + tag + ' teeth ' + g.n + ' (' + g.cols + 'x' + g.rows + ' x2) rows(top) ' + g.rowsN + ' min tap ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
+    ok(g.rowsN === 2 && g.up === g.lo && g.rows === 1 && g.n === g.cols * 2 && g.n === (land ? 12 : 8) && g.minw >= 80 && g.minh >= 80 && g.maxh <= g.minw * 1.6, tag + ': every tooth tap area >= 80x80 ' + JSON.stringify([g.n, g.minw, g.minh]));
     ok(g.allIn && !g.hs && g.ovl === 0, tag + ': teeth fully inside the viewport, no hscroll, none under 🏠 ' + JSON.stringify(g));
     const n0 = await dirty();
     ok(n0 >= 3 && n0 <= 5, tag + ': 3-5 dirty teeth (' + n0 + ')');
