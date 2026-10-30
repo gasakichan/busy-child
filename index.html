@@ -469,6 +469,42 @@
   }
   #stage-kiru { background: #FFF3DA; }
   #ki-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  /* はみがき */
+  #stage-hami { background: #FFC8D6; --haink: #5a3a28; }
+  .ha-gums {
+    position: absolute; left: 2px; right: 2px; top: 68px; bottom: 6px; z-index: 1;
+    display: flex; flex-direction: column; padding: 2px;
+    background: #FF96B0; border: 3px solid var(--haink); border-radius: 44px;
+    box-shadow: inset 0 6px 0 rgba(255,255,255,.35);
+  }
+  .ha-half { flex: 1; min-height: 0; display: grid; gap: 0; }
+  .ha-gap { flex: none; height: 28px; margin: 0 6px; position: relative; overflow: hidden; background: #C2415F; border-radius: 16px; box-shadow: inset 0 4px 0 rgba(0,0,0,.12); }
+  .ha-gap::after { content: ''; position: absolute; left: 50%; bottom: -14px; width: 46%; height: 26px; margin-left: -23%; background: #FF8AA2; border-radius: 50% 50% 0 0; }
+  .ha-tooth { position: relative; display: block; width: 100%; height: 100%; padding: 0; margin: 0; border: 0; background: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .ha-body {
+    position: absolute; inset: 3px; overflow: hidden; border: 4px solid var(--haink);
+    background: linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 55%, #E6F4FF 100%);
+    box-shadow: inset -6px -4px 0 rgba(160,200,235,.28);
+  }
+  .ha-up .ha-body { border-radius: 16px 16px 50% 50% / 16px 16px 36% 36%; }
+  .ha-lo .ha-body { border-radius: 50% 50% 16px 16px / 36% 36% 16px 16px; background: linear-gradient(0deg, #FFFFFF 0%, #FFFFFF 55%, #E6F4FF 100%); }
+  .ha-body::after { content: ''; position: absolute; left: 16%; top: 12%; width: 14%; height: 30%; border-radius: 99px; background: rgba(255,255,255,.95); box-shadow: 0 0 0 2px rgba(190,225,250,.6); }
+  .ha-lo .ha-body::after { top: auto; bottom: 12%; }
+  .ha-dirt { position: absolute; inset: 0; pointer-events: none; }
+  .ha-dirt i { position: absolute; display: block; background: #B8893F; opacity: .92; border-radius: 46% 54% 50% 50% / 52% 48% 56% 44%; box-shadow: inset -3px -3px 0 rgba(90,58,40,.35); }
+  .ha-dirt i.b2 { background: #D2A94E; }
+  .ha-dirt i.b3 { background: #8F6A3A; }
+  .ha-germ { position: absolute; width: 34%; aspect-ratio: 1; border-radius: 50%; background: #A7A04A; border: 3px solid var(--haink); }
+  .ha-germ::before, .ha-germ::after { content: ''; position: absolute; top: 34%; width: 14%; height: 20%; border-radius: 50%; background: var(--haink); }
+  .ha-germ::before { left: 26%; } .ha-germ::after { right: 26%; }
+  .ha-tooth.clean .ha-dirt { display: none; }
+  .ha-tooth.shine .ha-body { animation: ha-shine .7s ease-out; }
+  @keyframes ha-shine { 0% { transform: scale(1); } 35% { transform: scale(1.1) rotate(-2deg); box-shadow: 0 0 0 5px #FFF59A, 0 0 24px 8px #FFF59A; } 100% { transform: scale(1); } }
+  .ha-over { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+  .ha-brush { position: absolute; left: 0; top: 0; will-change: transform; }
+  .ha-brush svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .ha-foam { position: absolute; border-radius: 50%; background: #fff; border: 3px solid #BFE3FF; will-change: transform, opacity; }
+  @media (max-height: 420px) { .ha-gums { top: 68px; bottom: 4px; padding: 2px; border-radius: 30px; } .ha-gap { height: 16px; } }
   #pb-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #pb-launch {
     position: absolute; z-index: 5; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; padding: 0; border-radius: 50%;
@@ -1498,6 +1534,16 @@
   <section class="stage" id="stage-kiru" aria-label="とんとん" hidden>
     <canvas id="ki-cv" aria-label="とんとん"></canvas>
     <div class="fx" id="fx-kiru"></div>
+  </section>
+
+  <section class="stage" id="stage-hami" aria-label="はみがき" hidden>
+    <div class="ha-gums" id="ha-gums">
+      <div class="ha-half ha-up" id="ha-up"></div>
+      <div class="ha-gap" aria-hidden="true"></div>
+      <div class="ha-half ha-lo" id="ha-lo"></div>
+    </div>
+    <div class="ha-over" id="ha-over"></div>
+    <div class="fx" id="fx-hami"></div>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -8323,6 +8369,152 @@
     resize: function () { if (ki.on) kiSize(); }
   };
 
+  /* ---------- はみがき ---------- */
+  var haStage = $('#stage-hami'), haGums = $('#ha-gums'), haUp = $('#ha-up'), haLo = $('#ha-lo'), haOver = $('#ha-over'), haFx = $('#fx-hami');
+  var ha = { on: false, cols: 0, rows: 0, teeth: [], left: 0, tm: [], anims: [], busy: 0, round: 0, cheered: false };
+  window.__ha = ha;
+  var HA_BRUSH = '<svg viewBox="0 0 120 60"><g stroke="#5a3a28" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">' +
+    '<path d="M44 20 L112 12 Q118 12 118 18 L118 24 Q118 30 112 30 L44 32 Z" fill="#7EC8F5"/>' +
+    '<rect x="6" y="18" width="46" height="18" rx="8" fill="#FFE27A"/>' +
+    '<path d="M10 36 V50 M20 36 V52 M30 36 V50 M40 36 V52" stroke="#FFFFFF" stroke-width="7" fill="none"/>' +
+    '</g><path d="M10 36 V50 M20 36 V52 M30 36 V50 M40 36 V52" stroke="#5a3a28" stroke-width="2" fill="none" opacity=".0"/></svg>';
+  function haTm(fn, ms) { var id = later(function () { var i = ha.tm.indexOf(id); if (i >= 0) ha.tm.splice(i, 1); fn(); }, ms); ha.tm.push(id); return id; }
+  function haConf() {
+    var r = haGums.getBoundingClientRect(), W = Math.round(r.width), H = Math.round(r.height);
+    if (W < 50 || H < 50) return null;
+    var gap = haGums.querySelector('.ha-gap').offsetHeight;
+    var inW = W - 10, halfH = (H - 10 - gap) / 2;
+    var cols = 3; if (W >= 480) cols = 6; else if (inW / 4 >= 80) cols = 4;
+    var cw = inW / cols, rows = Math.max(1, Math.min(3, Math.floor(halfH / Math.max(80, cw * 0.95))));
+    return { cols: cols, rows: rows };
+  }
+  function haBuild(c) {
+    haUp.innerHTML = ''; haLo.innerHTML = ''; ha.teeth = [];
+    [haUp, haLo].forEach(function (half, hi) {
+      half.style.gridTemplateColumns = 'repeat(' + c.cols + ', minmax(0, 1fr))';
+      half.style.gridTemplateRows = 'repeat(' + c.rows + ', minmax(0, 1fr))';
+      for (var i = 0; i < c.cols * c.rows; i++) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'ha-tooth clean'; b.setAttribute('aria-label', 'は');
+        b.innerHTML = '<span class="ha-body"><span class="ha-dirt"></span></span>';
+        half.appendChild(b); ha.teeth.push(b);
+      }
+    });
+    ha.cols = c.cols; ha.rows = c.rows;
+  }
+  function haDirt(t) {
+    var d = t.querySelector('.ha-dirt'), h = '', i;
+    var cls = ['', 'b2', 'b3'];
+    for (i = 0; i < 3; i++) {
+      var w = rand(34, 52), hh = rand(26, 40), x = rand(4, 96 - w), y = rand(8, 92 - hh);
+      h += '<i class="' + cls[i] + '" style="left:' + x + '%;top:' + y + '%;width:' + w + '%;height:' + hh + '%"></i>';
+    }
+    h += '<span class="ha-germ" style="left:' + rand(30, 40) + '%;top:' + (t.parentNode === haUp ? rand(34, 44) : rand(24, 34)) + '%"></span>';
+    d.innerHTML = h; d.style.opacity = '1';
+  }
+  function haNewRound(speak) {
+    ha.tm.forEach(cancel); ha.tm = [];
+    ha.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} }); ha.anims = [];
+    haOver.innerHTML = ''; haFx.innerHTML = '';
+    ha.busy = 0; ha.cheered = false; ha.round++;
+    var n = ha.teeth.length, k = Math.min(5, Math.max(3, Math.round(n / 3))), idx = [], i;
+    for (i = 0; i < n; i++) idx.push(i);
+    for (i = n - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp; }
+    ha.teeth.forEach(function (t) { t.className = 'ha-tooth clean'; t.dataset.scrub = ''; t.querySelector('.ha-dirt').innerHTML = ''; });
+    for (i = 0; i < k; i++) { var t = ha.teeth[idx[i]]; t.className = 'ha-tooth dirty'; haDirt(t); }
+    ha.left = k;
+    if (speak) { say('はみがき しよう！'); bigWord('はみがき\nしよう！', '#3AA0E0'); }
+  }
+  function haSize() {
+    var c = haConf(); if (!c) return;
+    if (c.cols === ha.cols && c.rows === ha.rows && ha.teeth.length) return;
+    haBuild(c); haNewRound(false);
+  }
+  function haPos(t) {
+    var r = t.getBoundingClientRect(), s = haStage.getBoundingClientRect();
+    return { x: r.left - s.left + r.width / 2, y: r.top - s.top + r.height / 2, w: r.width, h: r.height };
+  }
+  function haScrub(t) {
+    var sw0 = 14, p = haPos(t), bw0 = Math.min(p.w * 1.5, 190), bh0 = bw0 / 2;
+    t.dataset.scrub = '1';
+    say('ごしごし'); bigWord('ごしごし', '#C2762B');
+    var br = document.createElement('div');
+    br.className = 'ha-brush'; br.style.width = bw0 + 'px'; br.style.height = bh0 + 'px'; br.innerHTML = HA_BRUSH;
+    haOver.appendChild(br);
+    var sr = haStage.getBoundingClientRect(), ox = Math.max(sw0 + 2, Math.min(sr.width - bw0 - sw0 - 2, p.x - bw0 / 2)), oy = p.y - bh0 * 0.45, sw = Math.min(p.w * 0.14, 14), DUR = reduce ? 800 : 1500;
+    var kf = [], N = 6, i;
+    for (i = 0; i <= N; i++) kf.push({ transform: 'translate(' + (ox + (i % 2 ? sw : -sw)) + 'px,' + (oy + (i % 2 ? -3 : 3)) + 'px) rotate(' + (i % 2 ? -6 : 4) + 'deg)', offset: i / N });
+    var a = br.animate(kf, { duration: DUR, easing: 'ease-in-out', fill: 'forwards' });
+    ha.anims.push(a);
+    var d = t.querySelector('.ha-dirt');
+    ha.anims.push(d.animate([{ opacity: 1 }, { opacity: 1, offset: 0.15 }, { opacity: 0 }], { duration: DUR, easing: 'ease-in', fill: 'forwards' }));
+    var steps = 8;
+    for (i = 0; i < steps; i++) (function (k) {
+      haTm(function () {
+        if (!ha.on) return;
+        tone(rand(170, 260), 0.07, 'sawtooth', 0.035);
+        tone(rand(1500, 2300), 0.04, 'square', 0.015, 0, 0.02);
+        var f = document.createElement('span'), sz = rand(12, 24);
+        f.className = 'ha-foam'; f.style.width = f.style.height = sz + 'px';
+        var fx = p.x + rand(-p.w * 0.3, p.w * 0.3), fy = p.y + rand(-p.h * 0.25, p.h * 0.25);
+        haOver.appendChild(f);
+        var fa = f.animate([{ transform: 'translate(' + fx + 'px,' + fy + 'px) scale(.3)', opacity: 0.95 }, { transform: 'translate(' + fx + 'px,' + (fy - 14) + 'px) scale(1.1)', opacity: 0.95, offset: 0.6 }, { transform: 'translate(' + fx + 'px,' + (fy - 22) + 'px) scale(1.2)', opacity: 0 }], { duration: 650, easing: 'ease-out' });
+        fa.onfinish = function () { f.remove(); };
+      }, 80 + k * (DUR - 200) / steps);
+    })(i);
+    ha.busy++;
+    haTm(function () {
+      br.remove(); t.dataset.scrub = ''; ha.busy--;
+      t.classList.remove('dirty'); t.classList.add('clean');
+      t.classList.remove('shine'); void t.offsetWidth; t.classList.add('shine');
+      var q = haPos(t);
+      burst(haFx, q.x, q.y, { n: 8, emoji: ['✨', '⭐'], far: 0.8 });
+      tone(784, 0.16, 'triangle', 0.14); tone(1175, 0.22, 'triangle', 0.12, 0, 0.08);
+      ha.left--;
+      if (ha.left <= 0 && !ha.cheered) {
+        ha.cheered = true;
+        haTm(function () {
+          say('できた！'); bigWord('できた！', '#E8761C'); arpeggio();
+          var r = haStage.getBoundingClientRect();
+          burst(haFx, r.width * 0.3, r.height * 0.4, { n: 10, emoji: ['✨', '⭐', '🌟'] });
+          burst(haFx, r.width * 0.7, r.height * 0.4, { n: 10, emoji: ['✨', '⭐', '🌟'] });
+          burst(haFx, r.width * 0.5, r.height * 0.6, { n: 10, emoji: ['✨', '🦷', '⭐'] });
+          haTm(function () { haNewRound(true); }, 4000);
+        }, 450);
+      }
+    }, DUR + 20);
+  }
+  function haDown(e) {
+    var t = e.target.closest ? e.target.closest('.ha-tooth') : null;
+    if (!t || !ha.on) return;
+    e.preventDefault(); audio();
+    if (t.classList.contains('dirty')) { if (!t.dataset.scrub) haScrub(t); return; }
+    var q = haPos(t);
+    burst(haFx, q.x, q.y, { n: 4, emoji: ['✨'], far: 0.5 });
+    tone(1046, 0.1, 'sine', 0.08);
+  }
+  function haCtl(e) { e.preventDefault(); }
+  games.hami = {
+    el: haStage,
+    enter: function () {
+      ha.on = true; ha.cols = 0; ha.rows = 0; ha.teeth = []; ha.round = 0;
+      haSize();
+      if (!ha.teeth.length) { haBuild({ cols: 4, rows: 2 }); haNewRound(false); }
+      haNewRound(true);
+      haGums.addEventListener('pointerdown', haDown); haGums.addEventListener('contextmenu', haCtl);
+    },
+    leave: function () {
+      ha.on = false;
+      haGums.removeEventListener('pointerdown', haDown); haGums.removeEventListener('contextmenu', haCtl);
+      ha.tm.forEach(cancel); ha.tm = [];
+      ha.anims.forEach(function (a) { try { a.cancel(); } catch (e) {} }); ha.anims = [];
+      haOver.innerHTML = ''; haFx.innerHTML = '';
+      haUp.innerHTML = ''; haLo.innerHTML = ''; ha.teeth = []; ha.cols = 0; ha.rows = 0; ha.busy = 0; ha.left = 0; ha.cheered = false;
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: function () { if (ha.on) haSize(); }
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var ICO = {
@@ -8383,13 +8575,14 @@
     voice: { ico: '🎤', lab: 'ボイスチェンジャー', br: 'ボイス', c: '#EBCBFF', say: 'ぼいすちぇんじゃー！' },
     mix:   { ico: '🧪', lab: 'まぜまぜ',       c: '#FFD3EC', say: 'まぜまぜ！' },
     suna:  { ico: '🏖️', lab: 'すなば',         c: '#FFE6B8', say: 'すなば！' },
-    kiru:  { ico: '🥕', lab: 'とんとん',       c: '#FFD6B0', say: 'とんとん！' }
+    kiru:  { ico: '🥕', lab: 'とんとん',       c: '#FFD6B0', say: 'とんとん！' },
+    hami:  { ico: '🪥', lab: 'はみがき',       c: '#C8EEFF', say: 'はみがき！' }
   };
   // ホームの並び。新しいゲームは最後に足す（9 個ずつ自動でページになる）
   var HORDER = ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker',
     'touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi',
     'koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix', 'suna',
-    'kiru'];
+    'kiru', 'hami'];
   var HPER = 9, HN = Math.ceil(HORDER.length / HPER);
   var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
   var hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
