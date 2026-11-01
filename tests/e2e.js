@@ -40,13 +40,13 @@ if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami','kaeru'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき','かえる'];
 // ホームの並び（index.html の HORDER と同じ。9 個ずつでページ）
 const HLABS = ['ふうせん','どうぶつ','おえかき','いないいないばあ','もしもし','でんしゃ','おみせやさん','ぬりえ','シールちょう',
   'いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち',
   'ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば',
-  'とんとん','はみがき'];
+  'とんとん','はみがき','かえる'];
 const NPAGES = Math.ceil(HLABS.length / 9);
 const pageOf = lab => Math.floor(HLABS.indexOf(lab) / 9);
 async function gotoPage(p, n) {
@@ -180,11 +180,11 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hm-p2').isVisible() && await p.locator('#hm-p1').isHidden(), tag + ' swipe left p2 -> p3');
     await p.mouse.move(ab.x + 100, y0); await p.mouse.down(); await p.mouse.move(ab.x + 300, y0 + 5, { steps: 5 }); await p.mouse.up(); await sleep(330);
     ok(await p.locator('#hm-p1').isVisible(), tag + ' swipe right p3 -> p2');
-    // ---- page 4 (last): とんとん + はみがき ----
+    // ---- page 4 (last): とんとん + はみがき + かえる ----
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
-    ok(t4.length === 2 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[0].cy === tiles[0].cy, tag + ' page4: とんとん + はみがき in the top row, same size ' + JSON.stringify(t4));
-    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥'; }), tag + ' page4: とんとん icon image loaded, はみがき uses the 🪥 emoji');
+    ok(t4.length === 3 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[0].cy === tiles[0].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, same size ' + JSON.stringify(t4));
+    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete; }), tag + ' page4: とんとん/かえる icon images loaded, はみがき uses the 🪥 emoji');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
     const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');
@@ -1072,7 +1072,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 27 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (27 rows)');
+      ok(await p.locator('.st-row.zero').count() === 28 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (28 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2751,11 +2751,94 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 
 
+  /* ---------- かえる ---------- */
+  TV('kaeru', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+    const tag = 'kaeru ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/kaeru-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true });
+    const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(30); } };
+    const geo = () => p.evaluate(() => { const vw = innerWidth, vh = innerHeight, st = document.querySelector('#stage-kaeru').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
+      const R = e => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; };
+      const ps = [...document.querySelectorAll('#stage-kaeru .kr-pad')].map(R), fr = R(document.querySelector('#kr-frog'));
+      const inside = r => r.l >= st.left - 0.5 && r.r <= st.right + 0.5 && r.t >= st.top - 0.5 && r.b <= st.bottom + 0.5 && r.l >= 0 && r.r <= vw && r.t >= 0 && r.b <= vh;
+      let ovl = 0; ps.forEach((a, i) => ps.forEach((b, j) => { if (j > i && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b) ovl++; }));
+      return { n: ps.length, minw: Math.min(...ps.map(r => r.w)), minh: Math.min(...ps.map(r => r.h)), allIn: ps.every(inside), padOvl: ovl, homeOvl: ps.filter(r => r.l < hb.right && hb.left < r.r && r.t < hb.bottom && hb.top < r.b).length,
+        frog: fr, frogIn: inside(fr), pads: ps, idx: window.__kr.idx,
+        hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw || document.querySelector('#stage-kaeru').scrollWidth > document.querySelector('#stage-kaeru').clientWidth }; });
+    const vis = () => p.evaluate(() => ({ sit: !document.querySelector('#kr-sit').hidden, jmp: !document.querySelector('#kr-jmp').hidden }));
+    const idle = () => p.evaluate(() => !window.__kr.busy);
+    const fire = () => p.evaluate(() => document.querySelector('#kr-frog').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })));
+    const near = (a, b) => Math.abs(a.cx - b.cx) <= 3 && a.cy - b.cy >= 0 && a.cy - b.cy <= 14;
+    await tapTile(p, 'かえる'); await sleep(500);
+    ok(await p.locator('#stage-kaeru').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens かえる');
+    ok((await says(p)).some(x => x.t === 'かえる！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks かえる！, shared 🏠, no adult button');
+    const g = await geo(), small = vp.width * vp.height < 200000, N = small ? 5 : 6;
+    console.log('info ' + tag + ' pads ' + g.n + ' min ' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ' frog ' + Math.round(g.frog.w) + 'x' + Math.round(g.frog.h));
+    ok(g.n === N, tag + ': ' + N + ' lily pads (' + g.n + ')');
+    ok(g.minw >= 80 && g.minh >= 80, tag + ': every pad >= 80px ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
+    ok(g.allIn && g.frogIn && !g.hs, tag + ': pads and frog fully inside the stage/viewport, no hscroll');
+    ok(g.padOvl === 0 && g.homeOvl === 0, tag + ': pads do not overlap each other or 🏠 ' + JSON.stringify([g.padOvl, g.homeOvl]));
+    ok(g.frog.w >= 96 && g.frog.h >= 96 && near(g.frog, g.pads[0]) && (await vis()).sit, tag + ': frog tap area >= 96, sits on the first pad with the sit sprite');
+    ok(await p.locator('#stage-kaeru .kr-lotus').count() === 1 && await p.locator('#stage-kaeru .kr-water .kr-ring').count() >= 3, tag + ': a lotus flower and pond ripples are drawn');
+    await shot('a');
+    /* 1 かい とぶ */
+    await clearSays(p);
+    await p.locator('#kr-frog').click();
+    ok(await until(async () => (await vis()).jmp, 800) && !(await vis()).sit, tag + ': jump sprite is shown in flight');
+    await sleep(330);
+    const mid = await p.evaluate(() => { const f = document.querySelector('#kr-lift').getBoundingClientRect(), sh = document.querySelector('#kr-shadow i').getBoundingClientRect(), sit = document.querySelector('#kr-jmp').getBoundingClientRect(); return { fw: sit.width, sw: sh.width, so: +getComputedStyle(document.querySelector('#kr-shadow i')).opacity, base: window.__kr.JW, shBase: window.__kr.SW, tf: document.querySelector('#kr-turn').style.transform || getComputedStyle(document.querySelector('#kr-turn')).transform }; });
+    await shot('mid');
+    ok(mid.fw > mid.base * 1.2 && mid.sw < mid.shBase * 0.9, tag + ': at the apex the frog is scaled up and the shadow is smaller ' + JSON.stringify(mid));
+    ok(await p.evaluate(() => { const a = document.querySelector('#kr-shadow i').getBoundingClientRect(), b = document.querySelector('#kr-frog').getBoundingClientRect(); return Math.hypot((a.left + a.width / 2) - (b.left + b.width / 2), (a.top + a.height / 2) - (b.top + b.height / 2)) > 3; }), tag + ': shadow is offset from the frog mid-flight');
+    /* とんでいる さいちゅうの タップは むし */
+    await fire(); await fire(); await sleep(60);
+    ok(await until(idle, 1500), tag + ': flight finishes');
+    await sleep(100); await shot('landed');
+    let g2 = await geo();
+    ok(g2.idx === 1 && near(g2.frog, g2.pads[1]) && (await vis()).sit && !(await vis()).jmp, tag + ': frog landed on pad 2, sit sprite is back, taps mid-jump did not skip a pad (idx ' + g2.idx + ')');
+    ok((await says(p)).some(x => x.t === 'ぴょん') && await p.locator('#fx-kaeru .kr-rip').count() >= 2, tag + ': spoke ぴょん, landing ripples drawn');
+    await sleep(250);
+    /* あきの はっぱを タップ: うごかない */
+    await clearSays(p);
+    const pad = g2.pads[N - 2];
+    await p.mouse.click(pad.cx, pad.cy); await sleep(150);
+    ok((await geo()).idx === 1 && (await says(p)).length === 0 && await p.locator('#fx-kaeru .kr-rip').count() > 0, tag + ': tapping an empty pad only wobbles/ripples, the frog stays');
+    /* ぐるっと 1 しゅう */
+    await sleep(600);
+    for (let i = 1; i < N; i++) {
+      await p.locator('#kr-frog').click();
+      ok(await until(idle, 2500), tag + ': jump ' + (i + 1) + ' finished');
+      await sleep(60);
+    }
+    const g3 = await geo();
+    ok(g3.idx === 0 && near(g3.frog, g3.pads[0]), tag + ': after ' + N + ' jumps the frog is back on the first pad');
+    ok(await until(async () => (await says(p)).some(x => x.t === 'いっしゅう！'), 1500) && await p.evaluate(() => document.querySelector('#bigword').textContent.indexOf('いっしゅう') >= 0), tag + ': a full lap says いっしゅう！ and shows it big');
+    await sleep(300); await shot('lap');
+    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
+    /* とんでいる ちゅうに ホームへ */
+    await sleep(700);
+    await p.locator('#kr-frog').click(); await sleep(350);
+    await p.click('#homebtn'); await sleep(150);
+    ok(await p.locator('#hm-p3').isVisible() && await p.locator('#stage-kaeru').isHidden(), tag + ': 🏠 returns to page 4');
+    const st = await p.evaluate(() => ({ on: window.__kr.on, tm: window.__kr.tm.length, an: window.__kr.anims.length, pads: window.__kr.pads.length, rip: document.querySelectorAll('#fx-kaeru *').length, run: document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#stage-kaeru')).length }));
+    ok(!st.on && st.tm === 0 && st.an === 0 && st.pads === 0 && st.rip === 0 && st.run === 0, tag + ': leave() cleared timers/animations/state ' + JSON.stringify(st));
+    await clearSays(p); await sleep(1500);
+    ok((await says(p)).length === 0, tag + ': nothing is spoken after leaving');
+    await tapTile(p, 'かえる'); await sleep(500);
+    const g4 = await geo();
+    ok(g4.n === N && g4.idx === 0 && near(g4.frog, g4.pads[0]) && (await vis()).sit, tag + ': re-enter starts fresh on the first pad');
+    await p.locator('#kr-frog').click();
+    ok(await until(idle, 2500) && (await geo()).idx === 1, tag + ': jumping works again after re-entering');
+    await p.click('#homebtn'); await sleep(100);
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+
 
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
