@@ -2767,7 +2767,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const vis = () => p.evaluate(() => ({ sit: !document.querySelector('#kr-sit').hidden, jmp: !document.querySelector('#kr-jmp').hidden }));
     const idle = () => p.evaluate(() => !window.__kr.busy);
     const fire = () => p.evaluate(() => document.querySelector('#kr-frog').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })));
-    const near = (a, b) => Math.hypot(a.cx - b.cx, a.cy - b.cy) <= 3;
+    const near = (a, b) => Math.abs(a.cx - b.cx) <= 3 && a.cy - b.cy >= 0 && a.cy - b.cy <= 14;
     await tapTile(p, 'かえる'); await sleep(500);
     ok(await p.locator('#stage-kaeru').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens かえる');
     ok((await says(p)).some(x => x.t === 'かえる！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks かえる！, shared 🏠, no adult button');
@@ -2785,9 +2785,9 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.locator('#kr-frog').click();
     ok(await until(async () => (await vis()).jmp, 800) && !(await vis()).sit, tag + ': jump sprite is shown in flight');
     await sleep(330);
-    const mid = await p.evaluate(() => { const f = document.querySelector('#kr-lift').getBoundingClientRect(), sh = document.querySelector('#kr-shadow i').getBoundingClientRect(), sit = document.querySelector('#kr-jmp').getBoundingClientRect(); return { fw: sit.width, sw: sh.width, so: +getComputedStyle(document.querySelector('#kr-shadow i')).opacity, base: window.__kr.D }; });
+    const mid = await p.evaluate(() => { const f = document.querySelector('#kr-lift').getBoundingClientRect(), sh = document.querySelector('#kr-shadow i').getBoundingClientRect(), sit = document.querySelector('#kr-jmp').getBoundingClientRect(); return { fw: sit.width, sw: sh.width, so: +getComputedStyle(document.querySelector('#kr-shadow i')).opacity, base: window.__kr.JW, shBase: window.__kr.SW, tf: document.querySelector('#kr-turn').style.transform || getComputedStyle(document.querySelector('#kr-turn')).transform }; });
     await shot('mid');
-    ok(mid.fw > mid.base * 1.2 && mid.sw < mid.base * 1.05 * 0.9, tag + ': at the apex the frog is scaled up and the shadow is smaller ' + JSON.stringify(mid));
+    ok(mid.fw > mid.base * 1.2 && mid.sw < mid.shBase * 0.9, tag + ': at the apex the frog is scaled up and the shadow is smaller ' + JSON.stringify(mid));
     ok(await p.evaluate(() => { const a = document.querySelector('#kr-shadow i').getBoundingClientRect(), b = document.querySelector('#kr-frog').getBoundingClientRect(); return Math.hypot((a.left + a.width / 2) - (b.left + b.width / 2), (a.top + a.height / 2) - (b.top + b.height / 2)) > 3; }), tag + ': shadow is offset from the frog mid-flight');
     /* とんでいる さいちゅうの タップは むし */
     await fire(); await fire(); await sleep(60);

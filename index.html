@@ -486,9 +486,9 @@
   @keyframes krGlint { 0%, 100% { opacity: 0; transform: translateX(-6px) scaleX(.7); } 50% { opacity: .85; transform: translateX(6px) scaleX(1); } }
   .kr-pads { position: absolute; inset: 0; overflow: hidden; }
   .kr-pad { position: absolute; padding: 0; border: 0; background: none; z-index: 1; -webkit-tap-highlight-color: transparent; }
-  .kr-pimg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; -webkit-user-drag: none; filter: drop-shadow(0 5px 3px rgba(40,90,110,.25)); animation: krBob 5.5s ease-in-out infinite; animation-delay: var(--d, 0s); transform: rotate(var(--r, 0deg)); }
+  .kr-pimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; -webkit-user-drag: none; filter: drop-shadow(0 5px 3px rgba(40,90,110,.25)); animation: krBob 5.5s ease-in-out infinite; animation-delay: var(--d, 0s); transform: rotate(var(--r, 0deg)); }
   @keyframes krBob { 0%, 100% { transform: rotate(var(--r, 0deg)) scale(1); } 50% { transform: rotate(calc(var(--r, 0deg) + 3deg)) scale(1.035); } }
-  .kr-lotus { position: absolute; width: 42%; height: 42%; left: 50%; top: 14%; pointer-events: none; display: block; animation: krSway 4s ease-in-out infinite; }
+  .kr-lotus { position: absolute; width: 36%; height: 36%; object-fit: contain; left: 14%; top: 22%; pointer-events: none; display: block; animation: krSway 4s ease-in-out infinite; }
   @keyframes krSway { 0%, 100% { transform: rotate(-5deg) scale(1); } 50% { transform: rotate(5deg) scale(1.06); } }
   .kr-shadow { position: absolute; z-index: 2; pointer-events: none; opacity: 0; }
   .kr-shadow i { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(15,50,65,.8), rgba(15,50,65,.5) 62%, rgba(15,50,65,0)); }
@@ -8601,7 +8601,7 @@
   var KAERU_IMG = { sit: 'assets/kaeru/frog-sit.webp', jump: 'assets/kaeru/frog-jump.webp', pad: ['assets/kaeru/pad1.webp', 'assets/kaeru/pad2.webp'], lotus: 'assets/kaeru/lotus.webp' };   // どれも うえむきの かえる／まるい はっぱ（おなじ名前の絵に さしかえられる）
   var krStage = $('#stage-kaeru'), krPads = $('#kr-pads'), krFrog = $('#kr-frog'), krLift = $('#kr-lift'), krTurn = $('#kr-turn'), krSq = $('#kr-sq'),
       krSit = $('#kr-sit'), krJmp = $('#kr-jmp'), krShadow = $('#kr-shadow'), krFx = $('#fx-kaeru');
-  var kr = { on: false, pads: [], idx: 0, to: 0, ang: 0, S: 0, F: 0, D: 0, busy: false, laps: 0, tm: [], anims: [], seed: [] };
+  var kr = { on: false, pads: [], idx: 0, to: 0, face: 1, S: 0, F: 0, D: 0, JW: 0, SW: 0, busy: false, laps: 0, tm: [], anims: [], seed: [] };
   window.__kr = kr;
   krSit.src = KAERU_IMG.sit; krJmp.src = KAERU_IMG.jump;
   function krTm(fn, ms) { var id = later(function () { var i = kr.tm.indexOf(id); if (i >= 0) kr.tm.splice(i, 1); fn(); }, ms); kr.tm.push(id); return id; }
@@ -8649,14 +8649,14 @@
   }
   function krPlace() {
     var L = krLayout(); if (!L) return false;
-    var S = L.S, D = Math.round(S * 0.8), F = Math.max(96, D + 12);
-    kr.S = S; kr.F = F; kr.D = D;
+    var S = L.S, D = Math.round(S * 0.76), F = Math.max(96, D + 12), JW = Math.round(D * 1.2);
+    kr.S = S; kr.F = F; kr.D = D; kr.JW = JW; kr.SW = Math.round(JW * 0.85);
     krPads.innerHTML = ''; kr.pads = [];
     L.pts.forEach(function (p, i) {
       var b = document.createElement('button'), im = document.createElement('img');
       b.type = 'button'; b.className = 'kr-pad'; b.setAttribute('aria-label', 'はっぱ'); b.dataset.i = i;
       b.style.width = b.style.height = S + 'px'; b.style.left = Math.round(p.x - S / 2) + 'px'; b.style.top = Math.round(p.y - S / 2) + 'px';
-      if (!kr.seed[i]) kr.seed[i] = { r: Math.round(Math.random() * 360), d: -(Math.random() * 5).toFixed(1) };
+      if (!kr.seed[i]) kr.seed[i] = { r: Math.round(Math.random() * 40 - 20), d: -(Math.random() * 5).toFixed(1) };
       im.className = 'kr-pimg'; im.alt = ''; im.draggable = false; im.src = KAERU_IMG.pad[i % 2];
       im.style.setProperty('--r', kr.seed[i].r + 'deg'); im.style.setProperty('--d', kr.seed[i].d + 's');
       b.appendChild(im);
@@ -8664,16 +8664,15 @@
       krPads.appendChild(b); kr.pads.push({ el: b, x: Math.round(p.x), y: Math.round(p.y) });
     });
     krFrog.style.width = krFrog.style.height = F + 'px';
-    krSit.style.width = krSit.style.height = krJmp.style.width = krJmp.style.height = D + 'px';
-    krShadow.style.width = krShadow.style.height = Math.round(D * 1.05) + 'px';
+    krSit.style.width = D + 'px'; krJmp.style.width = JW + 'px'; krSit.style.height = krJmp.style.height = 'auto';
+    krShadow.style.width = kr.SW + 'px'; krShadow.style.height = Math.round(kr.SW * 0.5) + 'px';
     krSetAt(Math.min(kr.idx, kr.pads.length - 1));
     return true;
   }
   function krSetAt(i) {
     var p = kr.pads[i]; if (!p) return;
     kr.idx = i;
-    krFrog.style.left = (p.x - kr.F / 2) + 'px'; krFrog.style.top = (p.y - kr.F / 2) + 'px';
-    krTurn.style.transform = 'rotate(' + kr.ang + 'deg)';
+    krFrog.style.left = (p.x - kr.F / 2) + 'px'; krFrog.style.top = (p.y - kr.F / 2 + Math.round(kr.S * 0.07)) + 'px';   // すわった かえるが はっぱの まんなかに みえるよう すこし した
     krFrog.hidden = false;
   }
   function krRipple(x, y, size, delay) {
@@ -8705,12 +8704,11 @@
   function krJump() {
     if (!kr.on || kr.busy || kr.pads.length < 2) return;
     var from = kr.idx, to = (from + 1) % kr.pads.length, a = kr.pads[from], b = kr.pads[to];
-    var dx = b.x - a.x, dy = b.y - a.y, want = Math.atan2(dx, -dy) * 180 / Math.PI;
-    var delta = ((want - kr.ang) % 360 + 540) % 360 - 180;
-    var R = reduce ? 0.4 : 1, T_TURN = Math.max(60, Math.min(170, Math.abs(delta) * 2.2)) * R, T_CROUCH = 130 * R, T_FLY = 650 * R;
+    var dx = b.x - a.x, dy = b.y - a.y;
+    if (Math.abs(dx) > 8) kr.face = dx > 0 ? 1 : -1;      // えは ひだりむき。みぎへ とぶときは はんてん
+    var sgn = kr.face, tilt = Math.max(-35, Math.min(35, Math.atan2(dy * sgn, Math.max(Math.abs(dx), 20)) * 180 / Math.PI));
+    var R = reduce ? 0.4 : 1, T_TURN = 0, T_CROUCH = 150 * R, T_FLY = 650 * R;
     kr.busy = true; kr.to = to;
-    var fromAng = kr.ang; kr.ang = fromAng + delta;
-    krAnim(krTurn, [{ transform: 'rotate(' + fromAng + 'deg)' }, { transform: 'rotate(' + kr.ang + 'deg)' }], { duration: T_TURN, easing: 'ease-in-out', fill: 'forwards' });
     krTm(function () {                                   // ためる
       krAnim(krSq, [{ transform: 'scale(1,1)' }, { transform: 'scale(1.12,.82)' }], { duration: T_CROUCH, easing: 'ease-out', fill: 'forwards' });
       krAnim(a.el, [{ transform: 'scale(1)' }, { transform: 'scale(.94)' }], { duration: T_CROUCH, easing: 'ease-out', fill: 'forwards' });
@@ -8718,20 +8716,21 @@
     krTm(function () {                                   // とびだす
       krSit.hidden = true; krJmp.hidden = false;
       krCancelOn([krSq, a.el]);
+      krAnim(krTurn, [{ transform: 'scaleX(' + -sgn + ')' }, { transform: 'rotate(' + tilt + 'deg) scaleX(' + -sgn + ')' }], { duration: reduce ? 100 : 220, easing: 'ease-out', fill: 'forwards' });
       krDip(a.el, 0.84);
       krRipple(a.x, a.y, kr.S * 0.9); krDrops(a.x, a.y, 3);
       tone(420, 0.14, 'sine', 0.16, 980); tone(840, 0.1, 'triangle', 0.05, 1500, 0.03);
       say('ぴょん'); bigWord('ぴょん', '#3E9B3E');
-      var ease = 'cubic-bezier(.35,.05,.45,1)', ox = Math.max(-16, Math.min(16, 10 + dx * 0.03)), oy = 56, sw = parseFloat(krShadow.style.width);
+      var ease = 'cubic-bezier(.35,.05,.45,1)', ox = Math.max(-16, Math.min(16, 10 + dx * 0.03)), oy = Math.round(kr.D * 0.5), sw = kr.SW, sh = parseFloat(krShadow.style.height);
       krAnim(krFrog, [{ transform: 'translate(0,0)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px)' }], { duration: T_FLY, easing: ease, fill: 'forwards' });
       krAnim(krLift, [{ transform: 'scale(1)', easing: 'cubic-bezier(.15,.7,.4,1)' }, { transform: 'scale(1.45)', offset: 0.5, easing: 'cubic-bezier(.6,0,.85,.35)' }, { transform: 'scale(1)' }], { duration: T_FLY, fill: 'forwards' });
-      krShadow.style.left = (a.x - sw / 2) + 'px'; krShadow.style.top = (a.y - sw / 2) + 'px';
+      krShadow.style.left = (a.x - sw / 2) + 'px'; krShadow.style.top = (a.y - sh / 2 + Math.round(kr.S * 0.07)) + 'px';
       krAnim(krShadow, [{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: 1 }], { duration: T_FLY, easing: ease, fill: 'both' });
       krAnim(krShadow.firstElementChild, [{ transform: 'translate(0,0) scale(1)', opacity: 0.7, easing: 'ease-out' }, { transform: 'translate(' + ox + 'px,' + oy + 'px) scale(.8)', opacity: 0.55, offset: 0.5, easing: 'ease-in' }, { transform: 'translate(0,0) scale(1)', opacity: 0.7 }], { duration: T_FLY, fill: 'both' });
     }, T_TURN + T_CROUCH);
     krTm(function () {                                   // ちゃくち
       krSit.hidden = false; krJmp.hidden = true;
-      krCancelOn([krFrog, krLift, krShadow, krShadow.firstElementChild, krSq]);
+      krCancelOn([krFrog, krLift, krShadow, krShadow.firstElementChild, krSq, krTurn]);
       krSetAt(to);
       krAnim(krSq, [{ transform: 'scale(1,1)' }, { transform: 'scale(1.24,.78)', offset: 0.22 }, { transform: 'scale(.9,1.14)', offset: 0.5 }, { transform: 'scale(1.04,.97)', offset: 0.75 }, { transform: 'scale(1,1)' }], { duration: reduce ? 250 : 480, easing: 'ease-out' });
       krDip(b.el, 0.88);
@@ -8765,7 +8764,7 @@
   games.kaeru = {
     el: krStage,
     enter: function () {
-      kr.on = true; kr.idx = 0; kr.to = 0; kr.ang = 0; kr.busy = false; kr.laps = 0; kr.seed = [];
+      kr.on = true; kr.idx = 0; kr.to = 0; kr.face = 1; kr.busy = false; kr.laps = 0; kr.seed = [];
       krSit.hidden = false; krJmp.hidden = true;
       krSize();
       krStage.addEventListener('pointerdown', krDown); krStage.addEventListener('contextmenu', krCtl);
