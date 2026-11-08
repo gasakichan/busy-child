@@ -8910,7 +8910,7 @@
       d.it.appendChild(dkImg(DOKO_IMG.item(it.k), function () { em.hidden = true; }));
     });
     var look = dk.round === 1 ? 4500 : 3500;
-    dkTm(function () { say('よく みてね'); bigWord('よく みてね', '#E8761C'); }, 600);
+    dkTm(function () { say('よく みてね'); bigWord('よく みてね', '#E8761C', 'clamp(40px, 13vw, 110px)'); }, 600);
     dkTm(function () {
       dk.phase = 'close'; dkRattle(6);
       dk.doors.forEach(function (d, i) { dkShutter(d, false, 450, i * 120); });
@@ -8941,7 +8941,7 @@
       dkDisarm();
       dkTm(function () {
         if (dk.found >= 6) {
-          dk.phase = 'done'; say('ぜんぶ みつけた！'); bigWord('ぜんぶ みつけた！', '#E8761C');
+          dk.phase = 'done'; say('ぜんぶ みつけた！'); bigWord('ぜんぶ みつけた！', '#E8761C', 'clamp(40px, 10.5vw, 100px)');
           arpeggio();
           dk.doors.forEach(function (dd) { var p = dkCenter(dd); burst(dkFx, p.x, p.y, { n: 4, emoji: ['✨', '⭐'], far: 0.6 }); });
           dkTm(dkRound, 2500);
