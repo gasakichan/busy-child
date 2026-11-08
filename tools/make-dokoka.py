@@ -2,7 +2,7 @@
 """どこかな の絵: マゼンタ背景のシート（4x4）を切り分けて透過 WebP にする。
 使い方: python3 tools/make-dokoka.py シート.png
  左上から右へ tokei ringo banana kutsu / boushi koppu haburashi kuruma / boru onigiri kasa pan / ichigo kuma shutter ico
- → assets/dokoka/<name>.webp（どうぐ・たべものは 長辺 256px、shutter は 長辺 320px）、ico は assets/ico/dokoka.webp（192px 正方形）
+ → assets/dokoka/<name>.webp（どうぐ・たべものは 長辺 256px、shutter は 長辺 320px で 色ちがい shutter0〜5）、ico は assets/ico/dokoka.webp（192px 正方形）
 元シートはリポジトリに置かない。キーイングは make-kaeru.py と同じ。"""
 import os
 import sys
@@ -14,6 +14,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 ICO_DIR = os.path.join(ROOT, 'assets', 'ico')
 DK_DIR = os.path.join(ROOT, 'assets', 'dokoka')
 GRID = 'tokei ringo banana kutsu boushi koppu haburashi kuruma boru onigiri kasa pan ichigo kuma shutter ico'.split()   # 4x4（左上から右へ）
+SHUTTER_COL = [(352, 0.8), (32, 1.0), (50, 1.0), (105, 0.8), (205, 1.0), (268, 0.8)]   # とびら 6 つの 色（色相・彩度の倍率）
 OUTLINE_M = -35.0
 
 
@@ -99,14 +100,31 @@ if len(sys.argv) != 2:
 os.makedirs(DK_DIR, exist_ok=True)
 rgba = to_rgba(sys.argv[1])
 H, W = rgba.shape[:2]
+# 絵はマスから少しはみ出すことがあるので、つながった塊ごとに 重心のあるマスへ振り分ける
+lab, nl = ndi.label(rgba[..., 3] > 40)
+cy, cx = (np.array(v) for v in zip(*ndi.center_of_mass(np.ones(lab.shape), lab, np.arange(1, nl + 1)))) if nl else ([], [])
+owner = np.zeros(nl + 1, int) - 1
+owner[1:] = (np.clip(cy * 4 // H, 0, 3) * 4 + np.clip(cx * 4 // W, 0, 3)).astype(int)
 for i, n in enumerate(GRID):
-    r, c = divmod(i, 4)
-    y0, y1, x0, x1 = r * H // 4, (r + 1) * H // 4, c * W // 4, (c + 1) * W // 4
-    cell = np.zeros_like(rgba)
-    cell[y0:y1, x0:x1] = rgba[y0:y1, x0:x1]
+    m = owner[lab] == i
+    m = ndi.binary_dilation(m, iterations=3)
+    cell = rgba.copy()
+    cell[..., 3] = np.where(m, cell[..., 3], 0)
     cell, _ = clean(cell)
     t = crop(cell)
     if n == 'ico':
         save(square(t, 192, 180), '%s/dokoka.webp' % ICO_DIR)
+    elif n == 'shutter':
+        t = long_side(t, 320)
+        # 色ちがい 6 まい（水色の ところだけ 色相を かえる。焦げ茶の 輪郭は そのまま）
+        a = np.asarray(t)
+        hsv = np.asarray(Image.fromarray(a[..., :3]).convert('HSV')).copy()
+        blue = (hsv[..., 0] >= 150 * 255 // 360) & (hsv[..., 0] <= 240 * 255 // 360) & (hsv[..., 1] > 20)
+        for j, (hue, sat) in enumerate(SHUTTER_COL):
+            h2 = hsv.copy()
+            h2[..., 0] = np.where(blue, hue * 255 // 360, h2[..., 0])
+            h2[..., 1] = np.where(blue, np.clip(h2[..., 1].astype(int) * sat, 0, 255), h2[..., 1]).astype(np.uint8)
+            rgb = np.asarray(Image.fromarray(h2, 'HSV').convert('RGB'))
+            save(Image.fromarray(np.dstack([rgb, a[..., 3]]), 'RGBA'), '%s/shutter%d.webp' % (DK_DIR, j))
     else:
-        save(long_side(t, 320 if n == 'shutter' else 256), '%s/%s.webp' % (DK_DIR, n))
+        save(long_side(t, 256), '%s/%s.webp' % (DK_DIR, n))
