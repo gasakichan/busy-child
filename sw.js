@@ -1,5 +1,5 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v10';
+var CACHE = 'ponpon-v11';
 var FONTS = 'ponpon-fonts-v1';
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
   './assets/ani/buta.webp',
@@ -31,6 +31,27 @@ var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.sv
   './assets/ico/suna.webp',
   './assets/ico/kiru.webp',
   './assets/ico/kaeru.webp',
+  './assets/ico/dokoka.webp',
+  './assets/dokoka/tokei.webp',
+  './assets/dokoka/ringo.webp',
+  './assets/dokoka/banana.webp',
+  './assets/dokoka/kutsu.webp',
+  './assets/dokoka/boushi.webp',
+  './assets/dokoka/koppu.webp',
+  './assets/dokoka/haburashi.webp',
+  './assets/dokoka/kuruma.webp',
+  './assets/dokoka/boru.webp',
+  './assets/dokoka/onigiri.webp',
+  './assets/dokoka/kasa.webp',
+  './assets/dokoka/pan.webp',
+  './assets/dokoka/ichigo.webp',
+  './assets/dokoka/kuma.webp',
+  './assets/dokoka/shutter0.webp',
+  './assets/dokoka/shutter1.webp',
+  './assets/dokoka/shutter2.webp',
+  './assets/dokoka/shutter3.webp',
+  './assets/dokoka/shutter4.webp',
+  './assets/dokoka/shutter5.webp',
   './assets/kaeru/frog-sit.webp',
   './assets/kaeru/frog-jump.webp',
   './assets/kaeru/pad1.webp',

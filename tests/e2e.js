@@ -40,13 +40,13 @@ if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami','kaeru'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき','かえる'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami','kaeru','dokoka'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき','かえる','どこかな'];
 // ホームの並び（index.html の HORDER と同じ。9 個ずつでページ）
 const HLABS = ['ふうせん','どうぶつ','おえかき','いないいないばあ','もしもし','でんしゃ','おみせやさん','ぬりえ','シールちょう',
   'いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち',
   'ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば',
-  'とんとん','はみがき','かえる'];
+  'とんとん','はみがき','かえる','どこかな'];
 const NPAGES = Math.ceil(HLABS.length / 9);
 const pageOf = lab => Math.floor(HLABS.indexOf(lab) / 9);
 async function gotoPage(p, n) {
@@ -158,7 +158,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hm-p1').isVisible() && await p.locator('#hm-p0').isHidden(), tag + ' dot jumps to page2');
     await p.click('.hm-dot:nth-child(1)'); await sleep(320);
     // ---- page 3 ----
-    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (29 games, 9 per page)');
+    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (31 games, 9 per page)');
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
@@ -183,8 +183,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     // ---- page 4 (last): とんとん + はみがき + かえる ----
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
-    ok(t4.length === 3 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[0].cy === tiles[0].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, same size ' + JSON.stringify(t4));
-    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete; }), tag + ' page4: とんとん/かえる icon images loaded, はみがき uses the 🪥 emoji');
+    ok(t4.length === 4 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[3].cx === tiles[0].cx && t4[0].cy === tiles[0].cy && t4[3].cy === tiles[3].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, どこかな starts row 2, same size ' + JSON.stringify(t4));
+    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete; }), tag + ' page4: とんとん/かえる/どこかな icon images loaded, はみがき uses the 🪥 emoji');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
     const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');
@@ -1072,7 +1072,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 28 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (28 rows)');
+      ok(await p.locator('.st-row.zero').count() === 29 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (29 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2834,11 +2834,76 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 
 
+  /* ---------- どこかな ---------- */
+  TV('dokoka', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+    const tag = 'dokoka ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/dokoka-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+    const p = await newPage(br, vp, { deny: true });
+    const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const geo = () => p.evaluate(() => { const vw = innerWidth, vh = innerHeight, st = document.querySelector('#stage-dokoka').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
+      const R = e => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; };
+      const ds = [...document.querySelectorAll('#stage-dokoka .dk-door')].map(R);
+      const inside = r => r.l >= st.left - 0.5 && r.r <= st.right + 0.5 && r.t >= st.top - 0.5 && r.b <= st.bottom + 0.5 && r.l >= 0 && r.r <= vw && r.t >= 0 && r.b <= vh;
+      let ovl = 0; ds.forEach((a, i) => ds.forEach((b, j) => { if (j > i && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b) ovl++; }));
+      const cols = new Set(ds.map(r => Math.round(r.l))).size;
+      return { n: ds.length, minw: Math.min(...ds.map(r => r.w)), minh: Math.min(...ds.map(r => r.h)), allIn: ds.every(inside), ovl, cols, ds,
+        homeOvl: ds.filter(r => r.l < hb.right && hb.left < r.r && r.t < hb.bottom && hb.top < r.b).length,
+        hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw || document.querySelector('#stage-dokoka').scrollWidth > document.querySelector('#stage-dokoka').clientWidth }; });
+    const S = () => p.evaluate(() => ({ phase: window.__dk.phase, t: window.__dk.target, open: window.__dk.doors.map(d => d.open), found: window.__dk.doors.map(d => d.found), keys: window.__dk.doors.map(d => d.item && d.item.k), r: window.__dk.doors.map(d => d.item && d.item.r), on: window.__dk.on }));
+    const clickDoor = async (i) => { const g = (await geo()).ds[i]; await p.mouse.click(g.cx, g.cy); };
+    await tapTile(p, 'どこかな'); await sleep(500);
+    ok(await p.locator('#stage-dokoka').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens どこかな');
+    ok(await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': shared 🏠, no adult button');
+    const g = await geo(), land = vp.width > vp.height;
+    console.log('info ' + tag + ' doors ' + g.n + ' min ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
+    ok(g.n === 6 && g.cols === (land ? 3 : 2), tag + ': 6 doors in ' + (land ? '3x2' : '2x3') + ' (cols ' + g.cols + ')');
+    ok(g.minw >= 80 && g.minh >= 80, tag + ': every door >= 80px ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
+    ok(g.allIn && !g.hs, tag + ': doors inside the stage/viewport, no hscroll');
+    ok(g.ovl === 0 && g.homeOvl === 0, tag + ': doors do not overlap each other or 🏠');
+    const s0 = await S();
+    ok(s0.phase === 'look' && s0.open.every(x => x) && new Set(s0.keys).size === 6, tag + ': round starts with 6 different items and all shutters open');
+    ok(await until(async () => (await says(p)).some(x => x.t === 'よく みてね'), 2000), tag + ': says よく みてね');
+    await shot('open');
+    ok(await until(async () => (await S()).phase === 'ask', 9000), tag + ': question starts after the shutters roll down');
+    await sleep(100);
+    const s1 = await S();
+    ok(s1.open.every(x => !x) && s1.t >= 0, tag + ': all shutters are closed');
+    ok((await says(p)).some(x => x.t === s1.r[s1.t] + 'は どこかな？') && await p.locator('#dk-hname').isVisible() && (await p.locator('#dk-hname').textContent()).length > 0, tag + ': asks 「' + s1.r[s1.t] + 'は どこかな？」 and shows the hint');
+    await shot('ask');
+    /* まちがい */
+    const w = [0, 1, 2, 3, 4, 5].find(i => i !== s1.t);
+    await clearSays(p);
+    await clickDoor(w);
+    ok(await until(async () => (await says(p)).some(x => x.t === s1.r[w] + ' だったね'), 1500) && (await S()).open[w], tag + ': wrong door opens and says ' + s1.r[w] + ' だったね');
+    await shot('wrong');
+    ok(await until(async () => !(await S()).open[w], 2500), tag + ': wrong door closes again');
+    ok(await until(async () => { const s = await S(); return s.phase === 'ask' && !s.open[w]; }, 2500) && (await S()).t === s1.t, tag + ': same question continues, no failure effect');
+    /* せいかい */
+    await clearSays(p);
+    await clickDoor(s1.t);
+    ok(await until(async () => (await says(p)).some(x => x.t === 'あった！ ' + s1.r[s1.t]), 1500) && (await S()).open[s1.t], tag + ': right door says あった and stays open');
+    await sleep(500); await shot('found');
+    ok(await p.locator('#fx-dokoka span').count() > 0, tag + ': sparkles drawn');
+    ok(await until(async () => { const s = await S(); return s.phase === 'ask' && s.t !== s1.t; }, 3500), tag + ': next question targets another door');
+    const s2 = await S();
+    ok(s2.open[s1.t] && s2.found[s1.t] && !s2.open[s2.t], tag + ': found door stays open, new target is still closed');
+    await clearSays(p); await clickDoor(s1.t); await sleep(200);
+    ok((await says(p)).some(x => x.t === s1.r[s1.t]), tag + ': tapping a found door just says its name');
+    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
+    await p.click('#homebtn'); await sleep(150);
+    ok(await p.locator('#hm-p3').isVisible() && await p.locator('#stage-dokoka').isHidden(), tag + ': 🏠 returns to page 4');
+    const st = await p.evaluate(() => ({ on: window.__dk.on, tm: window.__dk.tm.length, an: window.__dk.anims.length, doors: window.__dk.doors.length, fx: document.querySelectorAll('#fx-dokoka *').length, run: document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#stage-dokoka')).length }));
+    ok(!st.on && st.tm === 0 && st.an === 0 && st.doors === 0 && st.fx === 0 && st.run === 0, tag + ': leave() cleared timers/animations/state ' + JSON.stringify(st));
+    await clearSays(p); await sleep(1500);
+    ok((await says(p)).length === 0, tag + ': nothing is spoken after leaving');
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
 
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
