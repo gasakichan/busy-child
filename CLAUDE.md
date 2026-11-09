@@ -25,14 +25,14 @@ E2E はブロックごとに別プロセス・別 browser で独立に走る（`
 - 共通ヘルパー: `say()`（日本語の読み上げ）、`sayEn()`（英語。カタカナにフォールバックする）、`bigWord()`（話した言葉を大きく表示）、`tone()`（効果音）、`holdButton()`（長押しボタン）。
 - 大人用の設定はホームの ⚙️（1.5 秒長押し）の `openSettings()` に集約。ゲーム画面には大人用ボタンを置かない。
 - localStorage: `ponpon.settings.v1` / `ponpon.family.v1` / `ponpon.stickers.v1` / `ponpon.stats.v1` / `ponpon.mix.v1`（まぜまぜの はっけんずみ）。必ず try/catch で囲む。音なし・声なしは保存しない。
-- イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）、`assets/mix/`（まぜまぜの もと6つ＋できもの21、192px。マゼンタ背景のシートから `python3 tools/make-mix.py 出力dir シート1 シート2 シート3` で切り出し）、`assets/kiru/`（とんとん の 食べもの・断面・道具。マゼンタ背景のシートから `python3 tools/make-kiru.py シート1 シート2` で切り出し。ホームの追加アイコン `assets/ico/{drive,piano,pinball,voice,nami,mix,suna,kiru}` も同じシート1 から出る）、`assets/kaeru/`（かえる: すわり・とびの 2 ポーズと はっぱ 2・はす。マゼンタ背景の 3x2 シートから `python3 tools/make-kaeru.py シート` で切り出し。ホームアイコン `assets/ico/kaeru` も同じシートから出る。絵は `KAERU_IMG` で差し替え）、`assets/dokoka/`（どこかな: もの 14 こと 色ちがいの シャッター shutter0〜5。マゼンタ背景の 4x4 シートから `python3 tools/make-dokoka.py シート` で切り出し。ホームアイコン `assets/ico/dokoka` も同じシートから出る。絵は `DOKO_IMG`）、`assets/stk/`（シールちょうのシール、`STK_IMG`。白フチ込み 256px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
+- イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）、`assets/mix/`（まぜまぜの もと6つ＋できもの21、192px。マゼンタ背景のシートから `python3 tools/make-mix.py 出力dir シート1 シート2 シート3` で切り出し）、`assets/kiru/`（とんとん の 食べもの・断面・道具。マゼンタ背景のシートから `python3 tools/make-kiru.py シート1 シート2` で切り出し。ホームの追加アイコン `assets/ico/{drive,piano,pinball,voice,nami,mix,suna,kiru}` も同じシート1 から出る）、`assets/kaeru/`（かえる: すわり・とびの 2 ポーズと はっぱ 2・はす。マゼンタ背景の 3x2 シートから `python3 tools/make-kaeru.py シート` で切り出し。ホームアイコン `assets/ico/kaeru` も同じシートから出る。絵は `KAERU_IMG` で差し替え）、`assets/dokoka/`（どこかな: もの 14 こと 色ちがいの シャッター shutter0〜5。マゼンタ背景の 4x4 シートから `python3 tools/make-dokoka.py シート` で切り出し。ホームアイコン `assets/ico/dokoka` も同じシートから出る。絵は `DOKO_IMG`）、`assets/aiueo/`（あいうえおの 絵文字の かわりに だす え。`KANA` の 4 つめに パス）、`assets/stk/`（シールちょうのシール、`STK_IMG`。白フチ込み 256px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
 - カメラ検出（おみせやさん）は `/* camdet:begin */`〜`/* camdet:end */` の純粋関数。単体テストはこの範囲を抜き出して実行する。
 
 ## 守ること
 - 対象は 2 歳児。
   - 失敗や罰の演出はしない。例外は ABC の ☝️ と「No!」。
   - 読み上げはひらがなで渡し、同じ言葉を画面にも大きく出す。
-  - タップ領域は 80px 以上。
+  - タップ領域は 80px 以上。例外: あいうえおの 50音表のセルは小さくてよい（ユーザー了承。できるだけ大きく取る）。
 - 外部スクリプト・外部画像は使わない（Google Fonts のみ可）。リポジトリ内の `assets/` の画像は可（相対パスで参照）。`alert`/`confirm`/`prompt` は使わない。表示切替は `el.hidden`。
 - 360px 幅で横スクロールを出さない。ホームは縦スクロールなし。
 - 絵はオリジナルにする。既存キャラクターや本物の紙幣のデザインはまねしない。
