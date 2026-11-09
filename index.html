@@ -939,6 +939,7 @@
   .ai-row { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 3vw, 28px); }
   .ai-l { font-size: clamp(80px, min(35vw, 21vh), 260px); line-height: 1.05; color: var(--cc, var(--ink)); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 rgba(43,58,103,.2); }
   .ai-e { font-size: clamp(64px, min(26vw, 16vh), 200px); line-height: 1; }
+  .ai-img { display: block; width: 1.15em; height: 1.15em; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
   .ai-w { font-size: clamp(22px, min(7.5vw, 6vh), 56px); line-height: 1.2; white-space: nowrap; color: var(--ink); }
   .ai-w .hl { color: var(--cc); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; }
   .ai-tb, .ai-back { position: absolute; top: 8px; right: 8px; z-index: 3; min-height: 56px; min-width: 56px; padding: 0 16px; border: 0; border-radius: 28px; background: #fff; font-size: 18px; box-shadow: 0 4px 0 var(--shadow), 0 0 0 3px #F2E6C8; }
@@ -3592,7 +3593,7 @@
     ['た', [['た', 'たこ', '🐙'], ['ち', 'ちょうちょ', '🦋'], ['つ', 'つき', '🌙'], ['て', 'て', '✋'], ['と', 'とまと', '🍅']]],
     ['な', [['な', 'なす', '🍆'], ['に', 'にんじん', '🥕'], ['ぬ', 'ぬいぐるみ', '🧸'], ['ね', 'ねこ', '🐱'], ['の', 'のーと', '📓']]],
     ['は', [['は', 'はな', '🌷'], ['ひ', 'ひよこ', '🐤'], ['ふ', 'ふね', '🚢'], ['へ', 'へび', '🐍'], ['ほ', 'ほし', '⭐']]],
-    ['ま', [['ま', 'まめ', '🫘'], ['み', 'みかん', '🍊'], ['む', 'むし', '🐛'], ['め', 'めがね', '👓'], ['も', 'もも', '🍑']]],
+    ['ま', [['ま', 'まめ', '🫘', 'assets/aiueo/mame.webp'], ['み', 'みかん', '🍊'], ['む', 'むし', '🐛'], ['め', 'めがね', '👓'], ['も', 'もも', '🍑']]],
     ['や', [['や', 'やま', '⛰️'], ['ゆ', 'ゆきだるま', '⛄'], ['よ', 'よっと', '⛵']]],
     ['ら', [['ら', 'らいおん', '🦁'], ['り', 'りんご', '🍎'], ['る', 'るーぺ', '🔍'], ['れ', 'れもん', '🍋'], ['ろ', 'ろけっと', '🚀']]],
     ['わ', [['わ', 'わに', '🐊'], ['を', 'ほんを よむ', '📖'], ['ん', 'ぱん', '🍞']]]
@@ -3603,7 +3604,9 @@
   function aiCol() { return COL[aiRow % COL.length]; }
   function aiShow(flip) {
     var row = KANA[aiRow], it = row[1][aiIdx], col = aiCol(), ch = it[0], word = it[1], k = word.indexOf(ch);
-    aiL.textContent = ch; aiE.textContent = it[2];
+    aiL.textContent = ch; aiE.textContent = '';
+    if (it[3]) { var im = document.createElement('img'); im.src = it[3]; im.alt = ''; im.className = 'ai-img'; im.draggable = false; aiE.appendChild(im); }   /* えもじが でない たんまつ むけに オリジナルの え */
+    else aiE.textContent = it[2];
     aiW.textContent = '';
     if (k > 0) aiW.appendChild(document.createTextNode(word.slice(0, k)));
     var hl = document.createElement('span'); hl.className = 'hl'; hl.textContent = ch; aiW.appendChild(hl);

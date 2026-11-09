@@ -236,6 +236,21 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(p.errs.length === 0, 'phone: no console errors ' + p.errs.join(' | '));
   });
 
+  T('aiueo-mame', async (br) => {
+    const p = await newPage(br, { width: 360, height: 740 }, { deny: true });
+    await tapTile(p, LAB[13]); await sleep(500);
+    await p.click('.ai-tab >> text="ま"', { force: true }); await sleep(500);
+    const st = await p.evaluate(() => { const im = document.querySelector('#ai-e img'), r = im && im.getBoundingClientRect();
+      return { w: document.querySelector('#ai-w').textContent, src: im && im.getAttribute('src'), ok: !!im && im.complete && im.naturalWidth > 0, iw: r ? r.width : 0, hs: document.documentElement.scrollWidth > innerWidth }; });
+    ok(st.w === 'まめ' && /assets\/aiueo\/mame\.webp$/.test(st.src) && st.ok && st.iw >= 60, 'aiueo ま shows まめ with its own picture ' + JSON.stringify(st));
+    ok(!st.hs, 'aiueo ま: no horizontal scroll');
+    await p.screenshot({ path: SP + '/aiueo-mame.png' });
+    await p.click('.ai-b >> text="み"', { force: true }); await sleep(400);
+    const mi = await p.evaluate(() => ({ img: !!document.querySelector('#ai-e img'), e: document.querySelector('#ai-e').textContent }));
+    ok(!mi.img && mi.e === '🍊', 'aiueo み goes back to the emoji ' + JSON.stringify(mi));
+    ok(p.errs.length === 0, 'aiueo-mame: no console errors ' + p.errs.join(' | '));
+  });
+
   T('settings', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     await holdOpen(p, 300); await sleep(100);

@@ -1,7 +1,8 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v11';
+var CACHE = 'ponpon-v12';
 var FONTS = 'ponpon-fonts-v1';
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
+  './assets/aiueo/mame.webp',
   './assets/ani/buta.webp',
   './assets/ani/hiyoko.webp',
   './assets/ani/inu.webp',
