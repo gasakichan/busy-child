@@ -930,17 +930,17 @@
 
   /* あいうえお */
   #stage-aiueo { background: var(--paper); display: flex; flex-direction: column; padding-top: var(--top); }
-  .ai-top { position: relative; flex: 1 1 0; min-height: 0; min-width: 0; margin: 0 10px; perspective: 900px; }
+  .ai-top { position: relative; container-type: size; flex: 1 1 0; min-height: 0; min-width: 0; margin: 0 10px; perspective: 900px; }
   .ai-card {
     position: absolute; inset: 0; width: 100%; padding: 8px; border: 0; border-radius: 28px;
     background: var(--ct, #fff); box-shadow: 0 6px 0 var(--shadow), inset 0 0 0 5px var(--cc, #F2E6C8);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden;
   }
   .ai-row { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 3vw, 28px); }
-  .ai-l { font-size: clamp(80px, min(35vw, 21vh), 260px); line-height: 1.05; color: var(--cc, var(--ink)); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 rgba(43,58,103,.2); }
-  .ai-e { font-size: clamp(64px, min(26vw, 16vh), 200px); line-height: 1; }
+  .ai-l { font-size: clamp(48px, min(38cqw, 38cqh), 260px); line-height: 1.05; color: var(--cc, var(--ink)); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 rgba(43,58,103,.2); }
+  .ai-e { font-size: clamp(40px, min(28cqw, 28cqh), 200px); line-height: 1; }
   .ai-img { display: block; width: 1.15em; height: 1.15em; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
-  .ai-w { font-size: clamp(22px, min(7.5vw, 6vh), 56px); line-height: 1.2; white-space: nowrap; color: var(--ink); }
+  .ai-w { font-size: clamp(14px, min(10cqw, 9cqh), 56px); line-height: 1.2; white-space: nowrap; color: var(--ink); }
   .ai-w .hl { color: var(--cc); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; }
   .ai-tb, .ai-back { position: absolute; top: 8px; right: 8px; z-index: 3; min-height: 56px; min-width: 56px; padding: 0 16px; border: 0; border-radius: 28px; background: #fff; font-size: 18px; box-shadow: 0 4px 0 var(--shadow), 0 0 0 3px #F2E6C8; }
   .ai-tb:active, .ai-back:active { transform: translateY(2px); }
@@ -949,27 +949,25 @@
   #ai-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .ai-done { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 3; min-width: 170px; min-height: 68px; padding: 0 24px; border: 0; border-radius: 34px; background: #34B556; color: #fff; font-size: 28px; box-shadow: 0 5px 0 var(--shadow); }
   .ai-done:active { transform: translateX(-50%) translateY(3px); }
-  .ai-ctl { flex: 0 0 auto; min-width: 0; padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 8px; }
-  .ai-strip { display: flex; align-items: center; gap: 6px; height: 56px; }
-  .ai-arrow { flex: 0 0 auto; width: 52px; height: 52px; border: 0; border-radius: 50%; background: #fff; font-size: 24px; line-height: 1; box-shadow: 0 3px 0 var(--shadow); display: grid; place-items: center; }
-  .ai-tabs { position: relative; flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; touch-action: pan-x; padding: 4px 2px 6px; }
-  .ai-tabs::-webkit-scrollbar { display: none; }
-  .ai-tab { flex: 0 0 auto; width: 48px; height: 48px; border: 0; border-radius: 14px; background: var(--c); color: var(--fg); font-size: 24px; line-height: 1; box-shadow: 0 3px 0 var(--shadow); }
-  .ai-tab.on { box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--ink); }
-  .ai-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .ai-ctl { flex: 1 1 0; min-height: 0; min-width: 0; padding: 8px 8px 10px; display: flex; flex-direction: column; }
+  /* 50音表: たて11ぎょう x よこ5だん（よこがた画面では 5 x 11 の ふつうの ごじゅうおんひょう、みぎから ひだり） */
+  .ai-tbl { flex: 1 1 0; min-height: 0; container-type: size; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(11, 1fr); gap: 4px; }
   .ai-b {
-    flex: 0 0 calc((100% - 20px) / 3); height: clamp(76px, 12vh, 120px); border: 0; border-radius: 24px; padding: 0;
-    background: var(--c); color: var(--fg); font-size: clamp(40px, min(13vw, 7vh), 76px); line-height: 1;
-    box-shadow: 0 5px 0 var(--shadow);
+    grid-row: calc(var(--g) + 1); grid-column: calc(var(--d) + 1);
+    min-width: 0; min-height: 0; width: 100%; height: 100%; border: 0; border-radius: 12px; padding: 0;
+    background: var(--c); color: var(--fg); font-size: clamp(14px, min(7cqw, 5cqh), 40px); line-height: 1;
+    box-shadow: 0 3px 0 var(--shadow);
   }
-  .ai-b:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--shadow); }
-  .ai-b.on { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--ink); }
-  @media (min-width: 600px) and (max-aspect-ratio: 13/10) { .ai-b { flex-basis: calc((100% - 40px) / 5); } }
+  .ai-b:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shadow); }
+  .ai-b.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
+  #stage-aiueo .ai-top { flex: 0 0 max(200px, 34%); }
   @media (min-aspect-ratio: 4/3) {
     #stage-aiueo { flex-direction: row; padding: 12px 12px 12px 80px; }
-    .ai-top { flex: 1 1 0; margin: 0; }
-    .ai-ctl { flex: 1 1 0; padding: 64px 0 0 12px; justify-content: center; }
-    .ai-btns { justify-content: center; }
+    #stage-aiueo .ai-top { flex: 4 1 0; margin: 0; }
+    .ai-ctl { flex: 5 1 0; padding: 0 0 0 12px; justify-content: center; }
+    .ai-tbl { flex: 0 0 auto; width: 100%; aspect-ratio: 11 / 8; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(5, 1fr); max-height: 100%; }
+    .ai-tbl { gap: 3px; }
+    .ai-b { grid-column: calc(11 - var(--g)); grid-row: calc(var(--d) + 1); font-size: clamp(14px, min(5.5cqw, 10cqh), 44px); border-radius: 10px; }
   }
 
   /* ABCパズル（木のアルファベットはめこみ） */
@@ -1460,12 +1458,7 @@
       </div>
     </div>
     <div class="ai-ctl">
-      <div class="ai-strip">
-        <button class="ai-arrow" id="ai-prev" type="button" aria-label="まえの ぎょう">◀</button>
-        <div class="ai-tabs" id="ai-tabs"></div>
-        <button class="ai-arrow" id="ai-next" type="button" aria-label="つぎの ぎょう">▶</button>
-      </div>
-      <div class="ai-btns" id="ai-btns"></div>
+      <div class="ai-tbl" id="ai-btns"></div>
     </div>
     <div class="fx" id="fx-aiueo"></div>
   </section>
@@ -3598,9 +3591,10 @@
     ['ら', [['ら', 'らいおん', '🦁'], ['り', 'りんご', '🍎'], ['る', 'るーぺ', '🔍'], ['れ', 'れもん', '🍋'], ['ろ', 'ろけっと', '🚀']]],
     ['わ', [['わ', 'わに', '🐊'], ['を', 'ほんを よむ', '📖'], ['ん', 'ぱん', '🍞']]]
   ];
-  var aiStage = $('#stage-aiueo'), aiCard = $('#ai-card'), aiL = $('#ai-l'), aiE = $('#ai-e'), aiW = $('#ai-w'), aiTabs = $('#ai-tabs'), aiBtns = $('#ai-btns');
+  var aiStage = $('#stage-aiueo'), aiCard = $('#ai-card'), aiL = $('#ai-l'), aiE = $('#ai-e'), aiW = $('#ai-w'), aiBtns = $('#ai-btns');
   var aiTb = $('#ai-tb'), aiTrace = $('#ai-trace'), aiTl = $('#ai-tl'), aiCv = $('#ai-cv'), aiCx = aiCv.getContext('2d'), fxAi = $('#fx-aiueo');
-  var aiRow = 0, aiIdx = 0, aiTraceOn = false, aiPtrs = {}, aiInk = false, aiNote = 0, aiTid = 0, aiLw = 20, aiTabEls = [], aiBtnEls = [];
+  var aiRow = 0, aiIdx = 0, aiTraceOn = false, aiPtrs = {}, aiInk = false, aiNote = 0, aiTid = 0, aiLw = 20, aiBtnEls = [];
+  var aiOffs = KANA.map(function (r, i) { var n = 0; for (var k = 0; k < i; k++) n += KANA[k][1].length; return n; });
   function aiCol() { return COL[aiRow % COL.length]; }
   function aiShow(flip) {
     var row = KANA[aiRow], it = row[1][aiIdx], col = aiCol(), ch = it[0], word = it[1], k = word.indexOf(ch);
@@ -3614,7 +3608,8 @@
     aiCard.style.setProperty('--cc', col.c); aiCard.style.setProperty('--ct', tint(col.c, 0.86));
     aiCard.setAttribute('aria-label', ch + '。 ' + word);
     aiTl.textContent = ch;
-    aiBtnEls.forEach(function (b, j) { b.classList.toggle('on', j === aiIdx); });
+    var aiOn = aiBtnEls[aiOffs[aiRow] + aiIdx];
+    aiBtnEls.forEach(function (b) { b.classList.toggle('on', b === aiOn); });
     if (flip && !aiTraceOn) {
       aiCard.animate(reduce ? [{ opacity: 0.2 }, { opacity: 1 }] : [{ transform: 'rotateY(90deg)', opacity: 0.4 }, { transform: 'rotateY(0)', opacity: 1 }], { duration: reduce ? 250 : 320, easing: 'ease-out' });
     }
@@ -3623,8 +3618,8 @@
     var it = KANA[aiRow][1][aiIdx];
     return it[0] + '。 ' + it[1] + ' の ' + it[0] + '！';
   }
-  function aiPick(j, speak) {
-    aiIdx = j; aiShow(true);
+  function aiPick(r, j, speak) {
+    aiRow = r; aiIdx = j; aiShow(true);
     if (speak) {
       say(aiTraceOn ? KANA[aiRow][1][j][0] : aiLine());
       tone(SCALE[(aiRow + j) % 10], 0.14, 'triangle', 0.12);
@@ -3633,33 +3628,23 @@
   }
   function aiSetRow(r, speak) {
     aiRow = (r + KANA.length) % KANA.length; aiIdx = 0;
-    var col = aiCol(), row = KANA[aiRow];
-    aiBtns.innerHTML = ''; aiBtnEls = [];
-    row[1].forEach(function (it, j) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'ai-b'; b.textContent = it[0];
-      b.style.setProperty('--c', col.c); b.style.setProperty('--fg', col.fg);
-      b.setAttribute('aria-label', it[0]);
-      onTap(b, function () { bounce(b, 14); aiPick(j, true); });
-      aiBtns.appendChild(b); aiBtnEls.push(b);
-    });
-    aiTabEls.forEach(function (t, j) { t.classList.toggle('on', j === aiRow); });
-    var t = aiTabEls[aiRow];
-    if (t) aiTabs.scrollLeft = t.offsetLeft - (aiTabs.clientWidth - t.offsetWidth) / 2;
     aiShow(true);
-    if (speak) { say(aiTraceOn ? row[1][0][0] : aiLine()); tone(SCALE[aiRow % 10], 0.14, 'triangle', 0.12); }
+    if (speak) { say(aiTraceOn ? KANA[aiRow][1][0][0] : aiLine()); tone(SCALE[aiRow % 10], 0.14, 'triangle', 0.12); }
     if (aiTraceOn) aiClearInk();
   }
+  /* 50音表: ぜんぶの もじを 1かいだけ つくる。--g = ぎょう(0..10, ん は 10), --d = だん(0..4) */
   KANA.forEach(function (row, r) {
-    var c = COL[r % COL.length], b = document.createElement('button');
-    b.type = 'button'; b.className = 'ai-tab'; b.textContent = row[0];
-    b.style.setProperty('--c', c.c); b.style.setProperty('--fg', c.fg);
-    b.setAttribute('aria-label', row[0] + 'ぎょう');
-    onTap(b, function () { aiSetRow(r, true); });
-    aiTabs.appendChild(b); aiTabEls.push(b);
+    var col = COL[r % COL.length], dans = r === 7 ? [0, 2, 4] : r === 9 ? [0, 4, 0] : [0, 1, 2, 3, 4];
+    row[1].forEach(function (it, j) {
+      var b = document.createElement('button'), g = (r === 9 && j === 2) ? 10 : r;
+      b.type = 'button'; b.className = 'ai-b'; b.textContent = it[0];
+      b.style.setProperty('--c', col.c); b.style.setProperty('--fg', col.fg);
+      b.style.setProperty('--g', g); b.style.setProperty('--d', dans[j]);
+      b.setAttribute('aria-label', it[0]);
+      onTap(b, function () { bounce(b, 14); aiPick(r, j, true); });
+      aiBtns.appendChild(b); aiBtnEls.push(b);
+    });
   });
-  onTap($('#ai-prev'), function () { aiSetRow(aiRow - 1, true); });
-  onTap($('#ai-next'), function () { aiSetRow(aiRow + 1, true); });
   onTap(aiCard, function () {
     say(aiLine()); bounce(aiCard, 8);
     var r = centerIn(aiE, fxAi);

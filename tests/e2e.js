@@ -239,7 +239,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   T('aiueo-mame', async (br) => {
     const p = await newPage(br, { width: 360, height: 740 }, { deny: true });
     await tapTile(p, LAB[13]); await sleep(500);
-    await p.click('.ai-tab >> text="ま"', { force: true }); await sleep(500);
+    await p.click('.ai-b >> text="ま"', { force: true }); await sleep(500);
     const st = await p.evaluate(() => { const im = document.querySelector('#ai-e img'), r = im && im.getBoundingClientRect();
       return { w: document.querySelector('#ai-w').textContent, src: im && im.getAttribute('src'), ok: !!im && im.complete && im.naturalWidth > 0, iw: r ? r.width : 0, hs: document.documentElement.scrollWidth > innerWidth }; });
     ok(st.w === 'まめ' && /assets\/aiueo\/mame\.webp$/.test(st.src) && st.ok && st.iw >= 60, 'aiueo ま shows まめ with its own picture ' + JSON.stringify(st));
@@ -249,6 +249,37 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const mi = await p.evaluate(() => ({ img: !!document.querySelector('#ai-e img'), e: document.querySelector('#ai-e').textContent }));
     ok(!mi.img && mi.e === '🍊', 'aiueo み goes back to the emoji ' + JSON.stringify(mi));
     ok(p.errs.length === 0, 'aiueo-mame: no console errors ' + p.errs.join(' | '));
+  });
+
+  TV('aiueo-table', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+    const tag = 'aiueo-table ' + vp.width + 'x' + vp.height, land = vp.width / vp.height >= 4 / 3;
+    const p = await newPage(br, vp, { deny: true });
+    await tapTile(p, LAB[13]); await sleep(500);
+    const geo = () => p.evaluate(() => { const vw = innerWidth, vh = innerHeight, st = document.querySelector('#stage-aiueo').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
+      const R = e => { const r = e.getBoundingClientRect(); return { t: e.textContent, l: r.left, tp: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
+      const bs = [...document.querySelectorAll('.ai-b')].map(R), card = R(document.querySelector('.ai-card'));
+      const inside = r => r.l >= st.left - 0.5 && r.r <= st.right + 0.5 && r.tp >= st.top - 0.5 && r.b <= st.bottom + 0.5 && r.l >= 0 && r.r <= vw && r.tp >= 0 && r.b <= vh;
+      let ovl = 0; bs.forEach((a, i) => bs.forEach((b, j) => { if (j > i && a.l < b.r - 0.5 && b.l < a.r - 0.5 && a.tp < b.b - 0.5 && b.tp < a.b - 0.5) ovl++; }));
+      return { n: bs.length, bs, card, allIn: bs.every(inside), ovl, minw: Math.min(...bs.map(r => r.w)), minh: Math.min(...bs.map(r => r.h)),
+        homeOvl: bs.filter(r => r.l < hb.right && hb.left < r.r && r.tp < hb.bottom && hb.top < r.b).length,
+        cardVis: await_ok(card), hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw }; function await_ok(c) { return c.w > 0 && c.h > 0 && c.tp >= 0 && c.b <= vh; } });
+    const g = await geo(), by = t => g.bs.find(b => b.t === t);
+    console.log('info ' + tag + ' cell ' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ' (' + Math.round(by('あ').w) + 'x' + Math.round(by('あ').h) + ') card h ' + Math.round(g.card.h) + ' w ' + Math.round(g.card.w));
+    ok(g.n === 46, tag + ': 46 cells (' + g.n + ')');
+    ok(g.allIn && !g.hs, tag + ': cells inside stage/viewport, no hscroll');
+    ok(g.ovl === 0 && g.homeOvl === 0, tag + ': no overlap between cells or with 🏠 (' + g.ovl + '/' + g.homeOvl + ')');
+    ok(g.cardVis && g.card.h >= (vp.width === 360 && vp.height === 740 ? 200 : 120), tag + ': card visible and tall enough (' + Math.round(g.card.h) + ')');
+    const a = by('あ'), ka = by('か'), i = by('い');
+    if (land) ok(ka.l < a.l && Math.abs(ka.tp - a.tp) < 2 && i.tp > a.tp && Math.abs(i.l - a.l) < 2, tag + ': landscape is the vertical table (か left of あ, い below あ)');
+    else ok(ka.tp > a.tp && Math.abs(ka.l - a.l) < 2 && i.l > a.l && Math.abs(i.tp - a.tp) < 2, tag + ': portrait is the horizontal table (か below あ, い right of あ)');
+    ok(!!by('ん') && !!by('を') && !!by('ゆ'), tag + ': ん を ゆ exist');
+    for (const [k, w] of [['そ', 'そふとくりーむ'], ['ゆ', 'ゆきだるま'], ['ん', 'ぱん']]) {
+      await p.click('.ai-b >> text="' + k + '"', { force: true }); await sleep(450);
+      const st = await p.evaluate(k => ({ w: document.querySelector('#ai-w').textContent, on: [...document.querySelectorAll('.ai-b.on')].map(b => b.textContent) }), k);
+      ok(st.w === w && st.on.length === 1 && st.on[0] === k, tag + ': tap ' + k + ' -> ' + w + ' ' + JSON.stringify(st));
+    }
+    await p.screenshot({ path: SP + '/aiueo-table-' + vp.width + 'x' + vp.height + '.png' });
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
   });
 
   T('settings', async (br) => {
