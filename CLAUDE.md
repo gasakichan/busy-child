@@ -39,6 +39,7 @@ E2E はブロックごとに別プロセス・別 browser で独立に走る（`
 
 ## PWA（ホーム画面に追加・オフライン）
 - `manifest.webmanifest` / `sw.js` / `icons/`（相対パスのみ。GitHub Pages のサブパス配下）。SW は https か localhost でだけ登録される（file:// では何もしない）。
+- SW の install は PRECACHE を 1 つずつ読み込み、1 つでも失敗したら install を失敗させる（古い SW と古いキャッシュを残す。オフライン端末で空のキャッシュに切り替わって絵が消えるのを防ぐ）。activate で古いキャッシュを消すのは新しいのが揃っているときだけ。ページは起動時に `navigator.storage.persist()` を頼み、SW に `heal`（足りない絵を読み直す）を送る。設定の「オフライン」に揃い具合を出す。
 - `index.html` は network-first、他は cache-first。`index.html` 以外のプリキャッシュ対象（manifest・アイコンなど）を変えたら `sw.js` の `CACHE` を上げる。
 - `assets/` に画像を足す・差し替えるときは `sw.js` の `PRECACHE` に足し、`CACHE` を上げる（cache-first なので同名差し替えは上げないと更新されない）。
 - アイコンは `icons/icon.svg` が元。`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node tools/make-icons.js` で PNG を再生成。

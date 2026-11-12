@@ -8,9 +8,13 @@ const { chromium } = loadPw();
 const ROOT = path.join(__dirname, '..');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const ok = (c, m) => { if (!c) throw new Error('NG: ' + m); console.log('ok  ' + m); };
+const srvMode = { next: false, broken: '', hits: 0, last: 0 };
 (async () => {
   const srv = http.createServer((req, res) => {
+    srvMode.last = Date.now();
     let p = decodeURIComponent(req.url.split('?')[0]); if (p.endsWith('/')) p += 'index.html';
+    if (p === '/sw.js' && srvMode.next) { res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }); return res.end(fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8').replace(/var CACHE = '[^']*'/, "var CACHE = 'ponpon-test-next'")); }
+    if (srvMode.broken && p === srvMode.broken) { srvMode.hits++; res.writeHead(404); return res.end('nf'); }
     const f = path.join(ROOT, p);
     if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('nf'); }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
@@ -67,6 +71,41 @@ const ok = (c, m) => { if (!c) throw new Error('NG: ' + m); console.log('ok  ' +
     await ctx.setOffline(false);
     const live = await pg.evaluate(list => Promise.all(list.map(u => fetch(u, { cache: 'reload' }).then(r => r.status))), pre);
     ok(live.every(s => s === 200), 'every PRECACHE entry fetches 200 from server');
+    // こわれた えを なおす（status / heal）
+    const ask = t => pg.evaluate(t => new Promise(r => { const ch = new MessageChannel(); ch.port1.onmessage = e => r(e.data); navigator.serviceWorker.controller.postMessage({ type: t }, [ch.port2]); }), t);
+    const st0 = await ask('status');
+    ok(st0 && st0.have === pre.length && st0.total === pre.length, 'status: all ' + pre.length + ' cached');
+    const cname = st0.version;
+    await pg.evaluate(n => caches.open(n).then(c => Promise.all(['./assets/ico/sky.webp', './assets/ani/inu.webp', './assets/stk/ufo.webp'].map(u => c.delete(u)))), cname);
+    const st1 = await ask('status');
+    ok(st1.have === pre.length - 3, 'status sees 3 missing');
+    const st2 = await ask('heal');
+    ok(st2.have === pre.length, 'heal refetches missing entries');
+    // アップデート ちゅうに 1 つ よめなくても、ふるい キャッシュは けされない
+    srvMode.next = true; srvMode.broken = '/assets/mix/yuki.webp';
+    // サーバーへの リクエストが 1.5 びょう とまったら インストールが おわったと みなす
+    const idle = async () => { for (let i = 0; i < 300 && Date.now() - srvMode.last < 1500; i++) await pg.waitForTimeout(100); await pg.waitForTimeout(300); };
+    await pg.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update().catch(() => {})));
+    for (let i = 0; i < 100 && srvMode.hits < 3; i++) await pg.waitForTimeout(100);   // 3 かい（さいしょ＋リトライ 2）ためして あきらめる
+    ok(srvMode.hits >= 3, 'broken file was retried');
+    await idle();
+    const keys = await pg.evaluate(() => caches.keys());
+    ok(keys.includes(cname), 'old cache kept when update install fails (' + keys.join(',') + ')');
+    const actv = await pg.evaluate(() => navigator.serviceWorker.getRegistration().then(r => ({ a: r.active && r.active.scriptURL, w: !!r.waiting })));
+    ok(!actv.w, 'broken update does not wait to activate');
+    ok((await ask('status')).version === cname, 'old service worker stays in control');
+    await ctx.setOffline(true);
+    await pg.reload(); await pg.waitForSelector('#home', { state: 'attached' });
+    const imgs = await pg.evaluate(l => Promise.all(l.map(u => fetch(u).then(r => r.status).catch(() => 0))), pre.filter(u => u.includes('/assets/')));
+    ok(imgs.every(s => s === 200), 'all images still served offline after failed update');
+    await ctx.setOffline(false);
+    // なおったら アップデートが ぜんぶ そろってから きりかわる
+    srvMode.broken = '';
+    await pg.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
+    await idle();
+    await pg.waitForFunction(n => caches.keys().then(k => !k.includes(n)), cname, { timeout: 10000 }).catch(() => {});
+    const keys2 = await pg.evaluate(() => caches.keys());
+    ok(keys2.includes('ponpon-test-next') && !keys2.includes(cname), 'good update replaces cache (' + keys2.join(',') + ')');
     console.log('PWA ALL OK');
   } finally { await b.close(); srv.close(); }
 })().catch(e => { console.error(e); process.exit(1); });

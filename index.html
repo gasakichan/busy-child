@@ -1759,6 +1759,10 @@
         <p class="setmsg" id="fam-msg" hidden></p>
         <button class="sbtn" id="fam-reset" type="button">もとに もどす</button>
       </div>
+      <div class="setgrp"><h3>オフライン</h3>
+        <p class="note" id="off-st">しらべています…</p>
+        <p class="note">iPhone・iPad は Safari の タブではなく「ホームがめんに ついか」した アイコンから ひらいてください（タブだと しばらく ひらかないと えが けされることが あります）</p>
+        <p class="note">あたらしい ばんは、えが ぜんぶ よみこめてから きりかわります（とちゅうで ネットが きれても いまの えは けえません）</p></div>
     </div>
   </div>
 </div>
@@ -6451,8 +6455,32 @@
     }, function () { if (gen === ct.gen) ctMsg.hidden = false; });
   }
   ctBtn.addEventListener('click', function () { audio(); ctStart(); });
+  /* service worker に きく: cb({ have, total }) または cb(null) */
+  function swAsk(type, cb) {
+    var done = false, t = setTimeout(function () { fin(null); }, 15000);
+    function fin(v) { if (done) return; done = true; clearTimeout(t); cb(v); }
+    try {
+      if (!('serviceWorker' in navigator)) return fin(null);
+      navigator.serviceWorker.ready.then(function (reg) {
+        var w = navigator.serviceWorker.controller || reg.active;
+        if (!w) return fin(null);
+        var ch = new MessageChannel();
+        ch.port1.onmessage = function (e) { fin(e.data || null); };
+        w.postMessage({ type: type }, [ch.port2]);
+      }).catch(function () { fin(null); });
+    } catch (e) { fin(null); }
+  }
+  function offStatus() {
+    var el = $('#off-st'); if (!el) return;
+    el.textContent = 'しらべています…';
+    swAsk(navigator.onLine !== false ? 'heal' : 'status', function (st) {
+      if (!st) { el.textContent = 'この ひらきかたでは オフラインの じゅんびが できません（https で ひらいてください）'; return; }
+      el.textContent = st.have >= st.total ? 'えの じゅんび: ぜんぶ そろっています（' + st.total + ' こ）'
+        : 'えの じゅんび: ' + st.have + ' / ' + st.total + ' こ。インターネットに つないで ひらくと のこりを よみこみます';
+    });
+  }
   function openSettings() {
-    setOpen = true;
+    setOpen = true; offStatus();
     if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     ctMsg.hidden = true; diagEl.hidden = true;
     famSync(); famMsgShow(''); famDisarm();
@@ -9436,7 +9464,13 @@
 
   try {
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-      window.addEventListener('load', function () { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {} });
+      window.addEventListener('load', function () {
+        try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
+        /* たんまつに 「けさないで」と たのむ（iOS 17〜 / Chrome。ゆるされなくても なにも しない） */
+        try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(function (p) { if (!p) return navigator.storage.persist(); }).catch(function () {}); } catch (e) {}
+        /* オンラインなら たりない え を よみなおす */
+        if (navigator.onLine !== false) swAsk('heal', function () {});
+      });
     }
   } catch (e) {}
 

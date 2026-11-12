@@ -1,5 +1,5 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v12';
+var CACHE = 'ponpon-v13';
 var FONTS = 'ponpon-fonts-v1';
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
   './assets/aiueo/mame.webp',
@@ -178,18 +178,74 @@ var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.sv
   './assets/mny/m1000.webp'
 ]);
 
+/* インストール: ひとつずつ よみこむ（とちゅうで きれても、おなじ CACHE なら つぎは のこりだけ）。
+   1 つでも よめなければ インストールを しっぱいさせる。こうすると ふるい SW と ふるい キャッシュが そのまま のこり、
+   オフラインの たんまつで 「あたらしい からっぽの キャッシュに きりかわって ふるいのを けす」ことが おきない。 */
+function fill(c, list) {
+  var i = 0, miss = [];
+  function one(u, n) {
+    var timer;
+    var to = new Promise(function (_, ng) { timer = setTimeout(function () { ng(new Error('timeout')); }, 30000); });
+    /* なかみを さきに ぜんぶ よんでから put する（とちゅうで きれた レスポンスで キャッシュが つまらないように） */
+    return Promise.race([to, fetch(new Request(u, { cache: 'reload' })).then(function (res) {
+      if (!res || !res.ok) throw new Error('status ' + (res && res.status));
+      return res.arrayBuffer().then(function (buf) { return { res: res, buf: buf }; });
+    })]).then(function (o) {
+      clearTimeout(timer);
+      var h = new Headers(o.res.headers);
+      return c.put(u, new Response(o.buf, { status: o.res.status, statusText: o.res.statusText, headers: h }));
+    }, function (err) { clearTimeout(timer); throw err; }).catch(function (err) { if (n > 0) return one(u, n - 1); miss.push(u); });
+  }
+  return missing(c, list).then(function (todo) {
+    function worker() {
+      if (i >= todo.length) return Promise.resolve();
+      return one(todo[i++], 2).then(worker);
+    }
+    var ws = []; for (var k = 0; k < 6; k++) ws.push(worker());
+    return Promise.all(ws).then(function () { return miss; });
+  });
+}
+function missing(c, list) {
+  return c.keys().then(function (ks) {
+    var have = {}; ks.forEach(function (r) { have[r.url] = 1; });
+    return (list || PRECACHE).filter(function (u) { return !have[new URL(u, self.location.href).href]; });
+  });
+}
+function status() {
+  return caches.open(CACHE).then(function (c) { return missing(c); }).then(function (m) { return { have: PRECACHE.length - m.length, total: PRECACHE.length, version: CACHE }; });
+}
+
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(PRECACHE); }).catch(function () {}).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(CACHE).then(function (c) { return fill(c, PRECACHE); }).then(function (miss) {
+    if (miss.length) throw new Error('precache: ' + miss.length + ' missing');
+    return self.skipWaiting();
+  }));
 });
 
 self.addEventListener('activate', function (e) {
-  e.waitUntil(caches.keys().then(function (ks) {
-    return Promise.all(ks.filter(function (k) { return k !== CACHE && k !== FONTS; }).map(function (k) { return caches.delete(k); }));
+  /* ふるい キャッシュは あたらしい のが そろっている ときだけ けす */
+  e.waitUntil(caches.open(CACHE).then(function (c) { return missing(c); }).then(function (m) {
+    if (m.length) return;
+    return caches.keys().then(function (ks) {
+      return Promise.all(ks.filter(function (k) { return k !== CACHE && k !== FONTS; }).map(function (k) { return caches.delete(k); }));
+    });
   }).catch(function () {}).then(function () { return self.clients.claim(); }));
+});
+
+/* ページから: status = そろっているか / heal = たりない ものを よみなおす（オンラインの とき） */
+self.addEventListener('message', function (e) {
+  var d = e.data || {}, port = e.ports && e.ports[0];
+  if (d.type !== 'status' && d.type !== 'heal') return;
+  var job = d.type === 'heal' ? caches.open(CACHE).then(function (c) { return fill(c, PRECACHE); }).catch(function () {}).then(status) : status();
+  e.waitUntil(job.then(function (st) { if (port) port.postMessage(st); }, function () { if (port) port.postMessage(null); }));
 });
 
 function put(name, req, res) {
   try { var copy = res.clone(); caches.open(name).then(function (c) { return c.put(req, copy); }).catch(function () {}); } catch (err) {}
+}
+function fromCache(req) {
+  /* ?つき・Vary の ちがいでも みつかるように（Safari は Vary で とりこぼすことがある） */
+  return caches.match(req).then(function (hit) { return hit || caches.match(req, { ignoreSearch: true, ignoreVary: true }); });
 }
 
 self.addEventListener('fetch', function (e) {
@@ -221,7 +277,7 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  e.respondWith(caches.match(req).then(function (hit) {
+  e.respondWith(fromCache(req).then(function (hit) {
     if (hit) return hit;
     return fetch(req).then(function (res) { if (res && res.ok) put(CACHE, req, res); return res; });
   }));
