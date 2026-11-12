@@ -282,6 +282,34 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
   });
 
+  TV('aiueo-trace', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+    const tag = 'aiueo-trace ' + vp.width + 'x' + vp.height;
+    const p = await newPage(br, vp, { deny: true });
+    await tapTile(p, LAB[13]); await sleep(500);
+    await p.click('#ai-tb', { force: true }); await sleep(500);
+    const g = await p.evaluate(() => {
+      const R = r => ({ l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height });
+      const tl = document.querySelector('#ai-tl'), tn = [...tl.childNodes].find(n => n.nodeType === 3);
+      const rg = document.createRange(); rg.selectNodeContents(tn);
+      const L = R(rg.getBoundingClientRect()), D = R(document.querySelector('#ai-done').getBoundingClientRect()), B = R(document.querySelector('#ai-back').getBoundingClientRect());
+      const X = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+      const vw = innerWidth, vh = innerHeight, inV = r => r.l >= 0 && r.r <= vw && r.t >= 0 && r.b <= vh;
+      return { L, D, B, oD: X(L, D), oB: X(L, B), oDB: X(D, B), inV: inV(D) && inV(B), hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw,
+        cls: document.querySelector('#stage-aiueo').classList.contains('tracing'), cv: R(document.querySelector('#ai-cv').getBoundingClientRect()) };
+    });
+    console.log('info ' + tag + ' letter ' + Math.round(g.L.w) + 'x' + Math.round(g.L.h) + ' pad ' + Math.round(g.cv.w) + 'x' + Math.round(g.cv.h));
+    ok(g.cls, tag + ': stage has .tracing');
+    ok(!g.oD && !g.oB, tag + ': letter does not overlap buttons ' + JSON.stringify([g.L, g.D, g.B]));
+    ok(!g.oDB, tag + ': buttons do not overlap each other');
+    ok(g.D.h >= 80 && g.B.h >= 80 && g.D.w >= 80 && g.B.w >= 80, tag + ': buttons >= 80px (' + Math.round(g.D.h) + '/' + Math.round(g.B.h) + ')');
+    ok(g.inV && !g.hs, tag + ': buttons inside viewport, no hscroll');
+    ok(g.L.l >= g.cv.l - 1 && g.L.r <= g.cv.r + 1 && g.L.t >= g.cv.t - 1 && g.L.b <= g.cv.b + 1, tag + ': letter fits inside the pad');
+    await p.screenshot({ path: SP + '/aiueo-trace-' + vp.width + 'x' + vp.height + '.png' });
+    await p.click('#ai-back', { force: true }); await sleep(300);
+    ok(await p.evaluate(() => !document.querySelector('#stage-aiueo').classList.contains('tracing') && document.querySelector('#ai-trace').hidden), tag + ': もどる leaves tracing');
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+  });
+
   T('settings', async (br) => {
     const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
     await holdOpen(p, 300); await sleep(100);
