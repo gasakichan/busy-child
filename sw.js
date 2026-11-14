@@ -1,6 +1,10 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v13';
+var CACHE = 'ponpon-v14';
 var FONTS = 'ponpon-fonts-v1';
+/* へんしん カメラ（assets/face/ 約 13MB）は PRECACHE に いれない: あそんだ とき（または せっていの ボタン）に ふべつの キャッシュへ。
+   なまえを あげるときは ponpon-face-v2 のように（ふるい ponpon-face-* は activate で けす） */
+var FACECACHE = 'ponpon-face-v1';
+var FACE_FILES = ['./assets/face/vision.js', './assets/face/vision_wasm_internal.js', './assets/face/vision_wasm_internal.wasm', './assets/face/face_landmarker.task'];
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
   './assets/aiueo/mame.webp',
   './assets/ani/buta.webp',
@@ -227,16 +231,37 @@ self.addEventListener('activate', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return missing(c); }).then(function (m) {
     if (m.length) return;
     return caches.keys().then(function (ks) {
-      return Promise.all(ks.filter(function (k) { return k !== CACHE && k !== FONTS; }).map(function (k) { return caches.delete(k); }));
+      return Promise.all(ks.filter(function (k) { return k !== CACHE && k !== FONTS && k !== FACECACHE; }).map(function (k) { return caches.delete(k); }));
     });
   }).catch(function () {}).then(function () { return self.clients.claim(); }));
 });
 
+/* へんしん カメラ: face = そろっているか / face-fetch = たりない ものを ダウンロード（なかみを ぜんぶ よんでから put） */
+function faceStatus() {
+  return caches.open(FACECACHE).then(function (c) { return missing(c, FACE_FILES); }).then(function (m) { return { have: FACE_FILES.length - m.length, total: FACE_FILES.length, version: FACECACHE }; });
+}
+function faceFetch() {
+  return caches.open(FACECACHE).then(function (c) {
+    return missing(c, FACE_FILES).then(function (todo) {
+      var i = 0;
+      function next() {
+        if (i >= todo.length) return Promise.resolve();
+        var u = todo[i++];
+        return fetch(new Request(u, { cache: 'reload' })).then(function (res) {
+          if (!res || !res.ok) return;
+          return res.arrayBuffer().then(function (buf) { return c.put(u, new Response(buf, { status: 200, headers: new Headers(res.headers) })); });
+        }).catch(function () {}).then(next);
+      }
+      return next();
+    });
+  }).catch(function () {}).then(faceStatus);
+}
+
 /* ページから: status = そろっているか / heal = たりない ものを よみなおす（オンラインの とき） */
 self.addEventListener('message', function (e) {
   var d = e.data || {}, port = e.ports && e.ports[0];
-  if (d.type !== 'status' && d.type !== 'heal') return;
-  var job = d.type === 'heal' ? caches.open(CACHE).then(function (c) { return fill(c, PRECACHE); }).catch(function () {}).then(status) : status();
+  if (d.type !== 'status' && d.type !== 'heal' && d.type !== 'face' && d.type !== 'face-fetch') return;
+  var job = d.type === 'face' ? faceStatus() : d.type === 'face-fetch' ? faceFetch() : d.type === 'heal' ? caches.open(CACHE).then(function (c) { return fill(c, PRECACHE); }).catch(function () {}).then(status) : status();
   e.waitUntil(job.then(function (st) { if (port) port.postMessage(st); }, function () { if (port) port.postMessage(null); }));
 });
 
@@ -265,6 +290,20 @@ self.addEventListener('fetch', function (e) {
   }
 
   if (url.origin !== self.location.origin) return;
+
+  /* assets/face/: ふべつの キャッシュ（cache-first・200 だけ ためる） */
+  if (url.pathname.indexOf('/assets/face/') >= 0) {
+    e.respondWith(caches.open(FACECACHE).then(function (c) {
+      return c.match(req, { ignoreSearch: true }).then(function (hit) {
+        if (hit) return hit;
+        return fetch(req).then(function (res) {
+          if (res && res.ok && res.status === 200) { try { var cp = res.clone(); c.put(req, cp).catch(function () {}); } catch (err) {} }
+          return res;
+        });
+      });
+    }).catch(function () { return fetch(req); }));
+    return;
+  }
 
   var isPage = req.mode === 'navigate' || /\/(index\.html)?$/.test(url.pathname);
   if (isPage) {

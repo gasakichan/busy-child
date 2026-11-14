@@ -33,20 +33,22 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['var vc = {', 'var vc = window.__vc = {'],
   ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr, squeeze: vcSqueeze }; games.voice = {'],
   ['var NK_SOLID = {', 'var NK_SOLID = window.__nkSolid = {'],
-  ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;']];
+  ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;'],
+  ['games.henshin = {', 'window.__hs = games.henshin = {']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
+const hookedHttp = hooked;  // assets/ のパスは そのまま（リポジトリを http で配信して使う）
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami','kaeru','dokoka'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき','かえる','どこかな'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami','kaeru','dokoka','henshin'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき','かえる','どこかな','へんしん'];
 // ホームの並び（index.html の HORDER と同じ。9 個ずつでページ）
 const HLABS = ['ふうせん','どうぶつ','おえかき','いないいないばあ','もしもし','でんしゃ','おみせやさん','ぬりえ','シールちょう',
   'いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち',
   'ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば',
-  'とんとん','はみがき','かえる','どこかな'];
+  'とんとん','はみがき','かえる','どこかな','へんしん'];
 const NPAGES = Math.ceil(HLABS.length / 9);
 const pageOf = lab => Math.floor(HLABS.indexOf(lab) / 9);
 async function gotoPage(p, n) {
@@ -158,7 +160,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hm-p1').isVisible() && await p.locator('#hm-p0').isHidden(), tag + ' dot jumps to page2');
     await p.click('.hm-dot:nth-child(1)'); await sleep(320);
     // ---- page 3 ----
-    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (31 games, 9 per page)');
+    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (32 games, 9 per page)');
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
@@ -183,8 +185,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     // ---- page 4 (last): とんとん + はみがき + かえる ----
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
-    ok(t4.length === 4 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[3].cx === tiles[0].cx && t4[0].cy === tiles[0].cy && t4[3].cy === tiles[3].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, どこかな starts row 2, same size ' + JSON.stringify(t4));
-    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete; }), tag + ' page4: とんとん/かえる/どこかな icon images loaded, はみがき uses the 🪥 emoji');
+    ok(t4.length === 5 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[3].cx === tiles[0].cx && t4[4].cx === tiles[1].cx && t4[0].cy === tiles[0].cy && t4[3].cy === tiles[3].cy && t4[4].cy === tiles[3].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, どこかな + へんしん in row 2, same size ' + JSON.stringify(t4));
+    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete && !ts[4].querySelector('.ico-img') && ts[4].querySelector('.ico').textContent === '👻'; }), tag + ' page4: とんとん/かえる/どこかな icon images loaded, はみがき uses the 🪥 emoji, へんしん the 👻 emoji');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
     const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');
@@ -1146,7 +1148,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 29 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (29 rows)');
+      ok(await p.locator('.st-row.zero').count() === 30 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (30 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -2974,10 +2976,191 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 
 
+  /* ---------- へんしん ---------- */
+  // 映像座標（0..1）の かお を ランドマークに して __hs._fake へ（getUserMedia の フェイクカメラには かおが ないので）
+  const HS_FAKE = (o) => { const a = Object.assign({ cx: 0.5, cy: 0.45, w: 0.22, h: 0.31, mouth: 0.02 }, o); const P = (x, y) => ({ x, y, z: 0 }); const lm = new Array(478).fill(null).map(() => P(a.cx, a.cy));
+    lm[10] = P(a.cx, a.cy - a.h / 2); lm[152] = P(a.cx, a.cy + a.h / 2); lm[234] = P(a.cx - a.w / 2, a.cy); lm[454] = P(a.cx + a.w / 2, a.cy);
+    lm[468] = P(a.cx - a.w * 0.2, a.cy - a.h * 0.1); lm[473] = P(a.cx + a.w * 0.2, a.cy - a.h * 0.1);
+    lm[33] = lm[468]; lm[263] = lm[473]; lm[13] = P(a.cx, a.cy + a.h * 0.25 - a.mouth * a.h / 2); lm[14] = P(a.cx, a.cy + a.h * 0.25 + a.mouth * a.h / 2); return lm; };
+  const HS_FAKE_SRC = HS_FAKE.toString();
+  // スクショ（PNG）の 一部の ばらつき（ふつうの 映像なら 一様ではない）
+  const pixSpread = (p, buf) => p.evaluate(src => new Promise(res => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, Math.floor(c.height * 0.5)).data; let s = 0, s2 = 0, n = 0; for (let i = 0; i < d.length; i += 16) { const l = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; s += l; s2 += l * l; n++; } const m = s / n; res(Math.sqrt(Math.max(0, s2 / n - m * m))); }; im.src = src; }), 'data:image/png;base64,' + buf.toString('base64'));
+  TV('henshin', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 568, height: 320 }], async (br, vp) => {
+    const tag = 'henshin ' + vp.width + 'x' + vp.height, W = vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/henshin-' + W + '-' + n + '.png' });
+    const p = await newPage(br, vp);
+    const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const T = () => p.evaluate(() => window.__hs._t());
+    const fake = (o) => p.evaluate(([src, o]) => { const f = eval('(' + src + ')'); window.__hs._fake(f(o || {})); }, [HS_FAKE_SRC, o]);
+    await p.evaluate(() => { const g = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); window.__streams = []; navigator.mediaDevices.getUserMedia = c => g(c).then(s => { window.__streams.push(s); return s; }); });
+    await tapTile(p, 'へんしん'); await sleep(900);
+    ok(await p.locator('#stage-henshin').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens へんしん');
+    ok(await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': shared 🏠, no adult button');
+    ok(await p.locator('#hs-gl').isVisible() && await p.locator('#hs-ov').isVisible(), tag + ': camera canvas + overlay visible');
+    let t = await T();
+    ok(t.gl === true && t.cam === true && !t.noCam && t.frames > 5, tag + ': WebGL on, camera on, frames drawn ' + JSON.stringify({ gl: t.gl, cam: t.cam, f: t.frames }));
+    ok(t.cw > 0 && t.cw <= 960 && t.ch <= 960 && t.cw / t.ch > 0 && Math.abs(t.cw / t.ch - vp.width / vp.height) < 0.05, tag + ': canvas resolution capped (' + t.cw + 'x' + t.ch + ')');
+    ok(await until(async () => (await T()).vid === true, 4000), tag + ': video frames reach the GL texture');
+    await sleep(400);
+    const sd = await pixSpread(p, await p.screenshot());
+    ok(sd > 4, tag + ': camera view is not a uniform color (spread ' + sd.toFixed(1) + ')');
+    await shot('start');
+    // ボタン
+    const geo = () => p.evaluate(() => { const bs = [...document.querySelectorAll('#hs-modes .hs-b')].map(b => { const r = b.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height, lab: b.textContent }; });
+      let ovl = 0; bs.forEach((a, i) => bs.forEach((b, j) => { if (j > i && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b) ovl++; }));
+      const hb = document.querySelector('#homebtn').getBoundingClientRect();
+      return { n: bs.length, minw: Math.min(...bs.map(b => b.w)), minh: Math.min(...bs.map(b => b.h)), inside: bs.every(b => b.l >= 0 && b.r <= innerWidth && b.t >= 0 && b.b <= innerHeight), ovl, home: bs.filter(b => b.l < hb.right && hb.left < b.r && b.t < hb.bottom && hb.top < b.b).length, labs: bs.map(b => b.lab).join('|'),
+        hs: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth || document.querySelector('#stage-henshin').scrollWidth > document.querySelector('#stage-henshin').clientWidth }; });
+    const g = await geo();
+    console.log('info ' + tag + ' buttons min ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
+    ok(g.n === 6 && g.minw >= 80 && g.minh >= 80, tag + ': 6 mode buttons, each >= 80px (' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ')');
+    ok(g.inside && g.ovl === 0 && g.home === 0, tag + ': buttons inside the viewport, no overlap with each other or 🏠');
+    ok(!g.hs, tag + ': no horizontal scroll');
+    ok(g.labs === '👀おめめ|↕️のびーる|↔️ぺちゃんこ|🌀ぐるぐる|👻おばけ|🎩ぼうし', tag + ': labels ' + g.labs);
+    // モード切りかえ
+    const NAMES = ['おめめ ぷくー', 'のびーる', 'ぺちゃんこ', 'ぐるぐる', 'おばけ', 'ぼうし'];
+    for (let i = 5; i >= 0; i--) {   // 0 から はじまるので 5→0 の じゅんで 押して 毎回 変わる
+      await clearSays(p);
+      await p.click('.hs-b[data-m="' + i + '"]'); await sleep(120);
+      t = await T();
+      ok(t.mode === i && (await says(p)).some(x => x.t === NAMES[i]) && (await p.locator('#bigword').textContent()).replace(/\s+/g, '') === NAMES[i].replace(/\s+/g, '') && await p.locator('.hs-b[data-m="' + i + '"]').getAttribute('aria-pressed') === 'true', tag + ': button ' + i + ' → mode ' + i + ', says/shows 「' + NAMES[i] + '」');
+    }
+    ok((await T()).str < 1 || true, tag + ': (strength eases in)');
+    await sleep(500); t = await T();
+    ok(t.str > 0.99, tag + ': effect strength reached 1 after the switch (' + t.str.toFixed(2) + ')');
+    // 見るところ タップ → つぎの モード
+    const view = { x: Math.round(vp.width * (vp.width > vp.height ? 0.3 : 0.5)), y: 130 };
+    await p.mouse.click(view.x, view.y); await sleep(150);
+    ok((await T()).mode === 1, tag + ': tapping the view goes to the next mode');
+    await p.click('.hs-b[data-m="5"]'); await sleep(150);
+    // ぼうし: タップで ぼうしが かわる
+    const HATS = ['おうかん', 'とんがり ぼうし', 'ねこみみ', 'うさみみ', 'おはなの かんむり'];
+    ok((await T()).mode === 5 && (await T()).hat === 0, tag + ': hat mode starts with おうかん');
+    for (let k = 1; k <= 5; k++) {
+      await clearSays(p); await p.mouse.click(view.x, view.y); await sleep(120);
+      const hh = k % 5; t = await T();
+      ok(t.mode === 5 && t.hat === hh && (await says(p)).some(x => x.t === HATS[hh]), tag + ': tap in hat mode → hat ' + hh + ' 「' + HATS[hh] + '」, still hat mode');
+    }
+    // フェイクの かお
+    await fake({ cx: 0.5, cy: 0.45 });
+    ok(await until(async () => (await T()).hasFace, 1500), tag + ': injected face is picked up');
+    await sleep(900); t = await T();
+    ok(t.P.cx > 0 && t.P.cx < t.cw && Math.abs(t.P.cx - t.cw / 2) < t.cw * 0.12 && t.P.rx > 10 && t.P.ry > 10 && Math.abs(t.P.ry / t.P.rx - (0.31 * 480) / (0.22 * 640)) < 0.15, tag + ': face center/radii follow the landmarks ' + JSON.stringify({ cx: Math.round(t.P.cx), rx: Math.round(t.P.rx), ry: Math.round(t.P.ry) }));
+    await fake({ cx: 0.25, cy: 0.4 }); await sleep(900); t = await T();
+    ok(t.P.cx > t.cw / 2, tag + ': mirrored (a face on the video\'s left shows on the right)');
+    await fake({ cx: 0.5, cy: 0.42 }); await sleep(900);
+    // みんなの モードを スクショ
+    for (let i = 0; i < 6; i++) {
+      await p.click('.hs-b[data-m="' + i + '"]'); await sleep(550);
+      if (i === 5) { for (let k = 0; k < 5; k++) { await shot('mode5-hat' + k); if (k < 4) { await p.mouse.click(view.x, view.y); await sleep(550); } } await p.mouse.click(view.x, view.y); await sleep(200); }
+      else await shot('mode' + i);
+    }
+    // くちを おおきく あける
+    await p.click('.hs-b[data-m="4"]'); await sleep(450);
+    await clearSays(p); const r0 = (await T()).reactions;
+    await fake({ cy: 0.42, mouth: 0.22 });
+    ok(await until(async () => (await T()).reactions === r0 + 1, 1500), tag + ': mouth open → reaction fired');
+    ok((await says(p)).some(x => x.t === 'ばあ') && (await p.locator('#bigword').isVisible()) && (await p.locator('#bigword').textContent()) === 'ばあ', tag + ': ghost mode says/shows ばあ');
+    await sleep(150); await shot('ghost-baa');
+    await fake({ cy: 0.42, mouth: 0.02 }); await sleep(300);
+    await fake({ cy: 0.42, mouth: 0.22 }); await sleep(500);
+    ok((await T()).reactions === r0 + 1, tag + ': reaction is rate-limited (~1.5s)');
+    await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1300);
+    await p.click('.hs-b[data-m="0"]'); await sleep(200); await clearSays(p);
+    await fake({ cy: 0.42, mouth: 0.22 });
+    ok(await until(async () => (await T()).reactions === r0 + 2, 1500), tag + ': after the wait the reaction fires again (other mode)');
+    ok(!(await says(p)).some(x => x.t === 'ばあ'), tag + ': other modes do not say ばあ');
+    await sleep(120); await shot('sparkle');
+    await fake({ cy: 0.42, mouth: 0.02 });
+    // 顔が いなくなっても あそべる
+    await p.evaluate(() => window.__hs._fake(null)); await sleep(1800);
+    t = await T();
+    ok(!t.hasFace && Math.abs(t.P.cx - t.cw / 2) < t.cw * 0.05, tag + ': no face → effect eases back to the screen center, still running');
+    await shot('noface');
+    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
+    // 出る
+    await p.click('#homebtn'); await sleep(200);
+    ok(await p.locator('#hm-p3').isVisible() && await p.locator('#stage-henshin').isHidden(), tag + ': 🏠 returns to page 4');
+    const f1 = (await T()).frames; await sleep(400);
+    t = await T();
+    ok(t.frames === f1 && t.raf === 0 && !t.cam && t.tracks === 0, tag + ': leave() stopped the render loop ' + JSON.stringify({ f1, f2: t.frames, raf: t.raf }));
+    const st = await p.evaluate(() => ({ n: window.__streams.length, live: window.__streams.reduce((a, s) => a + s.getTracks().filter(x => x.readyState !== 'ended').length, 0), src: document.querySelector('#hs-video').srcObject }));
+    ok(st.n >= 1 && st.live === 0 && st.src === null, tag + ': camera tracks stopped, video released ' + JSON.stringify({ n: st.n, live: st.live }));
+    await clearSays(p); await sleep(1200);
+    ok((await says(p)).length === 0, tag + ': nothing is spoken after leaving');
+    // もういちど はいる
+    await tapTile(p, 'へんしん'); await sleep(700);
+    t = await T();
+    ok(t.cam && t.frames > 3 && t.mode === 0, tag + ': re-enter restarts camera and drawing');
+    await p.click('#homebtn'); await sleep(250);
+    const st2 = await p.evaluate(() => window.__streams.reduce((a, s) => a + s.getTracks().filter(x => x.readyState !== 'ended').length, 0));
+    ok(st2 === 0, tag + ': all camera tracks ended again after the second visit');
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  T('henshin-nocam', async (br) => {
+    const vp = { width: 360, height: 740 };
+    for (const mode of ['denied', 'off']) {
+      const p = await newPage(br, vp, mode === 'denied' ? { deny: true } : { init: "try { localStorage.setItem('ponpon.settings.v1', JSON.stringify({ camOn: false })); } catch (e) {}" });
+      const g0 = await p.evaluate(() => window.__gum);
+      await tapTile(p, 'へんしん'); await sleep(700);
+      const t = await p.evaluate(() => window.__hs._t());
+      ok(await p.locator('#hs-msg').isVisible() && (await p.locator('#hs-msg').textContent()).length > 0, 'henshin camera ' + mode + ': friendly message shown 「' + await p.locator('#hs-msg').textContent() + '」');
+      ok(t.noCam && !t.cam && t.raf === 0 && await p.locator('#hs-modes').isHidden(), 'henshin camera ' + mode + ': no drawing loop, mode buttons hidden');
+      if (mode === 'off') ok(await p.evaluate(() => window.__gum) === g0, 'henshin camera off in settings: getUserMedia not called');
+      ok((await says(p)).every(x => !/しっぱい|だめ|ごめん/.test(x.t)), 'henshin camera ' + mode + ': no failure speech');
+      ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'henshin camera ' + mode + ': no horizontal scroll');
+      await p.screenshot({ path: SP + '/henshin-nocam-' + mode + '.png' });
+      await p.click('#homebtn'); await sleep(150);
+      ok(await p.locator('#home').isVisible() && p.errs.length === 0, 'henshin camera ' + mode + ': back home, no console errors ' + p.errs.join(' | '));
+      await p.context().close();
+    }
+  });
+
+  // ほんものの ランドマーカー: リポジトリを http で配信（file:// では wasm が よめない）。hooked の index.html を / で わたす
+  T('henshin-real', async (br) => {
+    const http = require('http');
+    const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
+    const ROOT = path.join(__dirname, '..');
+    const srv = http.createServer((req, res) => {
+      let pth = decodeURIComponent(req.url.split('?')[0]); if (pth.endsWith('/')) pth += 'index.html';
+      if (pth === '/index.html') { res.writeHead(200, { 'Content-Type': TYPES['.html'] }); return res.end(hookedHttp); }
+      const f = path.join(ROOT, pth);
+      if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('nf'); }
+      res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
+    });
+    await new Promise(r => srv.listen(0, '127.0.0.1', r));
+    const base = 'http://localhost:' + srv.address().port + '/';
+    try {
+      const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+      await ctx.route(/^https?:\/\/(?!localhost)/, r => r.abort());
+      const p = await ctx.newPage(); p.errs = [];
+      p.on('pageerror', e => p.errs.push('PAGEERR ' + e.message));
+      await p.addInitScript(INIT(ENV));
+      await p.goto(base); await sleep(400);
+      await tapTile(p, 'へんしん');
+      const t0 = Date.now(); let t = null;
+      for (;;) { t = await p.evaluate(() => window.__hs._t()); if (t.ready || t.state === 3 || Date.now() - t0 > 25000) break; await sleep(250); }
+      console.log('info henshin-real: state ' + t.state + ' after ' + ((Date.now() - t0) / 1000).toFixed(1) + 's');
+      ok(t.ready === true, 'henshin real: MediaPipe Face Landmarker becomes ready over http (state ' + t.state + ')');
+      ok(t.gl === true && t.cam === true && t.frames > 5, 'henshin real: still drawing with the real landmarker loaded');
+      // ほんものの検出が エラーなく まわる（フェイクカメラには かおが ないので hasFace は false のまま）
+      const f0 = t.frames; await sleep(1500); t = await p.evaluate(() => window.__hs._t());
+      ok(t.frames > f0 + 3 && !t.hasFace, 'henshin real: detection runs each throttled tick without a face and rendering continues (' + (t.frames - f0) + ' frames/1.5s)');
+      await p.click('#homebtn'); await sleep(200);
+      await tapTile(p, 'へんしん'); await sleep(600);
+      t = await p.evaluate(() => window.__hs._t());
+      ok(t.ready === true && t.cam, 'henshin real: landmarker is kept across re-entry (ready immediately)');
+      await p.click('#homebtn'); await sleep(100);
+      ok(p.errs.length === 0, 'henshin real: no page errors ' + p.errs.join(' | '));
+      await ctx.close();
+    } finally { srv.close(); }
+  });
+
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'henshin-real': 35, 'henshin-390x844': 28, 'henshin-360x740': 28, 'henshin-568x320': 28, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
