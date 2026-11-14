@@ -26,6 +26,8 @@ E2E はブロックごとに別プロセス・別 browser で独立に走る（`
 - 大人用の設定はホームの ⚙️（1.5 秒長押し）の `openSettings()` に集約。ゲーム画面には大人用ボタンを置かない。
 - localStorage: `ponpon.settings.v1` / `ponpon.family.v1` / `ponpon.stickers.v1` / `ponpon.stats.v1` / `ponpon.mix.v1`（まぜまぜの はっけんずみ）。必ず try/catch で囲む。音なし・声なしは保存しない。
 - イラストは `assets/ico/`（ホームのアイコン、`ICO`）と `assets/ani/`（どうぶつの顔、`ANI_IMG`）に透過 WebP（約192px）、`assets/mix/`（まぜまぜの もと6つ＋できもの21、192px。マゼンタ背景のシートから `python3 tools/make-mix.py 出力dir シート1 シート2 シート3` で切り出し）、`assets/kiru/`（とんとん の 食べもの・断面・道具。マゼンタ背景のシートから `python3 tools/make-kiru.py シート1 シート2` で切り出し。ホームの追加アイコン `assets/ico/{drive,piano,pinball,voice,nami,mix,suna,kiru}` も同じシート1 から出る）、`assets/kaeru/`（かえる: すわり・とびの 2 ポーズと はっぱ 2・はす。マゼンタ背景の 3x2 シートから `python3 tools/make-kaeru.py シート` で切り出し。ホームアイコン `assets/ico/kaeru` も同じシートから出る。絵は `KAERU_IMG` で差し替え）、`assets/dokoka/`（どこかな: もの 14 こと 色ちがいの シャッター shutter0〜5。マゼンタ背景の 4x4 シートから `python3 tools/make-dokoka.py シート` で切り出し。ホームアイコン `assets/ico/dokoka` も同じシートから出る。絵は `DOKO_IMG`）、`assets/aiueo/`（あいうえおの 絵文字の かわりに だす え。`KANA` の 4 つめに パス）、`assets/stk/`（シールちょうのシール、`STK_IMG`。白フチ込み 256px）で置く。トーンはそろえる（やわらかい手描き風・太めで丸い焦げ茶の輪郭・パステル）。
+- へんしん（`henshin`）: 前面カメラの鏡。`assets/face/` に MediaPipe Face Landmarker（tasks-vision 0.10.14）を同梱（作り直しは `sh tools/make-face.sh`）。初めて入ったときだけ遅延ロードし、失敗しても無言で「顔なし（画面中央）」モードで遊べる。描画は WebGL の 1 枚シェーダ（歪み・おばけ色）＋2D オーバーレイ（ぼうし・おばけの布・きらきら）、WebGL なしは Canvas2D。検出は間引き（66ms、重いと 150ms）。テスト用に `games.henshin._t()` / `_fake(landmarks)`。
+- `assets/face/`（約 13MB）は PRECACHE に入れない。SW が `/assets/face/` を別キャッシュ `ponpon-face-*`（cache-first）に溜める。メッセージ `face`（そろい具合）/ `face-fetch`（ダウンロード）、設定の「オフライン」にボタンあり。名前を上げるときは `FACECACHE` を `ponpon-face-v2` のようにする。
 - カメラ検出（おみせやさん）は `/* camdet:begin */`〜`/* camdet:end */` の純粋関数。単体テストはこの範囲を抜き出して実行する。
 
 ## 守ること

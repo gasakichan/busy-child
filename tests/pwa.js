@@ -6,7 +6,7 @@ function loadPw() {
 }
 const { chromium } = loadPw();
 const ROOT = path.join(__dirname, '..');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.wasm': 'application/wasm', '.task': 'application/octet-stream' };
 const ok = (c, m) => { if (!c) throw new Error('NG: ' + m); console.log('ok  ' + m); };
 const srvMode = { next: false, broken: '', hits: 0, last: 0 };
 (async () => {
@@ -58,8 +58,9 @@ const srvMode = { next: false, broken: '', hits: 0, last: 0 };
     await pg.waitForSelector('#home', { state: 'attached' });
     ok(await pg.evaluate(() => { const h = document.querySelector('#home'); return !!h && !h.hidden && document.querySelectorAll('#home .tile').length > 0; }), 'offline reload shows home with tiles');
     const pre = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8').match(/var PRECACHE = \[[\s\S]*?\]\)?;/)[0].match(/'\.\/[^']*'/g).map(s => s.slice(1, -1));
-    const onDisk = fs.readdirSync(path.join(ROOT, 'assets')).flatMap(d => fs.readdirSync(path.join(ROOT, 'assets', d)).map(f => './assets/' + d + '/' + f));
-    ok(onDisk.every(f => pre.includes(f)), 'PRECACHE lists every file in assets/ (' + onDisk.length + ')');
+    const onDisk = fs.readdirSync(path.join(ROOT, 'assets')).filter(d => d !== 'face').flatMap(d => fs.readdirSync(path.join(ROOT, 'assets', d)).map(f => './assets/' + d + '/' + f));
+    ok(onDisk.every(f => pre.includes(f)), 'PRECACHE lists every file in assets/ except assets/face/ (' + onDisk.length + ')');
+    ok(!pre.some(u => u.includes('/assets/face/')), 'PRECACHE does not include the 13MB face files');
     ok(pre.every(s => fs.existsSync(path.join(ROOT, s === './' ? 'index.html' : s))), 'every PRECACHE entry exists on disk');
     const codes = await pg.evaluate(async list => Promise.all(list.map(u => caches.match(u).then(r => !!r))), pre);
     ok(codes.every(Boolean), 'every PRECACHE entry is in the cache while offline');
@@ -81,6 +82,25 @@ const srvMode = { next: false, broken: '', hits: 0, last: 0 };
     ok(st1.have === pre.length - 3, 'status sees 3 missing');
     const st2 = await ask('heal');
     ok(st2.have === pre.length, 'heal refetches missing entries');
+    // へんしん カメラ（assets/face/）: PRECACHE ではなく ふべつの キャッシュ。つかうと たまる／face-fetch で ダウンロード
+    const FACE = ['vision.js', 'vision_wasm_internal.js', 'vision_wasm_internal.wasm', 'face_landmarker.task'];
+    const faceGet = () => pg.evaluate(fl => Promise.all(fl.map(f => fetch('assets/face/' + f).then(r => r.arrayBuffer().then(b => [r.status, b.byteLength])))), FACE);
+    const f0 = await ask('face');
+    ok(f0 && f0.have === 0 && f0.total === 4, 'face: nothing cached before the game is used ' + JSON.stringify(f0));
+    const fa = await faceGet();
+    ok(fa.every(x => x[0] === 200 && x[1] > 1000) && fa[3][1] > 3e6 && fa[2][1] > 5e6, 'face files load over the network through the service worker ' + JSON.stringify(fa.map(x => x[1])));
+    for (let i = 0; i < 100 && (await ask('face')).have < 4; i++) await pg.waitForTimeout(100);
+    const f1 = await ask('face');
+    ok(f1.have === 4 && f1.total === 4 && f1.version === 'ponpon-face-v1', 'face: all 4 files cached after use ' + JSON.stringify(f1));
+    ok((await ask('status')).total === pre.length, 'face files do not change the main status');
+    await ctx.setOffline(true);
+    const fb = await faceGet();
+    ok(fb.every((x, i) => x[0] === 200 && x[1] === fa[i][1]), 'face files still load with the network offline');
+    await ctx.setOffline(false);
+    await pg.evaluate(() => caches.open('ponpon-face-v1').then(c => Promise.all(['./assets/face/vision.js', './assets/face/face_landmarker.task'].map(u => c.delete(u)))));
+    ok((await ask('face')).have === 2, 'face: status sees 2 missing');
+    const ff = await ask('face-fetch');
+    ok(ff.have === 4, 'face-fetch downloads the missing files ' + JSON.stringify(ff));
     // アップデート ちゅうに 1 つ よめなくても、ふるい キャッシュは けされない
     srvMode.next = true; srvMode.broken = '/assets/mix/yuki.webp';
     // サーバーへの リクエストが 1.5 びょう とまったら インストールが おわったと みなす
@@ -106,6 +126,7 @@ const srvMode = { next: false, broken: '', hits: 0, last: 0 };
     await pg.waitForFunction(n => caches.keys().then(k => !k.includes(n)), cname, { timeout: 10000 }).catch(() => {});
     const keys2 = await pg.evaluate(() => caches.keys());
     ok(keys2.includes('ponpon-test-next') && !keys2.includes(cname), 'good update replaces cache (' + keys2.join(',') + ')');
+    ok(keys2.includes('ponpon-face-v1') && (await ask('face')).have === 4, 'old-cache cleanup keeps the face cache (' + keys2.join(',') + ')');
     console.log('PWA ALL OK');
   } finally { await b.close(); srv.close(); }
 })().catch(e => { console.error(e); process.exit(1); });
