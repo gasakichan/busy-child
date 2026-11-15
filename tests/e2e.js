@@ -186,7 +186,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
     ok(t4.length === 5 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[3].cx === tiles[0].cx && t4[4].cx === tiles[1].cx && t4[0].cy === tiles[0].cy && t4[3].cy === tiles[3].cy && t4[4].cy === tiles[3].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, どこかな + へんしん in row 2, same size ' + JSON.stringify(t4));
-    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete && !ts[4].querySelector('.ico-img') && ts[4].querySelector('.ico').textContent === '👻'; }), tag + ' page4: とんとん/かえる/どこかな icon images loaded, はみがき uses the 🪥 emoji, へんしん the 👻 emoji');
+    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete && ts[4].querySelector('.ico-img') && ts[4].querySelector('.ico-img').complete && ts[4].querySelector('.ico-img').naturalWidth > 0; }), tag + ' page4: とんとん/かえる/どこかな/へんしん icon images loaded, はみがき uses the 🪥 emoji');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
     const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');
@@ -2994,6 +2994,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.evaluate(() => { const g = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); window.__streams = []; navigator.mediaDevices.getUserMedia = c => g(c).then(s => { window.__streams.push(s); return s; }); });
     await p.evaluate(() => { window.__cons = []; const g = navigator.mediaDevices.getUserMedia; navigator.mediaDevices.getUserMedia = c => { window.__cons.push(JSON.stringify(c.video && c.video.facingMode)); return g.call(navigator.mediaDevices, c); };
       navigator.mediaDevices.enumerateDevices = () => Promise.resolve([{ kind: 'videoinput', deviceId: 'a', label: '' }, { kind: 'videoinput', deviceId: 'b', label: '' }, { kind: 'audioinput', deviceId: 'c', label: '' }]); });
+    await gotoPage(p, pageOf('へんしん'));
+    ok(await p.evaluate(() => { const i = document.querySelector('.hm-page:not([hidden]) .tile[aria-label="へんしん"] img'); return !!i && /assets\/ico\/henshin\.webp$/.test(i.getAttribute('src')) && i.complete && i.naturalWidth > 0; }), tag + ': home tile shows the henshin icon image');
     await tapTile(p, 'へんしん'); await sleep(900);
     ok(await p.locator('#stage-henshin').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens へんしん');
     ok(await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': shared 🏠, no adult button');
@@ -3014,13 +3016,13 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
         hs: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth || document.querySelector('#stage-henshin').scrollWidth > document.querySelector('#stage-henshin').clientWidth }; });
     const g = await geo();
     console.log('info ' + tag + ' buttons min ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
-    ok(g.n === 6 && g.minw >= 80 && g.minh >= 80, tag + ': 6 mode buttons, each >= 80px (' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ')');
+    ok(g.n === 7 && g.minw >= 80 && g.minh >= 80, tag + ': 7 mode buttons (incl. おめん), each >= 80px (' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ')');
     ok(g.inside && g.ovl === 0 && g.home === 0, tag + ': buttons inside the viewport, no overlap with each other or 🏠');
     ok(!g.hs, tag + ': no horizontal scroll');
-    ok(g.labs === '👀おめめ|↕️のびーる|↔️ぺちゃんこ|🌀ぐるぐる|👻おばけ|🎩ぼうし', tag + ': labels ' + g.labs);
+    ok(g.labs === '👀おめめ|↕️のびーる|↔️ぺちゃんこ|🌀ぐるぐる|👻おばけ|🎩ぼうし|おめん', tag + ': labels ' + g.labs);
     // モード切りかえ
-    const NAMES = ['おめめ ぷくー', 'のびーる', 'ぺちゃんこ', 'ぐるぐる', 'おばけ', 'ぼうし'];
-    for (let i = 5; i >= 0; i--) {   // 0 から はじまるので 5→0 の じゅんで 押して 毎回 変わる
+    const NAMES = ['おめめ ぷくー', 'のびーる', 'ぺちゃんこ', 'ぐるぐる', 'おばけ', 'ぼうし', 'おめん'];
+    for (let i = 6; i >= 0; i--) {   // 0 から はじまるので 5→0 の じゅんで 押して 毎回 変わる
       await clearSays(p);
       await p.click('.hs-b[data-m="' + i + '"]'); await sleep(120);
       t = await T();
@@ -3051,6 +3053,39 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(t.P.cx > t.cw / 2, tag + ': mirrored (a face on the video\'s left shows on the right)');
     await fake({ cx: 0.5, cy: 0.42 }); await sleep(900);
     // みんなの モードを スクショ
+    // おめん: かおに おめんが つく
+    const OM = ['ねこさん', 'いぬさん', 'うさぎさん', 'くまさん', 'らいおんさん', 'ぱんださん', 'おばけさん', 'ろぼっとさん'];
+    const mimg = await p.evaluate(() => { const i = document.querySelector('.hs-b[data-m="6"] img'); return i ? { ok: i.complete && i.naturalWidth > 0, src: i.getAttribute('src') } : null; });
+    ok(mimg && mimg.ok && /assets\/omen\/neko\.webp$/.test(mimg.src), tag + ': おめん button shows a small neko image ' + JSON.stringify(mimg));
+    await clearSays(p); await p.click('.hs-b[data-m="6"]'); await sleep(700);
+    t = await T();
+    ok(t.mode === 6 && t.omen === 0 && (await says(p)).some(x => x.t === 'おめん') && (await p.locator('#bigword').textContent()) === 'おめん', tag + ': entering おめん says/shows おめん, mask 0');
+    ok(t.omenRect && t.omenRect.w > 20, tag + ': mask drawn (images loaded) ' + JSON.stringify(t.omenRect));
+    t = await T();
+    const eyeMid = tt => [(tt.P.e1x + tt.P.e2x) / 2, (tt.P.e1y + tt.P.e2y) / 2];
+    let em = eyeMid(t);
+    ok(Math.hypot(t.omenRect.cx - em[0], t.omenRect.cy - em[1]) < 4 && Math.abs(t.omenRect.rot - t.P.roll) < 0.02, tag + ': mask eyes sit on the face eyes ' + JSON.stringify({ m: [Math.round(t.omenRect.cx), Math.round(t.omenRect.cy)], e: em.map(Math.round) }));
+    ok(t.omenRect.w > 2 * t.P.rx && t.omenRect.w < 4 * t.P.rx, tag + ': mask covers the whole face (w ' + Math.round(t.omenRect.w) + ' vs face ' + Math.round(2 * t.P.rx) + ')');
+    const w1 = t.omenRect.w, rx1 = t.P.rx;
+    await fake({ cx: 0.3, cy: 0.4, w: 0.34, h: 0.46 }); await sleep(1100); t = await T(); em = eyeMid(t);
+    ok(t.omenRect.w > w1 * 1.3 && Math.abs(t.omenRect.w / (2 * t.P.rx) - w1 / (2 * rx1)) < 0.05 && Math.abs(t.omenRect.cx - em[0]) < 4 && t.omenRect.cx > t.cw / 2, tag + ': mask width scales with the face and follows it (mirrored) ' + Math.round(w1) + '→' + Math.round(t.omenRect.w));
+    await fake({ cx: 0.5, cy: 0.42 }); await sleep(1100);
+    const vid1 = Math.round(vp.width * (vp.width > vp.height ? 0.3 : 0.5));
+    for (let k = 1; k <= 8; k++) {
+      await clearSays(p); await p.mouse.click(vid1, 130); await sleep(120);
+      const oi = k % 8; t = await T();
+      ok(t.mode === 6 && t.omen === oi && (await says(p)).some(x => x.t === OM[oi]) && (await p.locator('#bigword').textContent()) === OM[oi], tag + ': stage tap in おめん → mask ' + oi + ' 「' + OM[oi] + '」, still おめん');
+      if (k === 1) { await sleep(600); await shot('omen-inu'); }
+    }
+    await p.click('.hs-b[data-m="6"]'); await sleep(150);
+    ok((await T()).omen === 0 && (await T()).mode === 6, tag + ': tapping the おめん button itself does not cycle');
+    await sleep(500); await shot('omen-neko');
+    { const r0 = (await T()).reactions; await clearSays(p); await fake({ cy: 0.42, mouth: 0.22 });
+      ok(await until(async () => (await T()).reactions === r0 + 1, 1500), tag + ': mouth open in おめん → reaction fires');
+      await sleep(150); await shot('omen-react'); await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1700); }
+    await p.evaluate(() => window.__hs._fake(null)); await sleep(1800); t = await T();
+    ok(!t.hasFace && t.omenRect && Math.abs(t.omenRect.cx - t.cw / 2) < t.cw * 0.06, tag + ': no face → mask at the default face position');
+    await fake({ cx: 0.5, cy: 0.42 }); await sleep(700);
     for (let i = 0; i < 6; i++) {
       await p.click('.hs-b[data-m="' + i + '"]'); await sleep(550);
       if (i === 5) { for (let k = 0; k < 5; k++) { await shot('mode5-hat' + k); if (k < 4) { await p.mouse.click(view.x, view.y); await sleep(550); } } await p.mouse.click(view.x, view.y); await sleep(200); }
