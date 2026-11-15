@@ -1372,6 +1372,12 @@
   .hs-video { position: absolute; left: 0; top: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
   .hs-modes { position: absolute; left: 10px; right: 10px; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 5; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; justify-items: center; }
   .hs-b { width: 100%; max-width: 112px; height: 88px; padding: 0; border-radius: 44px; border: 4px solid rgba(91,58,41,.55); background: var(--c); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
+  .hs-flip { position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); right: 12px; right: calc(12px + env(safe-area-inset-right)); z-index: 6; width: 84px; height: 84px; padding: 0; border-radius: 42px; border: 4px solid rgba(91,58,41,.55); background: #FFF3C4; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
+  .hs-flip[hidden] { display: none; }
+  .hs-flip { gap: 3px; }
+  .hs-flip .ico { font-size: 28px; line-height: 1; }
+  .hs-flip .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
+  .hs-flip:active { transform: translateY(2px); }
   .hs-b .ico { font-size: 30px; line-height: 1; }
   .hs-b .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
   .hs-b.on { box-shadow: 0 0 0 4px #fff, 0 0 0 8px #FFC83D; transform: translateY(-2px); }
@@ -1381,6 +1387,7 @@
   @media (min-aspect-ratio: 4/3) and (max-height: 520px) {
     .hs-modes { left: auto; right: 10px; top: 10px; bottom: 10px; width: 216px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 84px; align-content: center; }
     .hs-b { max-width: 104px; height: 84px; }
+    .hs-flip { top: auto; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); right: auto; left: 12px; left: calc(12px + env(safe-area-inset-left)); }
   }
 </style>
 </head>
@@ -1688,6 +1695,7 @@
     <div class="hs-prep" id="hs-prep" hidden>じゅんび ちゅう…</div>
     <div class="hs-msg" id="hs-msg" hidden role="status"></div>
     <div class="hs-modes" id="hs-modes"></div>
+    <button class="hs-flip" id="hs-flip" type="button" aria-label="うしろの かめらに する" hidden><span class="ico">🔄</span><span class="lab">うしろ</span></button>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -9119,10 +9127,10 @@
   ];
   var HS_HATS = ['おうかん', 'とんがり ぼうし', 'ねこみみ', 'うさみみ', 'おはなの かんむり'];
   var hsStage = $('#stage-henshin'), hsVideo = $('#hs-video'), hsGlCv = $('#hs-gl'), hsOv = $('#hs-ov'), hsOvC = hsOv.getContext('2d');
-  var hsMsg = $('#hs-msg'), hsPrep = $('#hs-prep'), hsModesEl = $('#hs-modes');
+  var hsMsg = $('#hs-msg'), hsPrep = $('#hs-prep'), hsModesEl = $('#hs-modes'), hsFlipEl = $('#hs-flip');
   var hs = {
     on: false, gen: 0, stream: null, raf: 0, last: 0, t0: 0, frames: 0, noCam: false, camOk: false,
-    mode: 0, hat: 0, strT0: 0, hatT0: 0, str: 0,
+    facing: 'user', mir: 1, mode: 0, hat: 0, strT0: 0, hatT0: 0, str: 0,
     cw: 0, ch: 0, gl: null, c2: null, glLost: false, prog: null, U: null, tex: null, texW: 0, texH: 0, vidOk: false,
     P: null, T: null, hasFace: false, miss: 0, fake: null,
     lmObj: null, lmState: 0, detAt: 0, detInt: 66, vt: -1,
@@ -9132,9 +9140,9 @@
   var HS_FS = [
     '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
     'varying vec2 vUv; uniform sampler2D uTex;',
-    'uniform float uAsp, uMode, uStr, uTime, uRoll, uER; uniform vec2 uOs, uSs, uC, uR, uE1, uE2;',
+    'uniform float uAsp, uMir, uMode, uStr, uTime, uRoll, uER; uniform vec2 uOs, uSs, uC, uR, uE1, uE2;',
     'vec2 rot(vec2 v, float a) { float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }',
-    'vec3 tex(vec2 P) { vec2 u = vec2(P.x / uAsp, P.y); return texture2D(uTex, vec2((1.0 - u.x - uOs.x) * uSs.x, (u.y - uOs.y) * uSs.y)).rgb; }',
+    'vec3 tex(vec2 P) { vec2 u = vec2(P.x / uAsp, P.y); float ux = uMir > 0.5 ? 1.0 - u.x : u.x; return texture2D(uTex, vec2((ux - uOs.x) * uSs.x, (u.y - uOs.y) * uSs.y)).rgb; }',
     'vec2 bulge(vec2 P, vec2 e) { vec2 d = P - e; float r = length(d); float t = r / uER; if (t >= 1.0 || r < 0.00001) return P; return e + d * (1.0 - 0.62 * uStr * (1.0 - t * t)); }',
     'void main() {',
     '  vec2 P = vec2(vUv.x * uAsp, vUv.y); vec2 Q = P; vec2 d = P - uC;',
@@ -9164,11 +9172,12 @@
     return { cx: cx, cy: cy, rx: rx, ry: ry, roll: 0, e1x: cx - 0.4 * rx, e1y: cy - 0.12 * ry, e2x: cx + 0.4 * rx, e2y: cy - 0.12 * ry, mx: cx, my: cy + 0.45 * ry, mr: 0 };
   }
   function hsDist(ax, ay, bx, by) { var dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
-  /* ランドマーク（映像の 0..1）→ がめんの px（かがみ: 左右はんてん・cover） */
+  /* ランドマーク（映像の 0..1）→ がめんの px（まえカメラは かがみ: 左右はんてん・cover） */
   function hsPt(l) {
     var v = hsVideo, vw = v.videoWidth || 640, vh = v.videoHeight || 480, cw = hs.cw, ch = hs.ch;
     var sc = Math.max(cw / vw, ch / vh), dw = vw * sc, dh = vh * sc;
-    return [cw - ((cw - dw) / 2 + l.x * dw), (ch - dh) / 2 + l.y * dh];
+    var x = (cw - dw) / 2 + l.x * dw;
+    return [hs.mir ? cw - x : x, (ch - dh) / 2 + l.y * dh];
   }
   function hsApply(lm) {
     var a = hsPt(lm[10]), b = hsPt(lm[152]), c = hsPt(lm[234]), d = hsPt(lm[454]);
@@ -9236,7 +9245,7 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     var U = {};
-    ['uTex', 'uAsp', 'uMode', 'uStr', 'uTime', 'uRoll', 'uER', 'uOs', 'uSs', 'uC', 'uR', 'uE1', 'uE2'].forEach(function (k) { U[k] = gl.getUniformLocation(pg, k); });
+    ['uTex', 'uAsp', 'uMir', 'uMode', 'uStr', 'uTime', 'uRoll', 'uER', 'uOs', 'uSs', 'uC', 'uR', 'uE1', 'uE2'].forEach(function (k) { U[k] = gl.getUniformLocation(pg, k); });
     gl.uniform1i(U.uTex, 0);
     hs.prog = pg; hs.U = U; hs.tex = tx; hs.texW = 0; hs.texH = 0; hs.gl = gl;
     return true;
@@ -9316,7 +9325,7 @@
     }
     if (!hs.vidOk) { gl.clearColor(0.91, 0.88, 1, 1); gl.clear(gl.COLOR_BUFFER_BIT); return; }
     var sc = Math.max(cw / vw, ch / vh), dw = vw * sc, dh = vh * sc;
-    gl.uniform1f(U.uAsp, cw / ch); gl.uniform1f(U.uMode, hs.mode); gl.uniform1f(U.uStr, hs.str); gl.uniform1f(U.uTime, (now - hs.t0) / 1000);
+    gl.uniform1f(U.uAsp, cw / ch); gl.uniform1f(U.uMir, hs.mir); gl.uniform1f(U.uMode, hs.mode); gl.uniform1f(U.uStr, hs.str); gl.uniform1f(U.uTime, (now - hs.t0) / 1000);
     gl.uniform1f(U.uRoll, P.roll);
     gl.uniform2f(U.uOs, (cw - dw) / 2 / cw, (ch - dh) / 2 / ch); gl.uniform2f(U.uSs, cw / dw, ch / dh);
     gl.uniform2f(U.uC, P.cx / ch, P.cy / ch); gl.uniform2f(U.uR, P.rx / ch, P.ry / ch);
@@ -9330,7 +9339,7 @@
     c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.fillStyle = '#E9E1FF'; c.fillRect(0, 0, cw, ch);
     if (!vw || v.readyState < 2) return;
     var sc = Math.max(cw / vw, ch / vh), dw = vw * sc, dh = vh * sc, ox = (cw - dw) / 2, oy = (ch - dh) / 2;
-    function vid() { c.save(); c.translate(cw, 0); c.scale(-1, 1); c.drawImage(v, ox, oy, dw, dh); c.restore(); }
+    function vid() { c.save(); if (hs.mir) { c.translate(cw, 0); c.scale(-1, 1); } c.drawImage(v, ox, oy, dw, dh); c.restore(); }
     function face(k) { c.beginPath(); c.save(); c.translate(P.cx, P.cy); c.rotate(P.roll); c.scale(P.rx * k, P.ry * k); c.arc(0, 0, 1, 0, Math.PI * 2); c.restore(); }
     vid();
     var t = (now - hs.t0) / 1000;
@@ -9517,6 +9526,7 @@
       if (m === 5 && hs.mode === 5) hsCycleHat(); else hsSetMode(m);
       return;
     }
+    if (hsFlipEl.contains(e.target)) { hsFlip(); return; }
     if (hsModesEl.contains(e.target) || e.target === hsMsg) return;
     if (hs.noCam) return;
     if (hs.mode === 5) hsCycleHat(); else hsSetMode((hs.mode + 1) % 6);
@@ -9533,7 +9543,7 @@
   function hsNoCam() {
     hs.noCam = true; hs.camOk = false;
     if (hs.raf) { cancelAnimationFrame(hs.raf); hs.raf = 0; }
-    hsGlCv.hidden = true; hsOv.hidden = true; hsModesEl.hidden = true; hsPrep.hidden = true;
+    hsGlCv.hidden = true; hsOv.hidden = true; hsModesEl.hidden = true; hsFlipEl.hidden = true; hsPrep.hidden = true;
     hsMsg.textContent = S.camOn ? 'カメラが おやすみ だよ' : 'カメラは おやすみ だよ'; hsMsg.hidden = false;
   }
   function hsCamStart() {
@@ -9543,14 +9553,38 @@
     try {
       var md = navigator.mediaDevices;
       if (!md || !md.getUserMedia) { hsNoCam(); return; }
-      pr = md.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
+      pr = md.getUserMedia({ video: { facingMode: hs.facing, width: 640, height: 480 }, audio: false });
     } catch (e) { hsNoCam(); return; }
-    pr.then(function (stream) {
+    pr.then(null, function (err) {
+      if (hs.facing !== 'environment' || gen !== hs.gen || !hs.on) throw err;
+      hs.facing = 'user';   /* うしろが ないとき: だまって まえに もどす */
+      return md.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
+    }).then(function (stream) {
       if (gen !== hs.gen || !hs.on) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} return; }
       hs.stream = stream; hsVideo.muted = true; hsVideo.srcObject = stream;
       try { var pp = hsVideo.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {}
+      hs.mir = hs.facing === 'user' ? 1 : 0; hsFlipLab();
       hs.camOk = true; hsLoadLM(); hsPrepUpd();
-    }, function () { if (gen === hs.gen) hsNoCam(); });
+      try {
+        navigator.mediaDevices.enumerateDevices().then(function (ds) {
+          if (gen !== hs.gen || !hs.on) return;
+          hsFlipEl.hidden = !(ds.filter(function (d) { return d.kind === 'videoinput'; }).length >= 2);
+        }, function () {});
+      } catch (e) {}
+    }).then(null, function () { if (gen === hs.gen) hsNoCam(); });
+  }
+  function hsFlipLab() {
+    var back = hs.facing === 'user';   /* おした さきの カメラ */
+    hsFlipEl.querySelector('.lab').textContent = back ? 'うしろ' : 'まえ';
+    hsFlipEl.setAttribute('aria-label', back ? 'うしろの かめらに する' : 'まえの かめらに する');
+  }
+  function hsFlip() {
+    if (hs.noCam) return;
+    hs.facing = hs.facing === 'user' ? 'environment' : 'user';
+    hs.hasFace = false;
+    var w = hs.facing === 'user' ? 'まえの かめら' : 'うしろの かめら';
+    tone(520, 0.14, 'triangle', 0.12); say(w); hsWord(w);
+    hsFlipLab(); hsCamStart();
   }
   (function () {
     HS_MODES.forEach(function (m, i) {
@@ -9566,6 +9600,7 @@
       hs.on = true; hs.noCam = false; hs.t0 = performance.now(); hs.last = hs.t0; hs.frames = 0; hs.detAt = 0; hs.reactAt = -1e9; hs.mouthOpen = false; hs.parts = [];
       if (hs.lmState === 3) hs.lmState = 0;
       hsMsg.hidden = true; hsGlCv.hidden = false; hsOv.hidden = false; hsModesEl.hidden = false; hsPrep.hidden = true;
+      hs.facing = 'user'; hs.mir = 1; hsFlipEl.hidden = true; hsFlipLab();
       hsInitGL(); hs.P = null; hsSize();
       hsSetMode(0, true); hs.str = 0;
       hsStage.addEventListener('pointerdown', hsDown); hsStage.addEventListener('click', hsClick);
@@ -9582,7 +9617,7 @@
     },
     resize: function () { if (hs.on) hsSize(); },
     /* テスト用 */
-    _t: function () { return { mode: hs.mode, hat: hs.hat, gl: !!hs.gl, ready: hs.lmState === 2, state: hs.lmState, reactions: hs.reactions, frames: hs.frames, hasFace: hs.hasFace, cam: hs.camOk, noCam: hs.noCam, str: hs.str, cw: hs.cw, ch: hs.ch, P: hs.P, tracks: hs.stream ? hs.stream.getTracks().length : 0, raf: hs.raf, vid: hs.vidOk }; },
+    _t: function () { return { mode: hs.mode, hat: hs.hat, gl: !!hs.gl, ready: hs.lmState === 2, state: hs.lmState, reactions: hs.reactions, frames: hs.frames, hasFace: hs.hasFace, cam: hs.camOk, facing: hs.facing, mir: hs.mir, flip: !hsFlipEl.hidden, noCam: hs.noCam, str: hs.str, cw: hs.cw, ch: hs.ch, P: hs.P, tracks: hs.stream ? hs.stream.getTracks().length : 0, raf: hs.raf, vid: hs.vidOk }; },
     _fake: function (lm) { hs.fake = lm; if (!lm) { hs.hasFace = false; hs.T = hsDefault(); } },
     _react: function () { hs.reactAt = -1e9; hsReact(performance.now(), hs.P.mx, hs.P.my); }
   };

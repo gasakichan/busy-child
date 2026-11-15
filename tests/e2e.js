@@ -2992,6 +2992,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const T = () => p.evaluate(() => window.__hs._t());
     const fake = (o) => p.evaluate(([src, o]) => { const f = eval('(' + src + ')'); window.__hs._fake(f(o || {})); }, [HS_FAKE_SRC, o]);
     await p.evaluate(() => { const g = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); window.__streams = []; navigator.mediaDevices.getUserMedia = c => g(c).then(s => { window.__streams.push(s); return s; }); });
+    await p.evaluate(() => { window.__cons = []; const g = navigator.mediaDevices.getUserMedia; navigator.mediaDevices.getUserMedia = c => { window.__cons.push(JSON.stringify(c.video && c.video.facingMode)); return g.call(navigator.mediaDevices, c); };
+      navigator.mediaDevices.enumerateDevices = () => Promise.resolve([{ kind: 'videoinput', deviceId: 'a', label: '' }, { kind: 'videoinput', deviceId: 'b', label: '' }, { kind: 'audioinput', deviceId: 'c', label: '' }]); });
     await tapTile(p, 'へんしん'); await sleep(900);
     ok(await p.locator('#stage-henshin').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens へんしん');
     ok(await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': shared 🏠, no adult button');
@@ -3077,6 +3079,29 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(!t.hasFace && Math.abs(t.P.cx - t.cw / 2) < t.cw * 0.05, tag + ': no face → effect eases back to the screen center, still running');
     await shot('noface');
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
+    // まえ／うしろ きりかえ
+    const fg = () => p.evaluate(() => { const r = d => { const x = d.getBoundingClientRect(); return { l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height }; };
+      const f = r(document.querySelector('#hs-flip')), ov = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+      return { w: f.w, h: f.h, inside: f.l >= 0 && f.r <= innerWidth && f.t >= 0 && f.b <= innerHeight, home: ov(f, r(document.querySelector('#homebtn'))), modes: [...document.querySelectorAll('#hs-modes .hs-b')].filter(b => ov(f, r(b))).length, prep: ov(f, r(document.querySelector('#hs-prep'))), lab: document.querySelector('#hs-flip .lab').textContent }; });
+    const fgeo = await fg();
+    ok(await p.locator('#hs-flip').isVisible() && (await T()).flip && fgeo.lab === 'うしろ', tag + ': 2 cameras → flip button shown (label うしろ)');
+    ok(fgeo.w >= 80 && fgeo.h >= 80 && fgeo.inside && !fgeo.home && fgeo.modes === 0, tag + ': flip button >= 80px, inside, no overlap with 🏠 or mode buttons ' + JSON.stringify(fgeo));
+    ok((await p.evaluate(() => window.__cons[0])) === '"user"', tag + ': first request is facingMode user');
+    ok((await T()).facing === 'user' && (await T()).mir === 1, tag + ': front camera is mirrored');
+    await p.click('.hs-b[data-m="2"]'); await sleep(150); await clearSays(p);
+    await p.click('#hs-flip'); await sleep(500);
+    t = await T();
+    ok(t.facing === 'environment' && t.mir === 0 && t.mode === 2 && t.cam && (await p.evaluate(() => window.__cons[window.__cons.length - 1])) === '"environment"', tag + ': flip → environment requested, not mirrored, mode unchanged ' + JSON.stringify({ f: t.facing, m: t.mir, mode: t.mode }));
+    ok((await says(p)).some(x => x.t === 'うしろの かめら') && (await p.locator('#bigword').textContent()).includes('うしろ') && (await p.locator('#hs-flip .lab').textContent()) === 'まえ', tag + ': spoken/shown うしろの かめら, label now まえ');
+    ok(await until(async () => (await T()).vid === true, 3000), tag + ': back camera frames reach the texture');
+    await fake({ cx: 0.25, cy: 0.4 }); await sleep(900); t = await T();
+    ok(t.P.cx < t.cw / 2, tag + ': back camera is not mirrored (a face on the video\'s left stays on the left)');
+    await fake({ cx: 0.5, cy: 0.42 }); await sleep(300);
+    await shot('flip-back');
+    ok((await p.evaluate(() => window.__streams.length)) >= 2 && (await p.evaluate(() => window.__streams.slice(0, -1).every(s => s.getTracks().every(x => x.readyState === 'ended')))), tag + ': previous stream stopped on flip');
+    await clearSays(p); await p.click('#hs-flip'); await sleep(500);
+    t = await T();
+    ok(t.facing === 'user' && t.mir === 1 && t.mode === 2 && (await says(p)).some(x => x.t === 'まえの かめら'), tag + ': flip again → front, mirrored, mode unchanged');
     // 出る
     await p.click('#homebtn'); await sleep(200);
     ok(await p.locator('#hm-p3').isVisible() && await p.locator('#stage-henshin').isHidden(), tag + ': 🏠 returns to page 4');
@@ -3095,6 +3120,29 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const st2 = await p.evaluate(() => window.__streams.reduce((a, s) => a + s.getTracks().filter(x => x.readyState !== 'ended').length, 0));
     ok(st2 === 0, tag + ': all camera tracks ended again after the second visit');
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  T('henshin-flip', async (br) => {
+    const p = await newPage(br, { width: 390, height: 844 });
+    const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const T = () => p.evaluate(() => window.__hs._t());
+    await p.evaluate(() => { window.__cons = []; const g = navigator.mediaDevices.getUserMedia;
+      navigator.mediaDevices.getUserMedia = c => { window.__cons.push(c.video && c.video.facingMode); return c.video && c.video.facingMode === 'environment' && window.__noBack ? Promise.reject(new DOMException('x', 'OverconstrainedError')) : g.call(navigator.mediaDevices, c); };
+      navigator.mediaDevices.enumerateDevices = () => Promise.resolve([{ kind: 'videoinput', deviceId: 'a', label: '' }]); });
+    await tapTile(p, 'へんしん'); await sleep(900);
+    ok((await T()).cam && await p.locator('#hs-flip').isHidden() && !(await T()).flip, 'henshin-flip: 1 videoinput → flip button hidden');
+    await p.click('#homebtn'); await sleep(200);
+    await p.evaluate(() => { window.__noBack = true; navigator.mediaDevices.enumerateDevices = () => Promise.resolve([{ kind: 'videoinput' }, { kind: 'videoinput' }]); });
+    await tapTile(p, 'へんしん'); await sleep(900);
+    ok(await p.locator('#hs-flip').isVisible(), 'henshin-flip: 2 videoinputs → shown again after re-enter');
+    await clearSays(p); await p.click('#hs-flip');
+    ok(await until(async () => { const t = await T(); return t.cam && t.facing === 'user' && t.mir === 1; }, 3000), 'henshin-flip: back camera fails → silently falls back to front');
+    ok(await p.locator('#hs-msg').isHidden() && await p.locator('#hs-modes').isVisible() && (await says(p)).every(x => !/しっぱい|だめ|ごめん|おやすみ/.test(x.t)), 'henshin-flip: no error message or failure speech');
+    await p.click('#homebtn'); await sleep(250);
+    const live = await p.evaluate(() => document.querySelector('#hs-video').srcObject);
+    ok(live === null && (await T()).tracks === 0, 'henshin-flip: leave() cleans up');
+    ok(p.errs.length === 0, 'henshin-flip: no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
