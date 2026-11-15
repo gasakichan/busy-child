@@ -103,6 +103,19 @@ const clearSays = p => p.evaluate(() => { window.__says.length = 0; });
 async function holdOpen(p, ms) {
   const b = await p.locator('#setbtn').boundingBox();
   await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(ms); await p.mouse.up();
+  if (ms >= 1500) await gatePass(p);
+}
+// おとなゲートが出ていたら といて通る（出ていなければ なにもしない）
+async function gatePass(p, fake) {
+  await sleep(60);
+  if (!(await p.locator('#gate').isVisible())) return false;
+  if (fake) await p.clock.runFor(400);
+  await sleep(400);
+  const q = await p.locator('#gate-q').textContent();
+  const m = /(\d+) \+ (\d+)/.exec(q);
+  for (const d of String(+m[1] + +m[2])) await p.locator('#gate-pad button[data-k="' + d + '"]').dispatchEvent('pointerdown');
+  await sleep(60);
+  return true;
 }
 
 // テストブロック登録。T(名前, fn(br)) / TV(名前, [viewport...], fn(br, vp))（TV は viewport ごとに別ブロック: 名前-幅x高さ）
@@ -1037,7 +1050,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       for (let t = 0; t < secs; t += 5) { if (input) await p.evaluate(() => window.dispatchEvent(new Event('pointerdown'))); await p.clock.runFor(Math.min(5, secs - t) * 1000); }
     }
     const store = (p) => p.evaluate(() => JSON.parse(localStorage.getItem('ponpon.stats.v1') || 'null'));
-    async function openSet(p) { const b = await p.locator('#setbtn').boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await p.clock.runFor(1600); await p.mouse.up(); await sleep(80); }
+    async function openSet(p) { const b = await p.locator('#setbtn').boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await p.clock.runFor(1600); await p.mouse.up(); await sleep(80); await gatePass(p, true); await sleep(80); }
     const hrs = (arr) => arr.reduce((a, b) => a + b, 0);
 
     // 1. かいすう + じかん
@@ -3490,6 +3503,76 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.evaluate(() => localStorage.setItem('ponpon.settings.v1', JSON.stringify({ home: 'nope' }))); await p.reload(); await sleep(400);
     ok(await p.locator('.hm-page').count() === 4, 'mode: unknown value falls back to page');
     await p.context().close();
+  });
+
+  /* ---------- おとなゲート（せっていの まえ） ---------- */
+  TV('gate', [{ width: 360, height: 740 }, { width: 568, height: 320 }, { width: 390, height: 844 }, { width: 740, height: 360 }, { width: 1024, height: 768 }], async (br, vp) => {
+    const tag = 'gate ' + vp.width + 'x' + vp.height;
+    const p = await newPage(br, vp, { deny: true });
+    const hold = async ms => { const b = await p.locator('#setbtn').boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(ms); await p.mouse.up(); await sleep(450); };
+    const vis = sel => p.locator(sel).isVisible();
+    const key = d => p.locator('#gate-pad button[data-k="' + d + '"]').dispatchEvent('pointerdown');
+    const ans = async () => { const m = /(\d+) \+ (\d+)/.exec(await p.locator('#gate-q').textContent()); return String(+m[1] + +m[2]); };
+    const homeOk = async () => (await vis('#home')) && !(await vis('#gate')) && !(await vis('#setsheet')) && await p.evaluate(() => !document.querySelector('.stage:not([hidden]):not(#home)'));
+    await hold(300);
+    ok(!(await vis('#gate')) && !(await vis('#setsheet')), tag + ': short hold: no gate');
+    await hold(1600);
+    ok((await vis('#gate')) && !(await vis('#setsheet')), tag + ': long hold: gate, no settings');
+    const q = await p.locator('#gate-q').textContent();
+    ok(/^\d\d \+ \d = \?$/.test(q) && (await ans()).length === 2, tag + ': question ' + q);
+    const info = await p.evaluate(() => {
+      const c = document.querySelector('#gate-card').getBoundingClientRect();
+      const ks = [...document.querySelectorAll('#gate-pad button')].map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; });
+      return { c: [c.left, c.top, c.right, c.bottom], iw: innerWidth, ih: innerHeight, ks, hs: document.documentElement.scrollWidth > innerWidth, n: ks.length };
+    });
+    ok(info.n === 10 && info.ks.every(k => k[0] >= 80 && k[1] >= 80), tag + ': 10 keys >= 80px');
+    ok(info.c[0] >= 0 && info.c[1] >= 0 && info.c[2] <= info.iw && info.c[3] <= info.ih && !info.hs, tag + ': card inside viewport, no hscroll ' + JSON.stringify(info.c));
+    if (vp.width === 360 || vp.width === 568) await p.screenshot({ path: SP + '/gate-' + vp.width + 'x' + vp.height + '.png' });
+    // 外側タップ
+    await p.mouse.click(3, 3); await sleep(100);
+    ok(await homeOk(), tag + ': backdrop tap closes, still home, no game');
+    // カードの なか（キー以外）
+    await hold(1600);
+    const cb = await p.locator('#gate-card').boundingBox();
+    await p.mouse.click(cb.x + cb.width / 2, cb.y + 6); await sleep(100);
+    ok(await vis('#gate'), tag + ': tap inside card (not key) keeps open');
+    // 1けためが まちがい
+    let a = await ans(); await key((+a[0] + 1) % 10); await sleep(100);
+    ok(await homeOk(), tag + ': wrong first digit closes');
+    // 1けためが あって 2けためが まちがい
+    await hold(1600); a = await ans(); await key(a[0]); await sleep(60);
+    ok(await vis('#gate') && (await p.locator('#gate-a').textContent()).includes(a[0]), tag + ': first digit shows');
+    await key((+a[1] + 1) % 10); await sleep(100);
+    ok(await homeOk(), tag + ': wrong second digit closes');
+    // Escape
+    await hold(1600); await p.keyboard.press('Escape'); await sleep(80);
+    ok(await homeOk(), tag + ': Escape closes');
+    // ぶつりキー + せいかい
+    await hold(1600); a = await ans(); await p.keyboard.press(a[0]); await p.keyboard.press(a[1]); await sleep(120);
+    ok(!(await vis('#gate')) && (await vis('#setsheet')), tag + ': correct answer (physical keys) opens settings');
+    await p.click('#setx'); await sleep(100);
+    await hold(1600); a = await ans(); await key(a[0]); await key(a[1]); await sleep(120);
+    ok(!(await vis('#gate')) && (await vis('#setsheet')), tag + ': correct answer (pointer) opens settings');
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  T('gate-timeout', async (br) => {
+    const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    const p = await ctx.newPage(); p.errs = [];
+    p.on('pageerror', e => p.errs.push('PAGEERR ' + e.message));
+    await p.clock.install();
+    await p.addInitScript(INIT(ENV));
+    await p.goto(URL); await sleep(300);
+    const b = await p.locator('#setbtn').boundingBox();
+    await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await p.clock.runFor(1600); await p.mouse.up(); await sleep(80);
+    ok(await p.locator('#gate').isVisible(), 'gate-timeout: opens');
+    await p.clock.runFor(29000); await sleep(50);
+    ok(await p.locator('#gate').isVisible(), 'gate-timeout: still open at 29s');
+    await p.clock.runFor(2000); await sleep(50);
+    ok(await p.locator('#gate').isHidden() && await p.locator('#setsheet').isHidden(), 'gate-timeout: closed after 30s idle');
+    ok(p.errs.length === 0, 'gate-timeout: no errors ' + p.errs.join(' | '));
+    await ctx.close();
   });
 
 }
