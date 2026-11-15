@@ -1142,7 +1142,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       const p = await cpage(T0, { v: 1, days, since: keyAgo(20), old: { baa: { n: 5, s: 900 } } });
       await openSet(p);
       const txt = async (s) => (await p.locator(s).innerText()).replace(/\s+/g, ' ').trim();
-      ok(await p.evaluate(() => document.querySelector('#statsgrp') === document.querySelector('.setbody').firstElementChild), 'stats: section is first in settings');
+      ok(await p.evaluate(() => document.querySelector('#statsgrp') === document.querySelector('.setbody').children[2] && !!document.querySelector('.setbody').children[0].querySelector('[data-k=home]')), 'stats: section follows the two home groups at the top of settings');
       ok(await p.locator('#st-period button[aria-pressed="true"]').innerText() === '7にち', 'stats: default period 7にち');
       ok((await txt('#st-total')) === '38ふん' && (await txt('#st-plays')) === '15かい', 'stats 7d: total/plays ' + await txt('#st-total') + ' ' + await txt('#st-plays'));
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
@@ -3155,6 +3155,288 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok(p.errs.length === 0, 'henshin real: no page errors ' + p.errs.join(' | '));
       await ctx.close();
     } finally { srv.close(); }
+  });
+
+  /* ---------- ホームの かたち（ページ／スクロール／あわあわ／おもちゃばこ）と、ホームに だす あそび ---------- */
+  // 1回だけ（リロードでは やりなおさない）localStorage に たねを まく。stats は {何日まえ: {id: {n, s}}}
+  const hseed = ({ set, stats, hide }) => `(function(){try{if(sessionStorage.getItem('__hs'))return;sessionStorage.setItem('__hs','1');
+    ${set ? `localStorage.setItem('ponpon.settings.v1',${JSON.stringify(JSON.stringify(set))});` : ''}
+    ${hide ? `localStorage.setItem('ponpon.home.v1',${JSON.stringify(typeof hide === 'string' ? hide : JSON.stringify({ v: 1, hide }))});` : ''}
+    ${stats ? `(function(){var P=function(n){return(n<10?'0':'')+n},K=function(a){var d=new Date();d.setDate(d.getDate()-a);return d.getFullYear()+'-'+P(d.getMonth()+1)+'-'+P(d.getDate())};var S=${JSON.stringify(stats)},days={};Object.keys(S).forEach(function(a){days[K(+a)]={g:S[a],h:[],ss:1,hm:1}});localStorage.setItem('ponpon.stats.v1',JSON.stringify({v:1,since:K(30),old:{},days:days}))})();` : ''}
+  }catch(e){}})();`;
+  // よくあそぶ: どこかな 9 > かえる 7 > へんしん 5 > (3かい: じかん 10 の sky と paint は HORDER じゅんで sky が さき) > paint > zoo。20にちまえの mix 50 かいは かぞえない
+  const STATS0 = { 0: { dokoka: { n: 9, s: 100 }, kaeru: { n: 7, s: 50 }, henshin: { n: 5, s: 30 }, paint: { n: 3, s: 10 }, sky: { n: 3, s: 10 }, zoo: { n: 3, s: 5 } }, 20: { mix: { n: 50, s: 900 } } };
+  const RANK0 = ['どこかな', 'かえる', 'へんしん', 'ふうせん', 'おえかき', 'どうぶつ'];
+  const labsOf = (p, sel) => p.evaluate(sel => [...document.querySelectorAll(sel)].map(t => t.getAttribute('aria-label')), sel);
+  const tgeom = (p, sel) => p.evaluate(sel => [...document.querySelectorAll(sel)].map(t => { const r = t.getBoundingClientRect(), l = t.querySelector('.lab').getBoundingClientRect(); return { lab: t.getAttribute('aria-label'), w: r.width, h: r.height, x: r.left, y: r.top, clip: t.scrollWidth > t.clientWidth + 1 || t.scrollHeight > t.clientHeight + 1, out: l.left < r.left - 0.5 || l.right > r.right + 0.5 || l.bottom > r.bottom + 0.5 || l.top < r.top - 0.5 }; }), sel);
+  const noHScroll = p => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth);
+  const homeShown = p => p.evaluate(() => !document.querySelector('#home').hidden);
+  const SAME = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+
+  TV('home-scroll', [{ width: 390, height: 844 }, { width: 360, height: 640 }, { width: 568, height: 320 }, { width: 667, height: 375 }, { width: 1024, height: 768 }], async (br, vp) => {
+    const tag = 'scroll ' + vp.width + 'x' + vp.height, land = vp.width > vp.height;
+    let p = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'scroll' } }) });
+    ok(await p.locator('.hl-scroll').count() === 1 && await p.locator('#hm-area').isHidden() && await p.locator('.hm-bar').isHidden(), tag + ': scroll layout shown, page layout hidden');
+    ok(await p.locator('.hl-fav').count() === 0, tag + ': ⭐ band hidden without play stats');
+    ok(SAME(await labsOf(p, '.hl-all .tile'), HLABS), tag + ': all 32 tiles in HORDER order');
+    let g = await tgeom(p, '.hl-scroll .tile');
+    ok(g.every(t => t.w >= 80 && t.h >= 80), tag + ': every tile >= 80px (min ' + Math.round(Math.min(...g.map(t => Math.min(t.w, t.h)))) + ')');
+    ok(g.every(t => !t.clip && !t.out), tag + ': no label/icon clipping ' + JSON.stringify(g.filter(t => t.clip || t.out).map(t => t.lab)));
+    ok(await noHScroll(p), tag + ': no horizontal page overflow');
+    const sc = () => p.evaluate(() => { const s = document.querySelector('.hl-scroll'), cs = getComputedStyle(s); return { sw: s.scrollWidth, cw: s.clientWidth, sh: s.scrollHeight, ch: s.clientHeight, ta: cs.touchAction, ob: cs.overscrollBehaviorY + '/' + cs.overscrollBehaviorX, ov: cs.overflowX + '/' + cs.overflowY, bar: getComputedStyle(s, '::-webkit-scrollbar').display, st: s.scrollTop, sl: s.scrollLeft }; });
+    let s = await sc();
+    if (land) ok(s.sw > s.cw + 50 && s.sh <= s.ch + 1 && s.ta === 'pan-x', tag + ': scrolls horizontally only, touch-action pan-x ' + JSON.stringify(s));
+    else ok(s.sh > s.ch + 50 && s.sw <= s.cw + 1 && s.ta === 'pan-y', tag + ': scrolls vertically only, touch-action pan-y ' + JSON.stringify(s));
+    ok(/contain/.test(s.ob) && s.bar === 'none', tag + ': overscroll contained, scrollbar hidden');
+    const rows = new Set(g.map(t => Math.round(t.y))).size;
+    if (land) ok(vp.height < 500 ? rows === 2 : rows >= 3, tag + ': landscape rows ' + rows);
+    else ok(new Set(g.filter(t => t.y < 3000).map(t => Math.round(t.x))).size === 3, tag + ': portrait 3 columns');
+    // 下が のぞいている（次の ぎょうが みえる）: 画面の したはしに かかる タイルが ある
+    if (!land) ok(g.some(t => t.y < vp.height - 20 && t.y + t.h > vp.height + 2) || g.some(t => t.y < vp.height - 20 && t.y + t.h > vp.height - 40), tag + ': next row peeks at the bottom');
+    await p.screenshot({ path: SP + '/home-scroll-' + vp.width + 'x' + vp.height + '.png' });
+    // ドラッグ（マウス）では ゲームが ひらかない
+    const t0 = g.find(t => t.y > 90 && t.x > 0 && t.x + t.w < vp.width && t.y + t.h < vp.height) || g[0];
+    await p.mouse.move(t0.x + t0.w / 2, t0.y + t0.h / 2); await p.mouse.down();
+    await p.mouse.move(t0.x + t0.w / 2 + (land ? -40 : 0), t0.y + t0.h / 2 + (land ? 0 : -40), { steps: 6 }); await p.mouse.up(); await sleep(200);
+    ok(await homeShown(p), tag + ': a mouse drag over a tile does not open a game');
+    // タッチで スクロール（CDP）。ゲームは ひらかず、スクロールする
+    const cdp = await p.context().newCDPSession(p);
+    await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+    const tpt = (type, d) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: t0.x + t0.w / 2 + (land ? d : 0), y: t0.y + t0.h / 2 + (land ? 0 : d) }] });
+    await tpt('touchStart', 0);
+    for (let d = 0; d >= -300; d -= 20) { await tpt('touchMove', d); await sleep(16); }
+    await tpt('touchEnd', 0);
+    await sleep(500); s = await sc();
+    ok(await homeShown(p) && (land ? s.sl : s.st) > 100, tag + ': touch scroll moves the list and opens nothing (' + (land ? s.sl : s.st) + ')');
+    // ゲームから もどると スクロールいちが のこる
+    const pos = land ? s.sl : s.st;
+    const tl = await p.evaluate(land => { const R = document.querySelector('.hl-scroll').getBoundingClientRect(); const t = [...document.querySelectorAll('.hl-all .tile')].find(t => { const r = t.getBoundingClientRect(); return r.left > R.left + 2 && r.right < R.right - 2 && r.top > R.top + 70 && r.bottom < R.bottom - 2; }); return t ? t.getAttribute('aria-label') : null; }, land);
+    ok(!!tl, tag + ': found a fully visible tile to open (' + tl + ')');
+    await p.click('.hl-all .tile[aria-label="' + tl + '"]'); await sleep(400);
+    ok(!(await homeShown(p)), tag + ': tile opens a game');
+    await p.click('#homebtn'); await sleep(300);
+    s = await sc();
+    ok(Math.abs((land ? s.sl : s.st) - pos) <= 2 && await homeShown(p), tag + ': scroll position restored after the game (' + pos + ' -> ' + (land ? s.sl : s.st) + ')');
+    ok(p.errs.length === 0, tag + ': no page errors ' + p.errs.join(' | '));
+    await p.context().close();
+    // よくあそぶ ⭐
+    p = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'scroll' }, stats: STATS0 }) });
+    const want = RANK0.slice(0, land ? 4 : 3);
+    ok(await p.locator('.hl-fav').count() === 1 && SAME(await labsOf(p, '.hl-fav .tile'), want), tag + ': ⭐ band has top ' + want.length + ' in rank order: ' + (await labsOf(p, '.hl-fav .tile')).join());
+    ok(SAME(await labsOf(p, '.hl-all .tile'), HLABS), tag + ': ⭐ games also stay in the full list');
+    g = await tgeom(p, '.hl-scroll .tile');
+    ok(g.every(t => t.w >= 80 && t.h >= 80 && !t.clip && !t.out), tag + ': band + list tiles >= 80px, not clipped');
+    const st = await p.evaluate(() => { const f = document.querySelector('.hl-fav'), s = f.querySelector('.hl-star'), cs = getComputedStyle(f); return { bg: cs.backgroundColor, star: s && s.textContent, text: [...f.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).length }; });
+    ok(st.bg === 'rgb(255, 217, 120)' && st.star === '⭐', tag + ': band is soft yellow with ⭐ badge ' + JSON.stringify(st));
+    ok(await noHScroll(p), tag + ': no horizontal page overflow with band');
+    await p.screenshot({ path: SP + '/home-scroll-band-' + vp.width + 'x' + vp.height + '.png' });
+    // 横むきに かえると ⭐ の かずが かわる（3 <-> 4）
+    await p.setViewportSize({ width: vp.height, height: vp.width }); await sleep(1100);
+    const want2 = RANK0.slice(0, land ? 3 : 4);
+    ok(SAME(await labsOf(p, '.hl-fav .tile'), want2) && SAME(await labsOf(p, '.hl-all .tile'), HLABS), tag + ': rotating rebuilds the band (' + want2.length + ')');
+    ok(p.errs.length === 0, tag + ': no page errors after rotate ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  TV('home-bubble', [{ width: 390, height: 844 }, { width: 360, height: 640 }, { width: 568, height: 320 }, { width: 1024, height: 768 }], async (br, vp) => {
+    const tag = 'bubble ' + vp.width + 'x' + vp.height;
+    const p = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'bubble' }, stats: STATS0 }) });
+    ok(await p.locator('.hb').count() === 1 && await p.locator('#hm-area').isHidden(), tag + ': bubble layout shown');
+    const labs = await labsOf(p, '.hb .tile');
+    ok(labs.length === 32 && SAME(labs.slice().sort(), HLABS.slice().sort()), tag + ': all 32 games present');
+    ok(SAME(labs.slice(0, 6), RANK0), tag + ': よくあそぶ ranked games are first (center of the spiral)');
+    ok(await noHScroll(p), tag + ': no horizontal page overflow');
+    const info = () => p.evaluate(() => { const H = document.querySelector('#home').getBoundingClientRect(), cx = H.left + H.width / 2, cy = H.top + H.height / 2; return [...document.querySelectorAll('.hb .tile')].map(t => { const r = t.getBoundingClientRect(); return { lab: t.getAttribute('aria-label'), w: r.width, h: r.height, x: r.left + r.width / 2, y: r.top + r.height / 2, d: Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy), big: t.classList.contains('big'), round: getComputedStyle(t).borderRadius }; }).sort((a, b) => a.d - b.d); });
+    let I = await info();
+    ok(I[0].lab === 'どこかな' && I[0].w >= 119.5 && I[0].d < 3, tag + ': ⭐ top game is the biggest bubble at the center (' + I[0].lab + ' ' + Math.round(I[0].w) + 'px)');
+    ok(I.filter(t => t.d <= 190).every(t => t.w >= 79.5), tag + ': bubbles within 190px of the center are >= 80px (' + I.filter(t => t.d <= 190).map(t => Math.round(t.w)).join() + ')');
+    ok(I.every((t, i) => i === 0 || t.w <= I[0].w + 0.5) && I[I.length - 1].w < I[0].w * 0.6, tag + ': sizes shrink toward the edges (' + Math.round(I[I.length - 1].w) + ' at the edge)');
+    ok(I[0].big && !I[I.length - 1].big && I.every(t => t.round === '50%'), tag + ': round bubbles, label only on the big ones');
+    await p.screenshot({ path: SP + '/home-bubble-' + vp.width + 'x' + vp.height + '.png' });
+    const c0 = I[0];
+    // ドラッグでは ひらかない・うごく
+    await p.mouse.move(c0.x, c0.y); await p.mouse.down();
+    await p.mouse.move(c0.x - 90, c0.y - 60, { steps: 8 }); await sleep(120); await p.mouse.up(); await sleep(1800);
+    I = await info();
+    const moved = I.find(t => t.lab === c0.lab);
+    ok(await homeShown(p), tag + ': a drag does not open a game');
+    ok(Math.hypot(moved.x - c0.x, moved.y - c0.y) > 40, tag + ': the drag moves the bubbles (' + Math.round(Math.hypot(moved.x - c0.x, moved.y - c0.y)) + 'px)');
+    ok(I[0].lab !== 'どこかな' && I[0].w >= 95, tag + ': the bubble now at the center is big (' + I[0].lab + ' ' + Math.round(I[0].w) + ')');
+    // つよく はじいても はしを こえない（はんぶん いじょう はみ出ない）
+    for (let k = 0; k < 6; k++) { await p.mouse.move(vp.width / 2, vp.height / 2); await p.mouse.down(); await p.mouse.move(vp.width / 2 - 400, vp.height / 2 - 400, { steps: 4 }); await p.mouse.up(); }
+    await sleep(1800); I = await info();
+    ok(I.filter(t => t.x > 0 && t.x < vp.width && t.y > 0 && t.y < vp.height).length >= 3 && I[0].w >= 80, tag + ': content cannot be dragged away (' + I.filter(t => t.x > 0 && t.x < vp.width && t.y > 0 && t.y < vp.height).length + ' on screen)');
+    // タップでは ひらく
+    const tp = I[0];
+    await p.mouse.click(tp.x, tp.y); await sleep(500);
+    ok(!(await homeShown(p)) && await p.locator('#homebtn').isVisible(), tag + ': a tap on the center bubble opens its game (' + tp.lab + ')');
+    await p.click('#homebtn'); await sleep(300);
+    I = await info();
+    ok(await homeShown(p) && I[0].lab === tp.lab, tag + ': back home keeps the position');
+    // かいてんで まんなかに もどる
+    await p.setViewportSize({ width: vp.height, height: vp.width }); await sleep(1100);
+    I = await info();
+    ok(I[0].lab === 'どこかな' && I[0].w >= 119.5 && I[0].d < 3, tag + ': rotating re-centers on the ⭐ game');
+    ok(await noHScroll(p), tag + ': no horizontal page overflow after rotate');
+    ok(p.errs.length === 0, tag + ': no page errors ' + p.errs.join(' | '));
+    await p.context().close();
+    // うごきを へらす: モメンタム なし（ドラッグ終了後に うごきつづけない）
+    const ctx = await br.newContext({ viewport: vp, reducedMotion: 'reduce' }); const q = await ctx.newPage();
+    await q.addInitScript(INIT(ENV)); await q.addInitScript(hseed({ set: { home: 'bubble' }, stats: STATS0 }));
+    await q.goto(URL); await sleep(400);
+    await q.mouse.move(vp.width / 2, vp.height / 2); await q.mouse.down(); await q.mouse.move(vp.width / 2 - 80, vp.height / 2, { steps: 3 }); await q.mouse.up(); await sleep(60);
+    const t1 = await q.evaluate(() => document.querySelector('.hb .tile').style.transform); await sleep(400);
+    ok(t1 === await q.evaluate(() => document.querySelector('.hb .tile').style.transform), tag + ': reduced motion: no momentum after release');
+    await ctx.close();
+  });
+
+  TV('home-box', [{ width: 390, height: 844 }, { width: 360, height: 640 }, { width: 568, height: 320 }, { width: 667, height: 375 }], async (br, vp) => {
+    const tag = 'box ' + vp.width + 'x' + vp.height, land = vp.width > vp.height;
+    let p = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'box' }, stats: STATS0 }) });
+    ok(await p.locator('.tb .tile').count() === 6 && await p.locator('.hl-fav').count() === 0 && await p.locator('#hm-area').isHidden(), tag + ': 6 tiles, no ⭐ band');
+    const set0 = await labsOf(p, '.tb .tile');
+    ok(new Set(set0).size === 6 && set0.every(l => HLABS.includes(l)), tag + ': 6 different games');
+    const g = await tgeom(p, '.tb .tile');
+    ok(g.every(t => t.w >= 80 && t.h >= 80 && !t.clip && !t.out), tag + ': tiles >= 80px, not clipped (' + Math.round(g[0].w) + 'x' + Math.round(g[0].h) + ')');
+    const cols = new Set(g.map(t => Math.round(t.x))).size, rows = new Set(g.map(t => Math.round(t.y))).size;
+    ok(land ? cols === 3 && rows === 2 : cols === 2 && rows === 3, tag + ': grid ' + cols + 'x' + rows);
+    const gb = await p.locator('.tb-gift').boundingBox();
+    ok(await p.locator('.tb-gift').isVisible() && gb.width >= 84 && gb.height >= 84 && gb.width === gb.height, tag + ': 🎁 button is round and >= 84px (' + gb.width + ')');
+    ok(!g.some(t => gb.x < t.x + t.w && gb.x + gb.width > t.x && gb.y < t.y + t.h && gb.y + gb.height > t.y), tag + ': 🎁 overlaps no tile');
+    ok(land ? gb.x > vp.width * 0.7 : gb.y > vp.height * 0.8 && Math.abs(gb.x + gb.width / 2 - vp.width / 2) < 3, tag + ': 🎁 at the ' + (land ? 'right' : 'bottom center'));
+    ok(await noHScroll(p), tag + ': no horizontal page overflow');
+    await p.screenshot({ path: SP + '/home-box-' + vp.width + 'x' + vp.height + '.png' });
+    await clearSays(p);
+    await p.click('.tb-gift'); await sleep(300);
+    ok(await p.evaluate(() => !document.querySelector('#bigword').hidden && document.querySelector('#bigword').textContent === 'なにかな？'), tag + ': 🎁 shows the word big too');
+    await sleep(600);
+    const set1 = await labsOf(p, '.tb .tile');
+    ok(set1.length === 6 && !set1.some(l => set0.includes(l)), tag + ': 🎁 swaps in 6 new games ' + set1.join());
+    ok((await says(p)).some(s => s.t === 'なにかな？'), tag + ': 🎁 says なにかな？');
+    await p.click('.tb-gift'); await sleep(900);
+    const set2 = await labsOf(p, '.tb .tile');
+    ok(set2.length === 6 && !set2.some(l => set1.includes(l)), tag + ': 🎁 again: another new set');
+    // ゲームから もどっても おなじ 6こ
+    await p.click('.tb .tile:nth-child(2)'); await sleep(400);
+    ok(!(await homeShown(p)), tag + ': tile opens a game');
+    await p.click('#homebtn'); await sleep(300);
+    ok(SAME(await labsOf(p, '.tb .tile'), set2), tag + ': same 6 after coming back from a game');
+    ok(await noHScroll(p) && p.errs.length === 0, tag + ': no overflow / errors ' + p.errs.join(' | '));
+    // 起動しなおすと あたらしい 6こ
+    await p.reload(); await sleep(500);
+    const set3 = await labsOf(p, '.tb .tile');
+    ok(set3.length === 6 && !SAME(set3, set2), tag + ': a fresh launch picks a new 6');
+    await p.context().close();
+    // 6こ いかなら ぜんぶ だして 🎁 は かくす
+    for (const keep of [6, 4]) {
+      const keepIds = ['sky', 'zoo', 'paint', 'baa', 'phone', 'train'].slice(0, keep), hide = IDS.filter(id => !keepIds.includes(id));
+      const q = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'box' }, hide }) });
+      const ls = await labsOf(q, '.tb .tile');
+      ok(ls.length === keep && await q.locator('.tb-gift').isHidden(), tag + ': ' + keep + ' visible games -> all ' + keep + ' shown, 🎁 hidden (' + ls.join() + ')');
+      await q.context().close();
+    }
+  });
+
+  TV('home-hide', [{ width: 390, height: 844 }, { width: 360, height: 640 }], async (br, vp) => {
+    const tag = 'hide ' + vp.width + 'x' + vp.height;
+    let p = await newPage(br, vp, { deny: true });
+    const pageLabs = () => labsOf(p, '.hm-page .tile');
+    const stored = () => p.evaluate(() => localStorage.getItem('ponpon.home.v1'));
+    ok(SAME(await pageLabs(), HLABS) && await p.locator('.hm-page').count() === 4, tag + ': default is the page layout with all 32');
+    ok(await stored() === null, tag + ': nothing stored by default');
+    await holdOpen(p, 1700); await sleep(200);
+    ok(await p.locator('.setbody .seg[data-k="home"] button').count() === 4 && (await p.locator('.setbody .seg[data-k="home"] button').allTextContents()).join() === 'ページ,スクロール,あわあわ,おもちゃばこ', tag + ': ホームの かたち has the 4 choices');
+    ok(await p.locator('.seg[data-k="home"] button[data-v="page"]').getAttribute('aria-pressed') === 'true', tag + ': page selected by default');
+    const cards = await p.evaluate(() => [...document.querySelectorAll('#hh-grid .hh-card')].map(c => { const r = c.getBoundingClientRect(); return { on: c.getAttribute('aria-pressed'), w: r.width, h: r.height, op: getComputedStyle(c).opacity, fits: r.right <= innerWidth + 1 }; }));
+    ok(cards.length === 32 && cards.every(c => c.on === 'true' && c.fits && c.h >= 80), tag + ': 32 cards, all shown, inside the sheet');
+    ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ': settings no horizontal overflow');
+    await p.locator('#hh-grid').scrollIntoViewIfNeeded();
+    await p.screenshot({ path: SP + '/home-settings-' + vp.width + 'x' + vp.height + '.png' });
+    await p.click('#hh-grid .hh-card[data-id="sky"]');
+    ok(await p.locator('#hh-grid .hh-card[data-id="sky"]').getAttribute('aria-pressed') === 'false' && Number(await p.locator('#hh-grid .hh-card[data-id="sky"]').evaluate(e => getComputedStyle(e).opacity)) < 0.6, tag + ': tap hides (grayed)');
+    ok(!(await pageLabs()).includes('ふうせん') && (await pageLabs()).length === 31, tag + ': page layout drops ふうせん underneath');
+    ok((await stored()) === JSON.stringify({ v: 1, hide: ['sky'] }), tag + ': stored ' + await stored());
+    await p.click('#hh-grid .hh-card[data-id="sky"]');
+    ok(SAME(await pageLabs(), HLABS), tag + ': tap again shows it');
+    // 9こ のこして ぜんぶ 1ページ
+    await p.evaluate(() => { [...document.querySelectorAll('#hh-grid .hh-card')].slice(0, 23).forEach(c => c.click()); });
+    await sleep(200);
+    ok(await p.locator('.hm-page').count() === 1 && await p.locator('.hm-dot').count() === 1 && await p.locator('.hm-bar').isHidden() && (await pageLabs()).length === 9, tag + ': 9 left -> one page, dots/arrows hidden');
+    ok(SAME(await pageLabs(), HLABS.slice(23)), tag + ': remaining keep HORDER');
+    for (const [m, sel, n] of [['scroll', '.hl-scroll .hl-all .tile', 9], ['bubble', '.hb .tile', 9], ['box', '.tb .tile', 6]]) {
+      await p.click('.seg[data-k="home"] button[data-v="' + m + '"]'); await sleep(250);
+      const ls = await labsOf(p, sel);
+      ok(ls.length === n && ls.every(l => HLABS.slice(23).includes(l)), tag + ': ' + m + ' shows only the shown games (' + ls.length + ')');
+      ok(await p.locator('.seg[data-k="home"] button[data-v="' + m + '"]').getAttribute('aria-pressed') === 'true', tag + ': ' + m + ' selected');
+    }
+    await p.click('#setx'); await sleep(200);
+    ok(await p.locator('.tb .tile').count() === 6, tag + ': closing settings keeps the box layout');
+    await p.reload(); await sleep(500);
+    const hs = JSON.parse(await stored()), st = await p.evaluate(() => JSON.parse(localStorage.getItem('ponpon.settings.v1')));
+    ok(hs.v === 1 && hs.hide.length === 23 && st.home === 'box', tag + ': hidden games and the layout persist after reload');
+    ok((await labsOf(p, '.tb .tile')).every(l => HLABS.slice(23).includes(l)), tag + ': hidden games still hidden after reload');
+    // さいごの 1こは かくせない
+    await holdOpen(p, 1700); await sleep(200);
+    await p.evaluate(() => { [...document.querySelectorAll('#hh-grid .hh-card[aria-pressed="true"]')].slice(0, 8).forEach(c => c.click()); });
+    const left = await p.evaluate(() => [...document.querySelectorAll('#hh-grid .hh-card[aria-pressed="true"]')].map(c => c.getAttribute('data-id')));
+    ok(left.length === 1, tag + ': one game left shown');
+    await p.click('#hh-grid .hh-card[data-id="' + left[0] + '"]');
+    ok(await p.locator('#hh-grid .hh-card[aria-pressed="true"]').count() === 1 && await p.locator('#hh-msg').isVisible(), tag + ': the last one cannot be hidden (message shown)');
+    ok((await labsOf(p, '.tb .tile')).length === 1 && await p.locator('.tb-gift').isHidden(), tag + ': box shows the single game, no 🎁');
+    await p.click('#hh-all'); await sleep(200);
+    ok(await p.locator('#hh-grid .hh-card[aria-pressed="true"]').count() === 32 && await p.locator('#hh-msg').isHidden(), tag + ': ぜんぶ だす shows all 32 cards');
+    ok((await stored()) === JSON.stringify({ v: 1, hide: [] }) && await p.locator('.tb .tile').count() === 6, tag + ': stored empty hide list; box back to 6');
+    await p.click('.seg[data-k="home"] button[data-v="page"]'); await sleep(200);
+    ok(SAME(await pageLabs(), HLABS), tag + ': page layout shows all 32 again');
+    ok(p.errs.length === 0, tag + ': no page errors ' + p.errs.join(' | '));
+    await p.context().close();
+    // ふめいな id・こわれた データは むし
+    p = await newPage(br, vp, { deny: true, init: hseed({ hide: JSON.stringify({ v: 1, hide: ['zzz', 'sky', 7] }) }) });
+    ok((await labsOf(p, '.hm-page .tile')).length === 31, tag + ': unknown ids ignored, known ones hidden');
+    await p.context().close();
+    p = await newPage(br, vp, { deny: true, init: hseed({ hide: '{oops' }) });
+    ok((await labsOf(p, '.hm-page .tile')).length === 32 && p.errs.length === 0, tag + ': broken data -> all shown');
+    await p.context().close();
+    p = await newPage(br, vp, { deny: true, init: hseed({ hide: JSON.stringify({ v: 1, hide: IDS }) }) });
+    ok((await labsOf(p, '.hm-page .tile')).length === 32, tag + ': everything hidden in storage -> all shown');
+    await p.context().close();
+  });
+
+  T('home-mode', async br => {
+    const vp = { width: 360, height: 640 };
+    let p = await newPage(br, vp, { deny: true, init: hseed({ stats: STATS0 }) });
+    const kinds = () => p.evaluate(() => ({ s: document.querySelectorAll('.hl-scroll').length, b: document.querySelectorAll('.hb').length, t: document.querySelectorAll('.tb').length, pg: document.querySelectorAll('.hm-page').length, areaHidden: document.querySelector('#hm-area').hidden, alt: !document.querySelector('#hm-alt').hidden }));
+    let k = await kinds();
+    ok(k.pg === 4 && k.s + k.b + k.t === 0 && !k.areaHidden && !k.alt, 'mode: default = page');
+    await p.click('#hm-next'); await sleep(320);
+    await holdOpen(p, 1700); await sleep(200);
+    for (const [m, key] of [['scroll', 's'], ['bubble', 'b'], ['box', 't'], ['scroll', 's'], ['page', 'pg']]) {
+      await p.click('.seg[data-k="home"] button[data-v="' + m + '"]'); await sleep(250);
+      k = await kinds();
+      ok(k[key] >= 1 && (m === 'page' ? k.s + k.b + k.t === 0 && !k.areaHidden && !k.alt : (k.s + k.b + k.t === 1 && k.areaHidden && k.alt)), 'mode: ' + m + ' replaces the previous layout ' + JSON.stringify(k));
+    }
+    ok(await p.locator('#hm-p1').isVisible(), 'mode: page layout keeps the page you were on');
+    await p.click('.seg[data-k="home"] button[data-v="bubble"]'); await sleep(200);
+    await p.click('#setx'); await sleep(200);
+    ok(await p.locator('.hb').count() === 1 && await p.locator('#home').isVisible(), 'mode: close settings -> bubble shown');
+    await p.reload(); await sleep(500);
+    ok(await p.locator('.hb').count() === 1 && await p.locator('.hm-page').count() === 0, 'mode: layout persists after reload');
+    ok(await noHScroll(p), 'mode: no horizontal overflow at 360x640 (bubble)');
+    // あわあわ: スイッチ中の タイマー／リスナーを のこさない（かたちを かえても エラーなし・rAF が とまる）
+    await p.mouse.move(180, 300); await p.mouse.down(); await p.mouse.move(100, 300, { steps: 3 }); await p.mouse.up();
+    await holdOpen(p, 1700); await sleep(100);
+    await p.click('.seg[data-k="home"] button[data-v="page"]'); await sleep(100);
+    await p.click('#setx'); await sleep(300);
+    await p.mouse.move(180, 300); await p.mouse.down(); await p.mouse.move(100, 300, { steps: 3 }); await p.mouse.up(); await sleep(450);
+    ok(await homeShown(p) && await p.locator('.hm-page:not([hidden]) .tile').count() === 9 && p.errs.length === 0, 'mode: switching away from bubble leaves nothing behind ' + p.errs.join(' | ') + ' ' + await p.locator('.hm-page:not([hidden]) .tile').count());
+    ok(await p.evaluate(() => JSON.parse(localStorage.getItem('ponpon.settings.v1')).home) === 'page', 'mode: page saved');
+    for (const m of ['scroll', 'box']) {
+      await p.evaluate(m => localStorage.setItem('ponpon.settings.v1', JSON.stringify({ home: m })), m); await p.reload(); await sleep(400);
+      ok(await noHScroll(p), 'mode: no horizontal overflow at 360x640 (' + m + ')');
+    }
+    await p.evaluate(() => localStorage.setItem('ponpon.settings.v1', JSON.stringify({ home: 'nope' }))); await p.reload(); await sleep(400);
+    ok(await p.locator('.hm-page').count() === 4, 'mode: unknown value falls back to page');
+    await p.context().close();
   });
 
 }

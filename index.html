@@ -124,6 +124,42 @@
     #hm-next { right: 10px; }
     .hm-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); }
   }
+
+  /* ホームの ほかの かたち（スクロール／あわあわ／おもちゃばこ） */
+  .hm-area.one { bottom: 12px; }
+  .hm-alt { position: absolute; inset: 0; z-index: 0; }
+  .hm-alt .tile .ico { font-size: min(58cqw, 40cqh); }
+  .hm-alt .tile .lab { font-size: min(clamp(14px, 4.6vmin, 24px), 15.5cqw); padding: 0; }
+  .hm-alt .tile .lab .pbr { display: inline; }
+  .hl-scroll { position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 64px 10px 16px; }
+  .hl-scroll::-webkit-scrollbar { display: none; }
+  .hl-fav { position: relative; background: #FFD978; border-radius: 28px; padding: 10px; margin-bottom: 12px; box-shadow: inset 0 0 0 4px rgba(255,255,255,.5); }
+  .hl-star { position: absolute; left: -4px; top: -14px; font-size: 34px; line-height: 1; filter: drop-shadow(0 2px 0 rgba(0,0,0,.15)); z-index: 1; pointer-events: none; }
+  .hl-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .hl-fav .tile { height: var(--bh, 150px); }
+  .hl-all { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 6px; }
+  .hl-all .tile { height: var(--th, 120px); }
+  .hm-alt.land .hl-scroll { overflow-x: auto; overflow-y: hidden; touch-action: pan-x; display: flex; align-items: stretch; gap: 12px; padding: 10px; }
+  .hm-alt.land .hl-scroll::after { content: ""; flex: 0 0 52px; }
+  .hm-alt.land .hl-fav { flex: none; margin: 0; display: flex; align-items: center; }
+  .hm-alt.land .hl-star { top: -8px; }
+  .hm-alt.land .hl-row { grid-template-columns: repeat(2, var(--btw, 130px)); }
+  .hm-alt.land .hl-fav .tile { height: var(--bth, 120px); }
+  .hm-alt.land .hl-all { flex: none; grid-template-columns: none; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 2), var(--th, 120px)); grid-auto-columns: var(--tw, 120px); padding: 0; }
+  .hb { position: absolute; inset: 0; overflow: hidden; touch-action: none; }
+  .hb .tile.bub { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform; gap: 2px; }
+  .hm-alt .hb .tile .ico { font-size: 54cqmin; }
+  .hm-alt .hb .tile .lab { display: none; }
+  .hm-alt .hb .tile.big .ico { font-size: 44cqmin; }
+  .hm-alt .hb .tile.big .lab { display: block; font-size: 9.6cqw; }
+  .tb { position: absolute; top: 62px; bottom: 112px; left: 10px; right: 10px; display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .tb .tile { box-shadow: 0 6px 0 var(--shadow); }
+  .hm-alt .tb .tile .lab { font-size: min(clamp(16px, 5vmin, 28px), 15.5cqw); }
+  .tb-gift { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); width: 96px; height: 96px; border-radius: 50%; border: 0; background: #fff; font-size: 52px; line-height: 1; padding: 0; box-shadow: 0 5px 0 var(--shadow); display: flex; align-items: center; justify-content: center; }
+  .tb-gift:active { transform: translateX(-50%) translateY(4px); box-shadow: 0 2px 0 var(--shadow); }
+  .hm-alt.land .tb { top: 10px; bottom: 10px; right: 120px; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  .hm-alt.land .tb-gift { left: auto; right: 12px; bottom: auto; top: 50%; transform: translateY(-50%); }
+  .hm-alt.land .tb-gift:active { transform: translateY(calc(-50% + 4px)); }
   /* ふうせん */
   #stage-sky {
     background:
@@ -763,6 +799,13 @@
   .seg { display: flex; flex-wrap: wrap; gap: 8px; }
   .seg button { flex: 1 1 0; min-width: 68px; min-height: 56px; border: 0; border-radius: 16px; background: #E8EEFA; font-size: 18px; padding: 0 10px; }
   .seg button[aria-pressed="true"] { background: #FFD21F; box-shadow: inset 0 0 0 3px var(--ink); }
+  .seg.q button { flex: 1 1 calc(50% - 4px); }
+  .hgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .hh-card { position: relative; min-height: 92px; border: 0; border-radius: 16px; background: var(--c); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 2px; font-size: 13px; line-height: 1.15; text-align: center; box-shadow: 0 3px 0 var(--shadow); }
+  .hh-card .hh-ico { font-size: 30px; line-height: 1; display: block; height: 40px; display: flex; align-items: center; justify-content: center; }
+  .hh-card .hh-ico img { width: 40px; height: 40px; object-fit: contain; }
+  .hh-card[aria-pressed="false"] { opacity: .35; filter: grayscale(.85); box-shadow: none; }
+  .hh-card[aria-pressed="true"]::after { content: "✓"; position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: #2FB34F; color: #fff; font-size: 14px; line-height: 22px; font-weight: 800; }
   .setgrp input[type=range] { width: 100%; height: 40px; }
   .setgrp .sbtn { width: 100%; min-height: 56px; margin-top: 8px; border: 0; border-radius: 16px; background: #E4F0FF; font-size: 18px; padding: 0 12px; }
   .setmsg { margin: 8px 0 0; padding: 8px 12px; border-radius: 12px; background: #FFE9E6; color: #A52A1E; font-size: 15px; line-height: 1.4; }
@@ -1346,6 +1389,7 @@
   <section class="stage" id="home" aria-label="ホーム">
     <div class="hm-area" id="hm-area">
     </div>
+    <div class="hm-alt" id="hm-alt" hidden></div>
     <div class="hm-bar">
       <button class="hm-nav" id="hm-prev" type="button" aria-label="まえのページ" hidden>◀</button>
       <div class="hm-dots" id="hm-dots"></div>
@@ -1729,6 +1773,14 @@
   <div class="setsheet" id="setsheet" role="dialog" aria-label="せってい" hidden>
     <div class="sethead"><h2>せってい（おとなよう）</h2><button class="setx" id="setx" type="button" aria-label="とじる">✖</button></div>
     <div class="setbody">
+      <div class="setgrp"><h3>ホームの かたち</h3>
+        <div class="seg q" data-k="home"><button type="button" data-v="page">ページ</button><button type="button" data-v="scroll">スクロール</button><button type="button" data-v="bubble">あわあわ</button><button type="button" data-v="box">おもちゃばこ</button></div>
+        <p class="note">スクロール・あわあわ では、よく あそぶ ものが ⭐ や まんなかに あつまります。</p></div>
+      <div class="setgrp"><h3>ホームに だす あそび</h3>
+        <div class="hgrid" id="hh-grid"></div>
+        <p class="setmsg" id="hh-msg" hidden>さいごの 1つは かくせません</p>
+        <button class="sbtn" id="hh-all" type="button">ぜんぶ だす</button>
+        <p class="note">タップで だす／かくす。かくした あそびは どのホームにも でません。</p></div>
       <div class="setgrp stats" id="statsgrp"><h3>あそびの きろく</h3>
         <div class="st-empty" id="st-empty" hidden>まだ きろくが ありません。ゲームで あそぶと ここに でます</div>
         <div id="st-main">
@@ -1827,7 +1879,7 @@
 
   /* ---------- せってい（おとなよう）。localStorage: ponpon.settings.v1。「おと なし」「こえ なし」は ほぞんしない ---------- */
   var SET_KEY = 'ponpon.settings.v1';
-  var S = { sound: true, voice: true, camOn: true, sens: 3, camPos: 'top', abcAll: false, abcStart: 0, clockNow: false, koroSens: 1, koroFlip: false };
+  var S = { sound: true, voice: true, camOn: true, sens: 3, camPos: 'top', abcAll: false, abcStart: 0, clockNow: false, koroSens: 1, koroFlip: false, home: 'page' };
   (function () {
     try {
       var o = JSON.parse(window.localStorage.getItem(SET_KEY) || 'null');
@@ -1840,12 +1892,13 @@
         if (typeof o.clockNow === 'boolean') S.clockNow = o.clockNow;
         if (o.koroSens === 0 || o.koroSens === 1 || o.koroSens === 2) S.koroSens = o.koroSens;
         if (typeof o.koroFlip === 'boolean') S.koroFlip = o.koroFlip;
+        if (/^(page|scroll|bubble|box)$/.test(o.home)) S.home = o.home;
       }
     } catch (e) {}
   })();
   function saveSettings() {
     try {
-      window.localStorage.setItem(SET_KEY, JSON.stringify({ camOn: S.camOn, sens: S.sens, camPos: S.camPos, abcAll: S.abcAll, abcStart: S.abcStart, clockNow: S.clockNow, koroSens: S.koroSens, koroFlip: S.koroFlip }));
+      window.localStorage.setItem(SET_KEY, JSON.stringify({ camOn: S.camOn, sens: S.sens, camPos: S.camPos, abcAll: S.abcAll, abcStart: S.abcStart, clockNow: S.clockNow, koroSens: S.koroSens, koroFlip: S.koroFlip, home: S.home }));
     } catch (e) {}
   }
 
@@ -6431,6 +6484,7 @@
       var k = g.getAttribute('data-k'), v = b.getAttribute('data-v');
       if (typeof S[k] === 'boolean') S[k] = v === '1'; else if (typeof S[k] === 'number') S[k] = parseInt(v, 10); else S[k] = v;
       segRefresh(); applySettings(); saveSettings();
+      if (k === 'home') homeApply();
     });
   });
   thrIn.addEventListener('input', function () {
@@ -6530,11 +6584,11 @@
     if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
     ctMsg.hidden = true; diagEl.hidden = true;
     famSync(); famMsgShow(''); famDisarm();
-    segRefresh(); setSheet.hidden = false; statsRender();
+    segRefresh(); hhRender(); setSheet.hidden = false; statsRender();
     var body = setSheet.querySelector('.setbody'); if (body) body.scrollTop = 0;
   }
   function closeSettings() {
-    ctStop(); famDisarm(); setSheet.hidden = true; setOpen = false; saveSettings();
+    ctStop(); famDisarm(); setSheet.hidden = true; setOpen = false; saveSettings(); if (!cur) homeShow();
   }
   $('#setx').addEventListener('click', closeSettings);
   holdButton(setBtn, 1500, openSettings);
@@ -9606,32 +9660,49 @@
     'touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi',
     'koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix', 'suna',
     'kiru', 'hami', 'kaeru', 'dokoka', 'henshin'];
-  var HPER = 9, HN = Math.ceil(HORDER.length / HPER);
-  var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
-  var hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
-  var hmEls = [], hmDots = [];
+  /* ---- ホームの かたち: page / scroll / bubble / box（S.home）。かくした あそびは ponpon.home.v1 ---- */
+  var HM_KEY = 'ponpon.home.v1', hmHide = {};
   (function () {
-    var area = $('#hm-area'), dots = $('#hm-dots');
-    for (var i = 0; i < HN; i++) {
-      var pgEl = document.createElement('div');
-      pgEl.className = 'hm-page'; pgEl.id = 'hm-p' + i; pgEl.hidden = i !== 0;
-      area.appendChild(pgEl); hmEls.push(pgEl);
-      var d = document.createElement('button');
-      d.className = 'hm-dot'; d.type = 'button'; d.setAttribute('aria-label', (i + 1) + 'ページ');
-      if (i === 0) d.setAttribute('aria-current', 'true');
-      dots.appendChild(d); hmDots.push(d);
-    }
+    try {
+      var o = JSON.parse(window.localStorage.getItem(HM_KEY) || 'null');
+      if (o && Array.isArray(o.hide)) o.hide.forEach(function (id) { if (TD[id]) hmHide[id] = true; });
+    } catch (e) {}
+    if (!hmVisible().length) hmHide = {};   /* ぜんぶ かくれていたら ぜんぶ だす */
   })();
-  HORDER.forEach(function (id, k) {
+  function hmVisible() { return HORDER.filter(function (id) { return !hmHide[id]; }); }
+  function hmSaveHide() {
+    try { window.localStorage.setItem(HM_KEY, JSON.stringify({ v: 1, hide: HORDER.filter(function (id) { return hmHide[id]; }) })); } catch (e) {}
+  }
+  /* よくあそぶ: さいきん 14にち の かいすう（おなじなら じかん、HORDER じゅん）。n >= 1 の みえている あそび だけ */
+  function hmRank(vis) {
+    var c = new Date(); c.setDate(c.getDate() - 13);
+    var ck = stKey(c), agg = {};
+    Object.keys(stats.days).forEach(function (k) {
+      if (k < ck) return;
+      var g = stats.days[k].g;
+      Object.keys(g).forEach(function (id) { var a = agg[id] || (agg[id] = { n: 0, s: 0 }); a.n += g[id].n; a.s += g[id].s; });
+    });
+    return vis.filter(function (id) { return agg[id] && agg[id].n >= 1; }).sort(function (a, b) {
+      return agg[b].n - agg[a].n || agg[b].s - agg[a].s || HORDER.indexOf(a) - HORDER.indexOf(b);
+    });
+  }
+  function hmTile(id) {
     var t = TD[id], b = document.createElement('button');
     b.type = 'button'; b.className = 'tile'; b.style.setProperty('--c', t.c);
-    b.setAttribute('aria-label', t.lab);
+    b.setAttribute('aria-label', t.lab); b.setAttribute('data-id', id);
     b.innerHTML = '<span class="ico">' + (ICO[id] ? '<img class="ico-img" src="' + ICO[id] + '" alt="" decoding="async" draggable="false">' : (t.html || t.ico)) + '</span><span class="lab">' + (t.br ? t.lab.replace(t.br, t.br + '<br class="pbr">') : t.lab) + '</span>';
     b.addEventListener('click', function () {
       audio(); go(id); say(t.say); tone(660, 0.12, 'triangle', 0.1);
     });
-    hmEls[Math.floor(k / HPER)].appendChild(b);
-  });
+    return b;
+  }
+  function hmLand() { return window.innerWidth > window.innerHeight; }
+  var HPER = 9, HN = 1;
+  var hmPage = 0, hmTimer = 0, hmSwipedAt = -1e9;
+  var hmPrev = $('#hm-prev'), hmNext = $('#hm-next');
+  var hmEls = [], hmDots = [];
+  var hmAreaEl = $('#hm-area'), hmBarEl = $('.hm-bar'), hmAlt = $('#hm-alt');
+  var hmSig = '', hmMode = '', hmTear = null, hmGeo = null, hmSaved = null, hmBoxSet = null;
   function hmSettle() {
     if (hmTimer) { clearTimeout(hmTimer); hmTimer = 0; }
     hmEls.forEach(function (el, i) {
@@ -9654,14 +9725,13 @@
     hmRender();
   }
   function hmRender() {
-    hmPrev.hidden = hmPage === 0; hmNext.hidden = hmPage === HN - 1;
+    hmPrev.hidden = hmPage === 0; hmNext.hidden = hmPage >= HN - 1;
     hmDots.forEach(function (d, i) { if (i === hmPage) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); });
   }
   hmPrev.addEventListener('click', function () { audio(); hmShow(hmPage - 1); });
   hmNext.addEventListener('click', function () { audio(); hmShow(hmPage + 1); });
-  hmDots.forEach(function (d, i) { d.addEventListener('click', function () { audio(); hmShow(i); }); });
   (function () {
-    var area = $('#hm-area'), sx = 0, sy = 0, down = false;
+    var area = hmAreaEl, sx = 0, sy = 0, down = false;
     area.addEventListener('pointerdown', function (e) { down = true; sx = e.clientX; sy = e.clientY; });
     area.addEventListener('pointercancel', function () { down = false; });
     area.addEventListener('pointerup', function (e) {
@@ -9676,9 +9746,278 @@
       if (performance.now() - hmSwipedAt < 400) { e.stopPropagation(); e.preventDefault(); }
     }, true);
   })();
-  hmSettle(); hmRender();
+
+  /* 1. ページ（3x3 を よこに めくる） */
+  function hmBuildPage(vis) {
+    var dots = $('#hm-dots');
+    hmAreaEl.textContent = ''; dots.textContent = ''; hmEls = []; hmDots = [];
+    HN = Math.max(1, Math.ceil(vis.length / HPER));
+    if (hmPage >= HN) hmPage = HN - 1;
+    for (var i = 0; i < HN; i++) {
+      var pgEl = document.createElement('div');
+      pgEl.className = 'hm-page'; pgEl.id = 'hm-p' + i; pgEl.hidden = i !== hmPage;
+      hmAreaEl.appendChild(pgEl); hmEls.push(pgEl);
+      var d = document.createElement('button');
+      d.className = 'hm-dot'; d.type = 'button'; d.setAttribute('aria-label', (i + 1) + 'ページ');
+      (function (n) { d.addEventListener('click', function () { audio(); hmShow(n); }); })(i);
+      dots.appendChild(d); hmDots.push(d);
+    }
+    vis.forEach(function (id, k) { hmEls[Math.floor(k / HPER)].appendChild(hmTile(id)); });
+    hmAreaEl.classList.toggle('one', HN === 1);
+    hmBarEl.hidden = HN === 1;
+    hmSettle(); hmRender();
+    return function () { hmSettle(); };
+  }
+
+  /* 2. スクロール（ながい ほうへ。うえに ⭐ よくあそぶ） */
+  function hmBuildScroll(vis, rank) {
+    var land = hmLand(), favN = land ? 4 : 3;
+    var sc = document.createElement('div'); sc.className = 'hl-scroll';
+    var band = null;
+    if (rank.length >= favN) {
+      band = document.createElement('div'); band.className = 'hl-fav';
+      band.innerHTML = '<span class="hl-star" aria-hidden="true">⭐</span>';
+      var row = document.createElement('div'); row.className = 'hl-row';
+      rank.slice(0, favN).forEach(function (id) { row.appendChild(hmTile(id)); });
+      band.appendChild(row); sc.appendChild(band);
+    }
+    var all = document.createElement('div'); all.className = 'hl-all';
+    vis.forEach(function (id) { all.appendChild(hmTile(id)); });
+    sc.appendChild(all);
+    hmAlt.appendChild(sc);
+    var sx = 0, sy = 0, moved = false;
+    var onDown = function (e) { sx = e.clientX; sy = e.clientY; moved = false; };
+    var onMove = function (e) { if (!moved && (e.buttons || e.pointerType === 'touch') && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) moved = true; };
+    var onClick = function (e) { if (moved) { moved = false; e.stopPropagation(); e.preventDefault(); } };
+    sc.addEventListener('pointerdown', onDown); sc.addEventListener('pointermove', onMove); sc.addEventListener('click', onClick, true);
+    hmScroll = { sc: sc, band: band, land: land };
+    hmSizeScroll();
+    return function () {
+      sc.removeEventListener('pointerdown', onDown); sc.removeEventListener('pointermove', onMove); sc.removeEventListener('click', onClick, true);
+      hmScroll = null;
+    };
+  }
+  var hmScroll = null;
+  function hmSizeScroll() {
+    var s = hmScroll; if (!s) return;
+    var W = hmAlt.clientWidth, H = hmAlt.clientHeight, gap = 10, pad = 10, th, f = function (k, v) { s.sc.style.setProperty(k, v + 'px'); };
+    if (!s.land) {
+      var bandTile = Math.max(138, Math.min(170, 0.42 * W)), top = 64;
+      var avail = H - top - (s.band ? bandTile + 20 + 12 : 0);
+      var n = Math.max(1, Math.round(avail / (132 + gap) - 0.45));
+      th = Math.max(96, Math.min(150, (avail - n * gap) / (n + 0.45)));
+      f('--th', th); f('--bh', bandTile);
+    } else {
+      var rows = Math.max(2, Math.round((H - pad * 2 + gap) / 160));
+      th = (H - pad * 2 - (rows - 1) * gap) / rows;
+      var bth = (H - pad * 2 - 20 - gap) / 2;
+      s.sc.style.setProperty('--rows', rows);
+      f('--th', th); f('--tw', th); f('--bth', bth); f('--btw', Math.min(bth, 200));
+    }
+  }
+
+  /* 3. あわあわ（まるい タイルを どこへでも ドラッグ。まんなかほど おおきい） */
+  function hmSpiral(n) {
+    var out = [[0, 0]], ring = 1, dirs = [[-0.5, 0.866], [-1, 0], [-0.5, -0.866], [0.5, -0.866], [1, 0], [0.5, 0.866]];
+    while (out.length < n) {
+      var x = ring, y = 0;
+      for (var d = 0; d < 6; d++) for (var k = 0; k < ring; k++) { out.push([x, y]); x += dirs[d][0]; y += dirs[d][1]; }
+      ring++;
+    }
+    return out.slice(0, n);
+  }
+  var hmBub = null;
+  function hmBuildBubble(vis, rank) {
+    var order = rank.concat(vis.filter(function (id) { return rank.indexOf(id) < 0; }));
+    var wrap = document.createElement('div'); wrap.className = 'hb';
+    var pts = hmSpiral(order.length);
+    var items = order.map(function (id, i) {
+      var el = hmTile(id); el.classList.add('bub'); wrap.appendChild(el);
+      return { el: el, lx: pts[i][0], ly: pts[i][1], x: 0, y: 0, big: false };
+    });
+    hmAlt.appendChild(wrap);
+    var B = hmBub = { wrap: wrap, items: items, u: 0, T: 0, smin: 0, px: 0, py: 0, rmax: 0, cx: 0, cy: 0, req: 0, mom: 0, vx: 0, vy: 0, moved: false, drag: false };
+    var calm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    var lx = 0, ly = 0, sx = 0, sy = 0, samples = [], pid = null;
+    function clampPan() {
+      var l = Math.hypot(B.px, B.py);
+      if (l > B.rmax) { B.px *= B.rmax / l; B.py *= B.rmax / l; return true; }
+      return false;
+    }
+    function ask() { if (!B.req) B.req = requestAnimationFrame(render); }
+    function render() {
+      B.req = 0;
+      var u = B.u, T = B.T, sm = B.smin;
+      items.forEach(function (it) {
+        var wx = it.x - B.px, wy = it.y - B.py, p = Math.hypot(wx, wy), r = 0;
+        r = 1.08 * (sm * p + (u - sm) * T * Math.atan(p / T)) / u;
+        var k = p > 0.0001 ? r / p : 0, sz = sm + (u - sm) / (1 + (p / T) * (p / T));
+        var sxp = B.cx + wx * k, syp = B.cy + wy * k, sc = sz / u;
+        it.el.style.transform = 'translate(' + (sxp - u / 2).toFixed(1) + 'px,' + (syp - u / 2).toFixed(1) + 'px) scale(' + sc.toFixed(3) + ')';
+        it.el.style.zIndex = String(Math.round(sz));
+        var big = sz >= 112;
+        if (big !== it.big) { it.big = big; it.el.classList.toggle('big', big); }
+      });
+    }
+    B.render = render; B.ask = ask;
+    function stopMom() { if (B.mom) { cancelAnimationFrame(B.mom); B.mom = 0; } }
+    function momentum(t0) {
+      var last = t0;
+      var step = function (t) {
+        var dt = Math.min(40, t - last); last = t;
+        B.px -= B.vx * dt; B.py -= B.vy * dt;
+        if (clampPan()) { B.vx = 0; B.vy = 0; }
+        var f = Math.exp(-dt / 260); B.vx *= f; B.vy *= f;
+        render();
+        if (Math.hypot(B.vx, B.vy) > 0.04) B.mom = requestAnimationFrame(step); else B.mom = 0;
+      };
+      B.mom = requestAnimationFrame(step);
+    }
+    function onMove(e) {
+      if (pid !== null && e.pointerId !== pid) return;
+      var dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+      if (!B.drag) {
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) <= 10) return;
+        B.drag = true; B.moved = true;
+        dx = e.clientX - sx; dy = e.clientY - sy;
+      }
+      B.px -= dx; B.py -= dy; clampPan();
+      var now = performance.now(); samples.push([now, e.clientX, e.clientY]);
+      while (samples.length > 1 && now - samples[0][0] > 90) samples.shift();
+      ask();
+    }
+    function onUp(e) {
+      if (pid !== null && e.pointerId !== pid) return;
+      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp);
+      pid = null;
+      if (B.drag && !calm && samples.length > 1 && performance.now() - samples[samples.length - 1][0] < 80) {
+        var a = samples[0], z = samples[samples.length - 1], dt = Math.max(1, z[0] - a[0]);
+        B.vx = -(z[1] - a[1]) / dt; B.vy = -(z[2] - a[2]) / dt;
+        var sp = Math.hypot(B.vx, B.vy);
+        if (sp > 3) { B.vx *= 3 / sp; B.vy *= 3 / sp; }
+        if (sp > 0.1) momentum(performance.now());
+      }
+      B.drag = false; samples = [];
+    }
+    function onDown(e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      B.moved = !!B.mom; stopMom();
+      lx = sx = e.clientX; ly = sy = e.clientY; pid = e.pointerId; samples = [[performance.now(), sx, sy]]; B.drag = false;
+      window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp);
+    }
+    function onClick(e) { if (B.moved) { B.moved = false; e.stopPropagation(); e.preventDefault(); } }
+    wrap.addEventListener('pointerdown', onDown); wrap.addEventListener('click', onClick, true);
+    hmSizeBubble();
+    return function () {
+      stopMom(); if (B.req) cancelAnimationFrame(B.req); B.req = 0;
+      wrap.removeEventListener('pointerdown', onDown); wrap.removeEventListener('click', onClick, true);
+      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp);
+      hmBub = null;
+    };
+  }
+  function hmSizeBubble() {   /* おおきさ・まんなか を きめなおす（かいてん・リサイズで まんなかに もどる） */
+    var B = hmBub; if (!B) return;
+    var W = hmAlt.clientWidth, H = hmAlt.clientHeight;
+    if (B.W === W && B.H === H) { B.render(); return; }   /* おなじ おおきさなら いちは そのまま（ゲームから もどったとき） */
+    B.W = W; B.H = H;
+    var u = Math.max(120, Math.min(168, 0.4 * Math.min(W, H)));
+    B.u = u; B.T = 1.75 * u; B.smin = Math.max(40, 0.3 * u); B.cx = W / 2; B.cy = H / 2; B.px = 0; B.py = 0; B.rmax = 0;
+    B.items.forEach(function (it) {
+      it.x = it.lx * u; it.y = it.ly * u; B.rmax = Math.max(B.rmax, Math.hypot(it.x, it.y));
+      it.el.style.width = u + 'px'; it.el.style.height = u + 'px';
+    });
+    B.render();
+  }
+
+  /* 4. おもちゃばこ（ランダムの 6こ ＋ 🎁 で いれかえ） */
+  function hmBoxPick(vis, keep) {
+    if (vis.length <= 6) return vis.slice();
+    var fresh = shuffle(vis.filter(function (id) { return !keep || keep.indexOf(id) < 0; }));
+    if (fresh.length >= 6) return fresh.slice(0, 6);
+    return fresh.concat(shuffle(vis.filter(function (id) { return fresh.indexOf(id) < 0; })).slice(0, 6 - fresh.length));
+  }
+  function hmBuildBox(vis) {
+    var want = Math.min(6, vis.length);
+    if (!hmBoxSet || hmBoxSet.length !== want || hmBoxSet.some(function (id) { return vis.indexOf(id) < 0; })) hmBoxSet = hmBoxPick(vis, null);
+    var wrap = document.createElement('div'); wrap.className = 'tb';
+    var gift = document.createElement('button'); gift.type = 'button'; gift.className = 'tb-gift'; gift.textContent = '🎁';
+    gift.setAttribute('aria-label', 'あたらしい あそび'); gift.hidden = vis.length <= 6;
+    function fill(anim) {
+      wrap.textContent = '';
+      hmBoxSet.forEach(function (id, i) {
+        var el = hmTile(id); wrap.appendChild(el);
+        if (!anim || !el.animate) return;
+        var fr = reduce ? [{ opacity: 0 }, { opacity: 1 }] : [
+          { transform: 'perspective(500px) rotateY(90deg) scale(.7)', opacity: 0 },
+          { transform: 'perspective(500px) rotateY(0deg) scale(1.08)', opacity: 1, offset: 0.7 },
+          { transform: 'perspective(500px) rotateY(0deg) scale(1)', opacity: 1 }];
+        el.animate(fr, { duration: reduce ? 250 : 460, delay: reduce ? 0 : i * 70, easing: 'ease-out', fill: 'backwards' });
+      });
+    }
+    fill(false);
+    var onGift = function () {
+      audio(); hmBoxSet = hmBoxPick(hmVisible(), hmBoxSet); fill(true);
+      tone(523, 0.1, 'triangle', 0.1); tone(784, 0.14, 'triangle', 0.1, null, 0.1);
+      say('なにかな？'); bigWord('なにかな？', DARK);
+    };
+    gift.addEventListener('click', onGift);
+    hmAlt.appendChild(wrap); hmAlt.appendChild(gift);
+    return function () { gift.removeEventListener('click', onGift); };
+  }
+
+  /* ホームを だす／つくりなおす。かたち・むき・みえている あそび・よくあそぶ が かわったときだけ つくりなおす */
+  function homeShow() {
+    var mode = /^(page|scroll|bubble|box)$/.test(S.home) ? S.home : 'page', land = hmLand();
+    var vis = hmVisible(), rank = (mode === 'scroll' || mode === 'bubble') ? hmRank(vis) : [];
+    var sig = mode + '|' + (land ? 1 : 0) + '|' + vis.join() + '|' + rank.join();
+    hmAlt.classList.toggle('land', land);
+    if (sig !== hmSig) {
+      if (hmTear) { hmTear(); hmTear = null; }
+      hmAlt.textContent = '';
+      var page = mode === 'page';
+      hmAreaEl.hidden = !page; hmBarEl.hidden = !page; hmAlt.hidden = page;
+      hmMode = mode; hmSig = sig;
+      if (mode === 'page') hmTear = hmBuildPage(vis);
+      else if (mode === 'scroll') hmTear = hmBuildScroll(vis, rank);
+      else if (mode === 'bubble') hmTear = hmBuildBubble(vis, rank);
+      else hmTear = hmBuildBox(vis);
+    } else if (mode === 'scroll') hmSizeScroll();
+    else if (mode === 'bubble') hmSizeBubble();
+    if (hmScroll && hmSaved && hmSaved.sig === sig) { hmScroll.sc.scrollTop = hmSaved.top; hmScroll.sc.scrollLeft = hmSaved.left; }
+    hmSaved = null;
+  }
+  function homeLeave() {   /* ゲームへ いくとき: スクロールいちを おぼえる */
+    hmSaved = hmScroll ? { sig: hmSig, top: hmScroll.sc.scrollTop, left: hmScroll.sc.scrollLeft } : null;
+  }
+  function homeApply() { homeShow(); }
+
+  /* せってい: ホームに だす あそび */
+  var hhGrid = $('#hh-grid'), hhMsg = $('#hh-msg'), hhMsgT = 0;
+  function hhRender() {
+    hhGrid.textContent = '';
+    HORDER.forEach(function (id) {
+      var t = TD[id], b = document.createElement('button');
+      b.type = 'button'; b.className = 'hh-card'; b.style.setProperty('--c', t.c); b.setAttribute('data-id', id);
+      b.setAttribute('aria-pressed', String(!hmHide[id]));
+      b.innerHTML = '<span class="hh-ico">' + (ICO[id] ? '<img src="' + ICO[id] + '" alt="" draggable="false">' : (t.html || t.ico)) + '</span><span class="hh-lab">' + (t.br ? t.lab.replace(t.br, t.br + '<br>') : t.lab) + '</span>';
+      b.addEventListener('click', function () {
+        if (!hmHide[id]) {
+          if (hmVisible().length <= 1) {
+            hhMsg.hidden = false; clearTimeout(hhMsgT); hhMsgT = setTimeout(function () { hhMsg.hidden = true; }, 2500);
+            return;
+          }
+          hmHide[id] = true;
+        } else delete hmHide[id];
+        b.setAttribute('aria-pressed', String(!hmHide[id]));
+        hmSaveHide(); homeShow();
+      });
+      hhGrid.appendChild(b);
+    });
+  }
+  $('#hh-all').addEventListener('click', function () { hmHide = {}; hmSaveHide(); hhRender(); hhMsg.hidden = true; homeShow(); });
 
   function go(name) {
+    if (name && !cur) homeLeave();
     if (cur) { statLeave(); games[cur].leave(); games[cur].el.hidden = true; }
     clearTimers();
     hideWord();
@@ -9690,6 +10029,7 @@
     if (!name) $('#clear').hidden = true;
     statEnter(name);
     if (name) { games[name].el.hidden = false; games[name].enter(); }
+    else homeShow();
   }
   homeBtn.addEventListener('click', function () { audio(); go(null); tone(520, 0.12, 'triangle', 0.1); });
 
@@ -9700,6 +10040,7 @@
   function vpRun() {
     vpReset();
     if (cur && games[cur] && games[cur].resize) games[cur].resize();
+    else if (!cur) homeShow();
   }
   var vpTimers = [];
   function vpSettle() {
