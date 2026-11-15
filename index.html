@@ -9826,7 +9826,7 @@
     }
     return out.slice(0, n);
   }
-  var hmBub = null;
+  var hmBub = null; window.__hb = function () { return hmBub; };
   function hmBuildBubble(vis, rank) {
     var order = rank.concat(vis.filter(function (id) { return rank.indexOf(id) < 0; }));
     var wrap = document.createElement('div'); wrap.className = 'hb';
@@ -9836,13 +9836,25 @@
       return { el: el, lx: pts[i][0], ly: pts[i][1], x: 0, y: 0, big: false };
     });
     hmAlt.appendChild(wrap);
-    var B = hmBub = { wrap: wrap, items: items, u: 0, T: 0, smin: 0, px: 0, py: 0, rmax: 0, cx: 0, cy: 0, req: 0, mom: 0, vx: 0, vy: 0, moved: false, drag: false };
+    var B = hmBub = { wrap: wrap, items: items, u: 0, T: 0, smin: 0, px: 0, py: 0, rx: 0, ry: 0, d: 200, rmax: 0, cx: 0, cy: 0, req: 0, mom: 0, vx: 0, vy: 0, moved: false, drag: false };
     var calm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     var lx = 0, ly = 0, sx = 0, sy = 0, samples = [], pid = null;
+    /* Apple Watch みたいな ゴムの はんぱつ: えんの そとは ゆびの うごきより すこししか うごかない（iOS の しき） */
+    function band(rx, ry) {
+      var l = Math.hypot(rx, ry), R = B.rmax;
+      if (l <= R || l < 0.0001) { B.px = rx; B.py = ry; return; }
+      var d = B.d, o = d * (1 - 1 / ((l - R) * 0.55 / d + 1)), k = (R + o) / l;
+      B.px = rx * k; B.py = ry * k;
+    }
+    function unband() {   /* いまの いちから ゆびの ほんとうの いちを もとめる */
+      var l = Math.hypot(B.px, B.py), R = B.rmax;
+      if (l <= R || l < 0.0001) { B.rx = B.px; B.ry = B.py; return; }
+      var d = B.d, s = Math.min(0.97, (l - R) / d), x = d * s / ((1 - s) * 0.55), k = (R + x) / l;
+      B.rx = B.px * k; B.ry = B.py * k;
+    }
     function clampPan() {
       var l = Math.hypot(B.px, B.py);
-      if (l > B.rmax) { B.px *= B.rmax / l; B.py *= B.rmax / l; return true; }
-      return false;
+      if (l > B.rmax) { B.px *= B.rmax / l; B.py *= B.rmax / l; }
     }
     function ask() { if (!B.req) B.req = requestAnimationFrame(render); }
     function render() {
@@ -9861,15 +9873,27 @@
     }
     B.render = render; B.ask = ask;
     function stopMom() { if (B.mom) { cancelAnimationFrame(B.mom); B.mom = 0; } }
+    /* 1 ほんの rAF: ずっと ゆるやかに へるスピード（iOS ふつう）＋ はしの そとは ばねで もどる（ゆれもどし なし） */
+    var HB_W = 0.016, HB_K = HB_W * HB_W, HB_C = 2 * HB_W, HB_VMAX = 4.5, HB_FR = 0.002;
     function momentum(t0) {
       var last = t0;
       var step = function (t) {
         var dt = Math.min(40, t - last); last = t;
-        B.px -= B.vx * dt; B.py -= B.vy * dt;
-        if (clampPan()) { B.vx = 0; B.vy = 0; }
-        var f = Math.exp(-dt / 260); B.vx *= f; B.vy *= f;
+        while (dt > 0) {
+          var h = Math.min(8, dt); dt -= h;
+          var l = Math.hypot(B.px, B.py), R = B.rmax;
+          if (l > R && l > 0.0001) {
+            var nx = B.px / l, ny = B.py / l, vr = B.vx * nx + B.vy * ny, e = l - R;
+            var tx = B.vx - vr * nx, ty = B.vy - vr * ny, f = Math.exp(-HB_FR * h);
+            vr += (-HB_K * e - HB_C * vr) * h;
+            B.vx = tx * f + vr * nx; B.vy = ty * f + vr * ny;
+          } else { var g = Math.exp(-HB_FR * h); B.vx *= g; B.vy *= g; }
+          B.px += B.vx * h; B.py += B.vy * h;
+        }
+        var L = Math.hypot(B.px, B.py), sp = Math.hypot(B.vx, B.vy), out = L - B.rmax;
+        if (out > 0 && out < 0.4 && sp < 0.03) { B.px *= B.rmax / L; B.py *= B.rmax / L; B.vx = B.vy = 0; sp = 0; out = 0; }
         render();
-        if (Math.hypot(B.vx, B.vy) > 0.04) B.mom = requestAnimationFrame(step); else B.mom = 0;
+        if (out > 0 || sp > 0.04) B.mom = requestAnimationFrame(step); else { B.mom = 0; B.vx = B.vy = 0; }
       };
       B.mom = requestAnimationFrame(step);
     }
@@ -9881,7 +9905,8 @@
         B.drag = true; B.moved = true;
         dx = e.clientX - sx; dy = e.clientY - sy;
       }
-      B.px -= dx; B.py -= dy; clampPan();
+      if (calm) { B.px -= dx; B.py -= dy; clampPan(); }
+      else { B.rx -= dx; B.ry -= dy; band(B.rx, B.ry); }
       var now = performance.now(); samples.push([now, e.clientX, e.clientY]);
       while (samples.length > 1 && now - samples[0][0] > 90) samples.shift();
       ask();
@@ -9890,18 +9915,22 @@
       if (pid !== null && e.pointerId !== pid) return;
       window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp);
       pid = null;
-      if (B.drag && !calm && samples.length > 1 && performance.now() - samples[samples.length - 1][0] < 80) {
-        var a = samples[0], z = samples[samples.length - 1], dt = Math.max(1, z[0] - a[0]);
-        B.vx = -(z[1] - a[1]) / dt; B.vy = -(z[2] - a[2]) / dt;
-        var sp = Math.hypot(B.vx, B.vy);
-        if (sp > 3) { B.vx *= 3 / sp; B.vy *= 3 / sp; }
-        if (sp > 0.1) momentum(performance.now());
+      B.vx = 0; B.vy = 0;
+      if (B.drag && !calm) {
+        if (samples.length > 1 && performance.now() - samples[samples.length - 1][0] < 80) {
+          var a = samples[0], z = samples[samples.length - 1], dt = Math.max(1, z[0] - a[0]);
+          B.vx = -(z[1] - a[1]) / dt; B.vy = -(z[2] - a[2]) / dt;
+          var sp = Math.hypot(B.vx, B.vy);
+          if (sp > HB_VMAX) { B.vx *= HB_VMAX / sp; B.vy *= HB_VMAX / sp; }
+          if (sp < 0.1) { B.vx = 0; B.vy = 0; }
+        }
       }
+      if (!calm && (B.vx || B.vy || Math.hypot(B.px, B.py) > B.rmax + 0.4)) momentum(performance.now());
       B.drag = false; samples = [];
     }
     function onDown(e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      B.moved = !!B.mom; stopMom();
+      B.moved = !!B.mom; stopMom(); B.vx = B.vy = 0; unband();
       lx = sx = e.clientX; ly = sy = e.clientY; pid = e.pointerId; samples = [[performance.now(), sx, sy]]; B.drag = false;
       window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp);
     }
@@ -9921,7 +9950,7 @@
     if (B.W === W && B.H === H) { B.render(); return; }   /* おなじ おおきさなら いちは そのまま（ゲームから もどったとき） */
     B.W = W; B.H = H;
     var u = Math.max(120, Math.min(168, 0.4 * Math.min(W, H)));
-    B.u = u; B.T = 1.75 * u; B.smin = Math.max(40, 0.3 * u); B.cx = W / 2; B.cy = H / 2; B.px = 0; B.py = 0; B.rmax = 0;
+    B.u = u; B.T = 1.75 * u; B.smin = Math.max(40, 0.3 * u); B.cx = W / 2; B.cy = H / 2; B.px = 0; B.py = 0; B.rx = 0; B.ry = 0; B.d = Math.max(120, 0.5 * Math.min(W, H)); B.rmax = 0;
     B.items.forEach(function (it) {
       it.x = it.lx * u; it.y = it.ly * u; B.rmax = Math.max(B.rmax, Math.hypot(it.x, it.y));
       it.el.style.width = u + 'px'; it.el.style.height = u + 'px';
