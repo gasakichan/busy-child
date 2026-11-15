@@ -2998,7 +2998,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   const HS_FAKE_SRC = HS_FAKE.toString();
   // スクショ（PNG）の 一部の ばらつき（ふつうの 映像なら 一様ではない）
   const pixSpread = (p, buf) => p.evaluate(src => new Promise(res => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, Math.floor(c.height * 0.5)).data; let s = 0, s2 = 0, n = 0; for (let i = 0; i < d.length; i += 16) { const l = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; s += l; s2 += l * l; n++; } const m = s / n; res(Math.sqrt(Math.max(0, s2 / n - m * m))); }; im.src = src; }), 'data:image/png;base64,' + buf.toString('base64'));
-  TV('henshin', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 568, height: 320 }], async (br, vp) => {
+  TV('henshin', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 568, height: 320 }, { width: 740, height: 360 }], async (br, vp) => {
     const tag = 'henshin ' + vp.width + 'x' + vp.height, W = vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/henshin-' + W + '-' + n + '.png' });
     const p = await newPage(br, vp);
     const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
@@ -3021,42 +3021,97 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const sd = await pixSpread(p, await p.screenshot());
     ok(sd > 4, tag + ': camera view is not a uniform color (spread ' + sd.toFixed(1) + ')');
     await shot('start');
-    // ボタン
-    const geo = () => p.evaluate(() => { const bs = [...document.querySelectorAll('#hs-modes .hs-b')].map(b => { const r = b.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height, lab: b.textContent }; });
-      let ovl = 0; bs.forEach((a, i) => bs.forEach((b, j) => { if (j > i && a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b) ovl++; }));
-      const hb = document.querySelector('#homebtn').getBoundingClientRect();
-      return { n: bs.length, minw: Math.min(...bs.map(b => b.w)), minh: Math.min(...bs.map(b => b.h)), inside: bs.every(b => b.l >= 0 && b.r <= innerWidth && b.t >= 0 && b.b <= innerHeight), ovl, home: bs.filter(b => b.l < hb.right && hb.left < b.r && b.t < hb.bottom && hb.top < b.b).length, labs: bs.map(b => b.lab).join('|'),
-        hs: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth || document.querySelector('#stage-henshin').scrollWidth > document.querySelector('#stage-henshin').clientWidth }; });
-    const g = await geo();
-    console.log('info ' + tag + ' buttons min ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
-    ok(g.n === 7 && g.minw >= 80 && g.minh >= 80, tag + ': 7 mode buttons (incl. おめん), each >= 80px (' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ')');
-    ok(g.inside && g.ovl === 0 && g.home === 0, tag + ': buttons inside the viewport, no overlap with each other or 🏠');
-    ok(!g.hs, tag + ': no horizontal scroll');
-    ok(g.labs === '👀おめめ|↕️のびーる|↔️ぺちゃんこ|🌀ぐるぐる|👻おばけ|🎩ぼうし|おめん', tag + ': labels ' + g.labs);
-    // モード切りかえ
-    const NAMES = ['おめめ ぷくー', 'のびーる', 'ぺちゃんこ', 'ぐるぐる', 'おばけ', 'ぼうし', 'おめん'];
-    for (let i = 6; i >= 0; i--) {   // 0 から はじまるので 5→0 の じゅんで 押して 毎回 変わる
-      await clearSays(p);
-      await p.click('.hs-b[data-m="' + i + '"]'); await sleep(120);
-      t = await T();
-      ok(t.mode === i && (await says(p)).some(x => x.t === NAMES[i]) && (await p.locator('#bigword').textContent()).replace(/\s+/g, '') === NAMES[i].replace(/\s+/g, '') && await p.locator('.hs-b[data-m="' + i + '"]').getAttribute('aria-pressed') === 'true', tag + ': button ' + i + ' → mode ' + i + ', says/shows 「' + NAMES[i] + '」');
-    }
-    ok((await T()).str < 1 || true, tag + ': (strength eases in)');
-    await sleep(500); t = await T();
-    ok(t.str > 0.99, tag + ': effect strength reached 1 after the switch (' + t.str.toFixed(2) + ')');
-    // 見るところ タップ → つぎの モード
+    // したの バー（🔄 🎲 ✨）
     const view = { x: Math.round(vp.width * (vp.width > vp.height ? 0.3 : 0.5)), y: 130 };
-    await p.mouse.click(view.x, view.y); await sleep(150);
-    ok((await T()).mode === 1, tag + ': tapping the view goes to the next mode');
-    await p.click('.hs-b[data-m="5"]'); await sleep(150);
-    // ぼうし: タップで ぼうしが かわる
-    const HATS = ['おうかん', 'とんがり ぼうし', 'ねこみみ', 'うさみみ', 'おはなの かんむり'];
-    ok((await T()).mode === 5 && (await T()).hat === 0, tag + ': hat mode starts with おうかん');
-    for (let k = 1; k <= 5; k++) {
-      await clearSays(p); await p.mouse.click(view.x, view.y); await sleep(120);
-      const hh = k % 5; t = await T();
-      ok(t.mode === 5 && t.hat === hh && (await says(p)).some(x => x.t === HATS[hh]), tag + ': tap in hat mode → hat ' + hh + ' 「' + HATS[hh] + '」, still hat mode');
+    const land = vp.width > vp.height;
+    const rects = () => p.evaluate(() => { const r = q => { const e = document.querySelector(q), x = e.getBoundingClientRect(); return { vis: !e.hidden && x.width > 0, l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height }; };
+      const o = {}; ['#stage-henshin', '#hs-flip', '#hs-rand', '#hs-pick', '#homebtn', '#hs-sheet', '#hs-close', '#hs-ov'].forEach(k => { o[k] = r(k); }); return o; });
+    const ov = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+    const noHScroll = () => p.evaluate(() => !(document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth || document.querySelector('#stage-henshin').scrollWidth > document.querySelector('#stage-henshin').clientWidth));
+    let R = await rects();
+    const barBtns = ['#hs-flip', '#hs-rand', '#hs-pick'];
+    ok(await p.locator('.hs-modes').count() === 0 && await p.locator('#hs-bar').isVisible(), tag + ': the old grid of mode buttons is gone, the bar is shown');
+    ok(barBtns.every(k => R[k].vis && R[k].w >= 80 && R[k].h >= 80 && R[k].l >= 0 && R[k].r <= vp.width && R[k].t >= 0 && R[k].b <= vp.height), tag + ': 🔄 🎲 ✨ visible, each >= 80px, inside the viewport ' + barBtns.map(k => Math.round(R[k].w) + 'x' + Math.round(R[k].h)).join(' '));
+    ok(barBtns.every((k, i) => !ov(R[k], R['#homebtn']) && barBtns.every((k2, j) => j <= i || !ov(R[k], R[k2]))), tag + ': bar buttons do not overlap each other or 🏠');
+    ok(land ? barBtns.every(k => R[k].l > vp.width * 0.8) : barBtns.every(k => R[k].t > vp.height * 0.7), tag + ': bar sits at the ' + (land ? 'right edge' : 'bottom'));
+    ok(land ? R['#hs-ov'].r <= Math.min(...barBtns.map(k => R[k].l)) + 0.5 : Math.abs(R['#hs-ov'].t - R['#stage-henshin'].t) < 1 && Math.abs(R['#hs-ov'].b - R['#stage-henshin'].b) < 1 && Math.abs(R['#hs-ov'].r - R['#stage-henshin'].r) < 1, tag + ': camera view ' + (land ? 'ends left of the bar column' : 'fills the screen') + ' ' + JSON.stringify({ r: Math.round(R['#hs-ov'].r) }));
+    ok(await p.locator('#hs-flip .lab').textContent() === 'うしろ' && await p.locator('#hs-rand .lab').textContent() === 'ランダム' && await p.locator('#hs-pick .lab').textContent() === 'えらぶ', tag + ': bar labels うしろ / ランダム / えらぶ');
+    ok(await noHScroll(), tag + ': no horizontal scroll');
+    t = await T();
+    ok(t.sheet === false && t.item === 'eye' && t.mode === 0, tag + ': starts closed with おめめぷくー (eye)');
+    ok(!(await p.locator('#hs-sheet').isVisible()), tag + ': sheet is not visible when closed');
+    await shot('closed');
+    // ひらく
+    const ITEMS = ['eye', 'nobi', 'pecha', 'guru', 'obake', 'hat0', 'hat1', 'hat2', 'hat3', 'hat4', 'omen0', 'omen1', 'omen2', 'omen3', 'omen4', 'omen5', 'omen6', 'omen7'];
+    const SAY = { eye: 'おめめ ぷくー', nobi: 'のびーる', pecha: 'ぺちゃんこ', guru: 'ぐるぐる', obake: 'おばけ', hat0: 'おうかん', hat1: 'とんがり ぼうし', hat2: 'ねこみみ', hat3: 'うさみみ', hat4: 'おはなの かんむり', omen0: 'ねこさん', omen1: 'いぬさん', omen2: 'うさぎさん', omen3: 'くまさん', omen4: 'らいおんさん', omen5: 'ぱんださん', omen6: 'おばけさん', omen7: 'ろぼっとさん' };
+    const flat = s => s.replace(/\s+/g, '');
+    const openSheet = async () => { if (!(await T()).sheet) { await p.click('#hs-pick'); await sleep(420); } };
+    const closeSheet = async () => { if ((await T()).sheet) { await p.click('#hs-close'); await sleep(420); } };
+    const pick = async id => { await openSheet(); await clearSays(p); await p.click('.hs-b[data-id="' + id + '"]'); await sleep(140); };
+    await p.click('#hs-pick'); await sleep(450);
+    t = await T(); R = await rects();
+    const sh = R['#hs-sheet'], frac = sh.h / R['#stage-henshin'].h;
+    ok(t.sheet === true && await p.locator('#hs-sheet').isVisible() && t.item === 'eye' && t.mode === 0, tag + ': えらぶ opens the sheet, transform unchanged (eye)');
+    ok(land ? sh.h >= 120 && sh.h <= vp.height * 0.55 : frac >= 0.25 && frac <= 0.42, tag + ': sheet height ' + Math.round(sh.h) + 'px = ' + (frac * 100).toFixed(0) + '% of the viewport');
+    ok(Math.abs(sh.b - R['#stage-henshin'].b) < 2 && Math.abs(sh.l - R['#stage-henshin'].l) <= 1 && Math.abs(sh.r - R['#stage-henshin'].r) <= 1, tag + ': sheet is anchored to the bottom, full width');
+    const sty = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('#hs-sheet')); return { bg: c.backgroundColor, r: c.borderTopLeftRadius, bf: c.backdropFilter || c.webkitBackdropFilter || '' }; });
+    const alpha = (m => m ? (m[4] === undefined ? 1 : parseFloat(m[4])) : 1)(sty.bg.match(/rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)(?:[ ,/]+([\d.]+))?/));
+    ok(alpha < 1 && alpha > 0.3 && parseFloat(sty.r) >= 16, tag + ': sheet is translucent with rounded top ' + JSON.stringify(sty));
+    ok(!(await p.locator('#hs-pick').isVisible()), tag + ': bar is hidden while the sheet is open');
+    const tiles = await p.evaluate(() => [...document.querySelectorAll('#hs-list .hs-b')].map(b => { const r = b.getBoundingClientRect(); return { id: b.getAttribute('data-id'), w: r.width, h: r.height }; }));
+    ok(tiles.length === 18 && tiles.map(x => x.id).join() === ITEMS.join() && tiles.every(x => x.w >= 80 && x.h >= 80), tag + ': 18 item tiles in order, each >= 80px');
+    ok(R['#hs-close'].w >= 80 && R['#hs-close'].h >= 80 && R['#hs-close'].vis && R['#hs-close'].r <= vp.width && R['#hs-close'].t >= sh.t - 1 && !ov(R['#hs-close'], R['#homebtn']), tag + ': ✖ close button >= 80px inside the sheet');
+    ok(await p.evaluate(() => [...document.querySelectorAll('#hs-list .hs-b[data-id^="omen"] img')].filter(i => i.complete && i.naturalWidth > 0).length) === 8, tag + ': 8 mask tiles show their image thumbnails');
+    ok(await noHScroll(), tag + ': no horizontal page scroll with the sheet open');
+    await shot('open');
+    // ぼうしを 1つ えらぶ
+    await pick('hat2'); t = await T();
+    ok(t.item === 'hat2' && t.mode === 5 && t.hat === 2 && t.sheet === true && (await says(p)).some(x => x.t === SAY.hat2) && flat(await p.locator('#bigword').textContent()) === flat(SAY.hat2), tag + ': hat tile ねこみみ → hat 2, says/shows it, sheet stays open');
+    ok(await p.locator('.hs-b[data-id="hat2"]').getAttribute('aria-pressed') === 'true' && await p.locator('.hs-b.on').count() === 1 && await p.locator('.hs-b[data-id="eye"]').getAttribute('aria-pressed') === 'false', tag + ': only the chosen tile is marked');
+    await pick('hat4'); t = await T();
+    ok(t.item === 'hat4' && t.hat === 4 && t.mode === 5 && (await says(p)).some(x => x.t === SAY.hat4), tag + ': hat tile おはなの かんむり → hat 4');
+    await pick('omen3'); t = await T();
+    ok(t.item === 'omen3' && t.mode === 6 && t.omen === 3 && t.sheet === true && (await says(p)).some(x => x.t === 'くまさん') && flat(await p.locator('#bigword').textContent()) === 'くまさん', tag + ': mask tile くまさん → omen 3, sheet stays open');
+    await pick('nobi'); t = await T();
+    ok(t.item === 'nobi' && t.mode === 1 && t.sheet === true && (await says(p)).some(x => x.t === 'のびーる'), tag + ': effect tile のびーる → mode 1');
+    // スクロール（えらんでは いけない）
+    { const before = await p.evaluate(() => { const l = document.querySelector('#hs-list'); return { st: l.scrollTop, sl: l.scrollLeft, sh: l.scrollHeight, ch: l.clientHeight, sw: l.scrollWidth, cw: l.clientWidth }; });
+      ok(land ? before.sw > before.cw : before.sh > before.ch, tag + ': the list is scrollable (' + (land ? 'horizontally ' + before.sw + '>' + before.cw : 'vertically ' + before.sh + '>' + before.ch) + ')');
+      const lr = (await rects())['#hs-sheet'];
+      await clearSays(p); await p.mouse.move(lr.l + lr.w / 2, lr.t + lr.h * 0.6); await p.mouse.wheel(land ? 400 : 0, land ? 0 : 300); await sleep(350);
+      const after = await p.evaluate(() => { const l = document.querySelector('#hs-list'); return { st: l.scrollTop, sl: l.scrollLeft }; });
+      t = await T();
+      ok((land ? after.sl > before.sl : after.st > before.st) && t.item === 'nobi' && (await says(p)).length === 0 && t.sheet, tag + ': scrolling the list moves it without selecting ' + JSON.stringify({ before: [before.st, before.sl], after: [after.st, after.sl] }));
+      ok(await p.evaluate(() => window.scrollX === 0 && document.documentElement.scrollLeft === 0 && document.querySelector('#stage-henshin').scrollLeft === 0), tag + ': the page itself did not scroll');
+      // タッチ: ドラッグ → スクロール（せんたくなし）
+      const cdp = await p.context().newCDPSession(p);
+      const lx = lr.l + lr.w / 2, ly = lr.t + lr.h * 0.6, mv = land ? [[-60, 0], [-120, 0], [-180, 0]] : [[0, -50], [0, -100], [0, -150]];
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: lx, y: ly }] });
+      for (const [dx, dy] of mv) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: lx + dx, y: ly + dy }] }); await sleep(30); }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(400);
+      t = await T();
+      ok(t.item === 'nobi' && t.sheet === true, tag + ': a touch drag in the list does not select an item (item ' + t.item + ')');
+      await cdp.detach();
+      await p.evaluate(() => { document.querySelector('#hs-list').scrollTop = 0; document.querySelector('#hs-list').scrollLeft = 0; });
     }
+    // とじる ✖
+    await p.click('#hs-close'); await sleep(450); t = await T();
+    ok(t.sheet === false && !(await p.locator('#hs-sheet').isVisible()) && await p.locator('#hs-pick').isVisible() && t.item === 'nobi' && t.mode === 1, tag + ': ✖ closes the sheet, bar is back, item kept (nobi)');
+    // そとを タップ
+    await p.click('#hs-pick'); await sleep(420);
+    await p.mouse.click(view.x, view.y); await sleep(450); t = await T();
+    ok(t.sheet === false && t.item === 'nobi', tag + ': tapping outside the sheet closes it without changing the item');
+    // シートが しまっていて タップ → かわらない
+    for (let k = 0; k < 3; k++) { await p.mouse.click(view.x + k * 10, view.y + k * 20); await sleep(120); }
+    t = await T();
+    ok(t.item === 'nobi' && t.mode === 1 && t.sheet === false, tag + ': tapping the view with the sheet closed changes nothing');
+    // ランダム
+    { let prev = (await T()).item, diff = 0, allSay = 0; const seen = new Set();
+      for (let k = 0; k < 8; k++) { await clearSays(p); await p.click('#hs-rand'); await sleep(110); t = await T(); if (t.item !== prev) diff++; if ((await says(p)).some(x => x.t === SAY[t.item])) allSay++; seen.add(t.item); prev = t.item; }
+      ok(diff === 8 && allSay === 8 && seen.size >= 3 && t.sheet === false, tag + ': 🎲 ランダム always changes the item and says its name (' + [...seen].join(',') + ')'); }
+    await pick('eye'); await closeSheet();
+    await sleep(500); t = await T();
+    ok(t.str > 0.99 && t.item === 'eye', tag + ': effect strength reached 1 after the switch (' + t.str.toFixed(2) + ')');
     // フェイクの かお
     await fake({ cx: 0.5, cy: 0.45 });
     ok(await until(async () => (await T()).hasFace, 1500), tag + ': injected face is picked up');
@@ -3068,11 +3123,9 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     // みんなの モードを スクショ
     // おめん: かおに おめんが つく
     const OM = ['ねこさん', 'いぬさん', 'うさぎさん', 'くまさん', 'らいおんさん', 'ぱんださん', 'おばけさん', 'ろぼっとさん'];
-    const mimg = await p.evaluate(() => { const i = document.querySelector('.hs-b[data-m="6"] img'); return i ? { ok: i.complete && i.naturalWidth > 0, src: i.getAttribute('src') } : null; });
-    ok(mimg && mimg.ok && /assets\/omen\/neko\.webp$/.test(mimg.src), tag + ': おめん button shows a small neko image ' + JSON.stringify(mimg));
-    await clearSays(p); await p.click('.hs-b[data-m="6"]'); await sleep(700);
+    await pick('omen0'); await closeSheet(); await sleep(500);
     t = await T();
-    ok(t.mode === 6 && t.omen === 0 && (await says(p)).some(x => x.t === 'おめん') && (await p.locator('#bigword').textContent()) === 'おめん', tag + ': entering おめん says/shows おめん, mask 0');
+    ok(t.mode === 6 && t.omen === 0 && t.item === 'omen0', tag + ': mask tile ねこさん → omen mode, mask 0');
     ok(t.omenRect && t.omenRect.w > 20, tag + ': mask drawn (images loaded) ' + JSON.stringify(t.omenRect));
     t = await T();
     const eyeMid = tt => [(tt.P.e1x + tt.P.e2x) / 2, (tt.P.e1y + tt.P.e2y) / 2];
@@ -3083,39 +3136,36 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await fake({ cx: 0.3, cy: 0.4, w: 0.34, h: 0.46 }); await sleep(1100); t = await T(); em = eyeMid(t);
     ok(t.omenRect.w > w1 * 1.3 && Math.abs(t.omenRect.w / (2 * t.P.rx) - w1 / (2 * rx1)) < 0.05 && Math.abs(t.omenRect.cx - em[0]) < 4 && t.omenRect.cx > t.cw / 2, tag + ': mask width scales with the face and follows it (mirrored) ' + Math.round(w1) + '→' + Math.round(t.omenRect.w));
     await fake({ cx: 0.5, cy: 0.42 }); await sleep(1100);
-    const vid1 = Math.round(vp.width * (vp.width > vp.height ? 0.3 : 0.5));
     for (let k = 1; k <= 8; k++) {
-      await clearSays(p); await p.mouse.click(vid1, 130); await sleep(120);
-      const oi = k % 8; t = await T();
-      ok(t.mode === 6 && t.omen === oi && (await says(p)).some(x => x.t === OM[oi]) && (await p.locator('#bigword').textContent()) === OM[oi], tag + ': stage tap in おめん → mask ' + oi + ' 「' + OM[oi] + '」, still おめん');
+      const oi = k % 8; await pick('omen' + oi); t = await T();
+      ok(t.mode === 6 && t.omen === oi && t.sheet && (await says(p)).some(x => x.t === OM[oi]) && flat(await p.locator('#bigword').textContent()) === OM[oi], tag + ': mask tile → mask ' + oi + ' 「' + OM[oi] + '」, sheet open');
       if (k === 1) { await sleep(600); await shot('omen-inu'); }
     }
-    await p.click('.hs-b[data-m="6"]'); await sleep(150);
-    ok((await T()).omen === 0 && (await T()).mode === 6, tag + ': tapping the おめん button itself does not cycle');
-    await sleep(500); await shot('omen-neko');
+    await closeSheet(); await sleep(300);
+    ok((await T()).omen === 0 && (await T()).item === 'omen0', tag + ': closing the sheet keeps the mask (omen0)');
+    await sleep(300); await shot('omen-neko');
     { const r0 = (await T()).reactions; await clearSays(p); await fake({ cy: 0.42, mouth: 0.22 });
       ok(await until(async () => (await T()).reactions === r0 + 1, 1500), tag + ': mouth open in おめん → reaction fires');
       await sleep(150); await shot('omen-react'); await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1700); }
     await p.evaluate(() => window.__hs._fake(null)); await sleep(1800); t = await T();
     ok(!t.hasFace && t.omenRect && Math.abs(t.omenRect.cx - t.cw / 2) < t.cw * 0.06, tag + ': no face → mask at the default face position');
-    // よこむき: カメラは ボタンの ひだりに おさまる（かお・おめんの まんなかも ひだり）
-    { const lg = await p.evaluate(() => { const r = d => d.getBoundingClientRect(), ov = r(document.querySelector('#hs-ov')), gl = r(document.querySelector('#hs-gl')), bs = [...document.querySelectorAll('#hs-modes .hs-b')].map(b => r(b)), fl = r(document.querySelector('#hs-flip'));
-        return { ovL: ov.left, ovR: ov.right, ovW: ov.width, glR: gl.right, glL: gl.left, btnL: Math.min(...bs.map(b => b.left)), flipOverlap: bs.some(b => fl.left < b.right && b.left < fl.right && fl.top < b.bottom && b.top < fl.bottom), stageR: document.querySelector('#stage-henshin').getBoundingClientRect().right, stageL: document.querySelector('#stage-henshin').getBoundingClientRect().left }; });
-      const tt = await T(), land = vp.width > vp.height;
+    // よこむき: カメラは バーの ひだりに おさまる（かお・おめんの まんなかも ひだり）
+    { const lg = await p.evaluate(() => { const r = d => d.getBoundingClientRect(), ov = r(document.querySelector('#hs-ov')), gl = r(document.querySelector('#hs-gl')), bs = ['#hs-rand', '#hs-pick'].map(k => r(document.querySelector(k)));
+        return { ovL: ov.left, ovR: ov.right, ovW: ov.width, glR: gl.right, glL: gl.left, btnL: Math.min(...bs.map(b => b.left)), stageR: document.querySelector('#stage-henshin').getBoundingClientRect().right, stageL: document.querySelector('#stage-henshin').getBoundingClientRect().left }; });
+      const tt = await T();
       if (land) {
         const sc = lg.ovW / tt.cw, mx = lg.ovL + tt.omenRect.cx * sc, fx = lg.ovL + tt.P.cx * sc;
-        ok(lg.ovR <= lg.btnL && lg.glR <= lg.btnL && lg.glL >= 0 && Math.abs(lg.glR - lg.ovR) < 1, tag + ': landscape canvas right edge <= mode column left edge ' + JSON.stringify({ r: Math.round(lg.ovR), btnL: Math.round(lg.btnL) }));
-        ok(mx < lg.btnL && fx < lg.btnL && Math.abs(mx - (lg.ovL + lg.ovR) / 2) < lg.ovW * 0.06 && !lg.flipOverlap, tag + ': landscape default mask/face centre is left of the buttons, centred in the camera area, flip clear of buttons ' + Math.round(mx) + ' < ' + Math.round(lg.btnL));
+        ok(lg.ovR <= lg.btnL && lg.glR <= lg.btnL && lg.glL >= 0 && Math.abs(lg.glR - lg.ovR) < 1, tag + ': landscape canvas right edge <= bar column left edge ' + JSON.stringify({ r: Math.round(lg.ovR), btnL: Math.round(lg.btnL) }));
+        ok(mx < lg.btnL && fx < lg.btnL && Math.abs(mx - (lg.ovL + lg.ovR) / 2) < lg.ovW * 0.06, tag + ': landscape default mask/face centre is left of the bar, centred in the camera area ' + Math.round(mx) + ' < ' + Math.round(lg.btnL));
       } else ok(Math.abs(lg.ovR - lg.stageR) < 1 && Math.abs(lg.ovL - lg.stageL) < 1, tag + ': portrait canvas still fills the stage ' + JSON.stringify(lg));
     }
     await fake({ cx: 0.5, cy: 0.42 }); await sleep(700);
-    for (let i = 0; i < 6; i++) {
-      await p.click('.hs-b[data-m="' + i + '"]'); await sleep(550);
-      if (i === 5) { for (let k = 0; k < 5; k++) { await shot('mode5-hat' + k); if (k < 4) { await p.mouse.click(view.x, view.y); await sleep(550); } } await p.mouse.click(view.x, view.y); await sleep(200); }
-      else await shot('mode' + i);
-    }
+    for (const id of ['eye', 'nobi', 'pecha', 'guru', 'obake']) { await pick(id); await closeSheet(); await sleep(450); await shot('mode-' + id); }
+    for (let k = 0; k < 5; k++) { await pick('hat' + k); await closeSheet(); await sleep(450); await shot('mode5-hat' + k); }
+    await pick('hat0'); await sleep(400); await shot('sheet-hats');
+    await pick('omen7'); await sleep(300); await shot('sheet-omen'); await closeSheet();
     // くちを おおきく あける
-    await p.click('.hs-b[data-m="4"]'); await sleep(450);
+    await pick('obake'); await closeSheet(); await sleep(450);
     await clearSays(p); const r0 = (await T()).reactions;
     await fake({ cy: 0.42, mouth: 0.22 });
     ok(await until(async () => (await T()).reactions === r0 + 1, 1500), tag + ': mouth open → reaction fired');
@@ -3125,7 +3175,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await fake({ cy: 0.42, mouth: 0.22 }); await sleep(500);
     ok((await T()).reactions === r0 + 1, tag + ': reaction is rate-limited (~1.5s)');
     await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1300);
-    await p.click('.hs-b[data-m="0"]'); await sleep(200); await clearSays(p);
+    await pick('eye'); await closeSheet(); await sleep(200); await clearSays(p);
     await fake({ cy: 0.42, mouth: 0.22 });
     ok(await until(async () => (await T()).reactions === r0 + 2, 1500), tag + ': after the wait the reaction fires again (other mode)');
     ok(!(await says(p)).some(x => x.t === 'ばあ'), tag + ': other modes do not say ばあ');
@@ -3140,13 +3190,13 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     // まえ／うしろ きりかえ
     const fg = () => p.evaluate(() => { const r = d => { const x = d.getBoundingClientRect(); return { l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height }; };
       const f = r(document.querySelector('#hs-flip')), ov = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
-      return { w: f.w, h: f.h, inside: f.l >= 0 && f.r <= innerWidth && f.t >= 0 && f.b <= innerHeight, home: ov(f, r(document.querySelector('#homebtn'))), modes: [...document.querySelectorAll('#hs-modes .hs-b')].filter(b => ov(f, r(b))).length, prep: ov(f, r(document.querySelector('#hs-prep'))), lab: document.querySelector('#hs-flip .lab').textContent }; });
+      return { w: f.w, h: f.h, inside: f.l >= 0 && f.r <= innerWidth && f.t >= 0 && f.b <= innerHeight, home: ov(f, r(document.querySelector('#homebtn'))), modes: ['#hs-rand', '#hs-pick'].filter(k => ov(f, r(document.querySelector(k)))).length, prep: ov(f, r(document.querySelector('#hs-prep'))), lab: document.querySelector('#hs-flip .lab').textContent }; });
     const fgeo = await fg();
     ok(await p.locator('#hs-flip').isVisible() && (await T()).flip && fgeo.lab === 'うしろ', tag + ': 2 cameras → flip button shown (label うしろ)');
     ok(fgeo.w >= 80 && fgeo.h >= 80 && fgeo.inside && !fgeo.home && fgeo.modes === 0, tag + ': flip button >= 80px, inside, no overlap with 🏠 or mode buttons ' + JSON.stringify(fgeo));
     ok((await p.evaluate(() => window.__cons[0])) === '"user"', tag + ': first request is facingMode user');
     ok((await T()).facing === 'user' && (await T()).mir === 1, tag + ': front camera is mirrored');
-    await p.click('.hs-b[data-m="2"]'); await sleep(150); await clearSays(p);
+    await pick('pecha'); await closeSheet(); await clearSays(p);
     await p.click('#hs-flip'); await sleep(500);
     t = await T();
     ok(t.facing === 'environment' && t.mir === 0 && t.mode === 2 && t.cam && (await p.evaluate(() => window.__cons[window.__cons.length - 1])) === '"environment"', tag + ': flip → environment requested, not mirrored, mode unchanged ' + JSON.stringify({ f: t.facing, m: t.mir, mode: t.mode }));
@@ -3196,7 +3246,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hs-flip').isVisible(), 'henshin-flip: 2 videoinputs → shown again after re-enter');
     await clearSays(p); await p.click('#hs-flip');
     ok(await until(async () => { const t = await T(); return t.cam && t.facing === 'user' && t.mir === 1; }, 3000), 'henshin-flip: back camera fails → silently falls back to front');
-    ok(await p.locator('#hs-msg').isHidden() && await p.locator('#hs-modes').isVisible() && (await says(p)).every(x => !/しっぱい|だめ|ごめん|おやすみ/.test(x.t)), 'henshin-flip: no error message or failure speech');
+    ok(await p.locator('#hs-msg').isHidden() && await p.locator('#hs-bar').isVisible() && (await says(p)).every(x => !/しっぱい|だめ|ごめん|おやすみ/.test(x.t)), 'henshin-flip: no error message or failure speech');
     await p.click('#homebtn'); await sleep(250);
     const live = await p.evaluate(() => document.querySelector('#hs-video').srcObject);
     ok(live === null && (await T()).tracks === 0, 'henshin-flip: leave() cleans up');
@@ -3212,7 +3262,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       await tapTile(p, 'へんしん'); await sleep(700);
       const t = await p.evaluate(() => window.__hs._t());
       ok(await p.locator('#hs-msg').isVisible() && (await p.locator('#hs-msg').textContent()).length > 0, 'henshin camera ' + mode + ': friendly message shown 「' + await p.locator('#hs-msg').textContent() + '」');
-      ok(t.noCam && !t.cam && t.raf === 0 && await p.locator('#hs-modes').isHidden(), 'henshin camera ' + mode + ': no drawing loop, mode buttons hidden');
+      ok(t.noCam && !t.cam && t.raf === 0 && await p.locator('#hs-bar').isHidden(), 'henshin camera ' + mode + ': no drawing loop, bar hidden');
       if (mode === 'off') ok(await p.evaluate(() => window.__gum) === g0, 'henshin camera off in settings: getUserMedia not called');
       ok((await says(p)).every(x => !/しっぱい|だめ|ごめん/.test(x.t)), 'henshin camera ' + mode + ': no failure speech');
       ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'henshin camera ' + mode + ': no horizontal scroll');
@@ -3671,7 +3721,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'henshin-real': 35, 'henshin-390x844': 28, 'henshin-360x740': 28, 'henshin-568x320': 28, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'henshin-real': 35, 'henshin-390x844': 28, 'henshin-360x740': 28, 'henshin-568x320': 28, 'henshin-740x360': 28, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
