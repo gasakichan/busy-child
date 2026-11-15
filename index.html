@@ -1389,6 +1389,8 @@
   @media (min-aspect-ratio: 4/3) and (max-height: 520px) {
     .hs-modes { left: auto; right: 10px; top: 10px; bottom: 10px; width: 272px; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 80px; gap: 6px; align-content: center; }
     .hs-b { max-width: 88px; height: 80px; }
+    #hs-gl, #hs-ov { inset: auto; left: 10px; left: calc(10px + env(safe-area-inset-left)); top: 10px; width: calc(100% - 302px - env(safe-area-inset-left)); height: calc(100% - 20px); border-radius: 28px; }
+    .hs-prep { left: calc((100% - 282px) / 2); }
     .hs-flip { top: auto; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); right: auto; left: 12px; left: calc(12px + env(safe-area-inset-left)); }
   }
 </style>
@@ -9282,7 +9284,7 @@
   }
 
   function hsSize() {
-    var W = hsStage.clientWidth, H = hsStage.clientHeight;
+    var W = hsOv.clientWidth, H = hsOv.clientHeight;
     if (!W || !H) return;
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5), cw = W * dpr, ch = H * dpr, s = Math.min(1, 960 / Math.max(cw, ch));
     cw = Math.max(2, Math.round(cw * s)); ch = Math.max(2, Math.round(ch * s));

@@ -3002,7 +3002,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hs-gl').isVisible() && await p.locator('#hs-ov').isVisible(), tag + ': camera canvas + overlay visible');
     let t = await T();
     ok(t.gl === true && t.cam === true && !t.noCam && t.frames > 5, tag + ': WebGL on, camera on, frames drawn ' + JSON.stringify({ gl: t.gl, cam: t.cam, f: t.frames }));
-    ok(t.cw > 0 && t.cw <= 960 && t.ch <= 960 && t.cw / t.ch > 0 && Math.abs(t.cw / t.ch - vp.width / vp.height) < 0.05, tag + ': canvas resolution capped (' + t.cw + 'x' + t.ch + ')');
+    ok(t.cw > 0 && t.cw <= 960 && t.ch <= 960 && t.cw / t.ch > 0 && Math.abs(t.cw / t.ch - (await p.evaluate(() => { const r = document.querySelector('#hs-ov').getBoundingClientRect(); return r.width / r.height; }))) < 0.05, tag + ': canvas resolution capped (' + t.cw + 'x' + t.ch + ')');
     ok(await until(async () => (await T()).vid === true, 4000), tag + ': video frames reach the GL texture');
     await sleep(400);
     const sd = await pixSpread(p, await p.screenshot());
@@ -3085,6 +3085,16 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       await sleep(150); await shot('omen-react'); await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1700); }
     await p.evaluate(() => window.__hs._fake(null)); await sleep(1800); t = await T();
     ok(!t.hasFace && t.omenRect && Math.abs(t.omenRect.cx - t.cw / 2) < t.cw * 0.06, tag + ': no face → mask at the default face position');
+    // よこむき: カメラは ボタンの ひだりに おさまる（かお・おめんの まんなかも ひだり）
+    { const lg = await p.evaluate(() => { const r = d => d.getBoundingClientRect(), ov = r(document.querySelector('#hs-ov')), gl = r(document.querySelector('#hs-gl')), bs = [...document.querySelectorAll('#hs-modes .hs-b')].map(b => r(b)), fl = r(document.querySelector('#hs-flip'));
+        return { ovL: ov.left, ovR: ov.right, ovW: ov.width, glR: gl.right, glL: gl.left, btnL: Math.min(...bs.map(b => b.left)), flipOverlap: bs.some(b => fl.left < b.right && b.left < fl.right && fl.top < b.bottom && b.top < fl.bottom), stageR: document.querySelector('#stage-henshin').getBoundingClientRect().right, stageL: document.querySelector('#stage-henshin').getBoundingClientRect().left }; });
+      const tt = await T(), land = vp.width > vp.height;
+      if (land) {
+        const sc = lg.ovW / tt.cw, mx = lg.ovL + tt.omenRect.cx * sc, fx = lg.ovL + tt.P.cx * sc;
+        ok(lg.ovR <= lg.btnL && lg.glR <= lg.btnL && lg.glL >= 0 && Math.abs(lg.glR - lg.ovR) < 1, tag + ': landscape canvas right edge <= mode column left edge ' + JSON.stringify({ r: Math.round(lg.ovR), btnL: Math.round(lg.btnL) }));
+        ok(mx < lg.btnL && fx < lg.btnL && Math.abs(mx - (lg.ovL + lg.ovR) / 2) < lg.ovW * 0.06 && !lg.flipOverlap, tag + ': landscape default mask/face centre is left of the buttons, centred in the camera area, flip clear of buttons ' + Math.round(mx) + ' < ' + Math.round(lg.btnL));
+      } else ok(Math.abs(lg.ovR - lg.stageR) < 1 && Math.abs(lg.ovL - lg.stageL) < 1, tag + ': portrait canvas still fills the stage ' + JSON.stringify(lg));
+    }
     await fake({ cx: 0.5, cy: 0.42 }); await sleep(700);
     for (let i = 0; i < 6; i++) {
       await p.click('.hs-b[data-m="' + i + '"]'); await sleep(550);
