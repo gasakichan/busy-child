@@ -1395,28 +1395,43 @@
   #hs-gl, #hs-ov { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   #hs-ov { touch-action: none; }
   .hs-video { position: absolute; left: 0; top: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
-  .hs-modes { position: absolute; left: 10px; right: 10px; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 5; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 8px; justify-items: center; }
-  .hs-modes > .hs-b:nth-child(7):last-child { grid-column: 2; }
-  .hs-b { width: 100%; max-width: 112px; height: 84px; padding: 0; border-radius: 44px; border: 4px solid rgba(91,58,41,.55); background: var(--c); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
-  .hs-flip { position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); right: 12px; right: calc(12px + env(safe-area-inset-right)); z-index: 6; width: 84px; height: 84px; padding: 0; border-radius: 42px; border: 4px solid rgba(91,58,41,.55); background: #FFF3C4; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
+  .hs-bar { position: absolute; left: 0; right: 0; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: center; align-items: center; gap: 18px; pointer-events: none; }
+  .hs-bar[hidden] { display: none; }
+  .hs-rb { pointer-events: auto; width: 84px; height: 84px; padding: 0; border-radius: 42px; border: 4px solid rgba(91,58,41,.55); background: #FFF3C4; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
+  #hs-rand { background: #C9F0B0; }
+  #hs-pick { background: #FFD9B8; }
   .hs-flip[hidden] { display: none; }
-  .hs-flip { gap: 3px; }
-  .hs-flip .ico { font-size: 28px; line-height: 1; }
-  .hs-flip .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
-  .hs-flip:active { transform: translateY(2px); }
+  .hs-rb .ico { font-size: 28px; line-height: 1; }
+  .hs-rb .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
+  .hs-rb:active { transform: translateY(2px); }
+  #stage-henshin.hs-open .hs-bar { visibility: hidden; }
+  .hs-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 7; height: 34vh; min-height: 220px; display: flex; flex-direction: column; box-sizing: border-box; background: rgba(255,255,255,.72); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-radius: 28px 28px 0 0; box-shadow: 0 -4px 18px rgba(91,58,41,.18); padding-bottom: env(safe-area-inset-bottom); transform: translateY(105%); visibility: hidden; transition: transform .26s ease, visibility 0s linear .26s; }
+  .hs-sheet.open { transform: none; visibility: visible; transition: transform .26s ease, visibility 0s; }
+  .hs-sh-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 4px 12px 0 22px; padding-right: calc(12px + env(safe-area-inset-right)); }
+  .hs-sh-t { font-size: 20px; font-weight: 800; color: var(--ink); }
+  .hs-close { width: 80px; height: 80px; padding: 0; border-radius: 40px; border: 4px solid rgba(91,58,41,.55); background: #FFC4DA; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
+  .hs-close .ico { font-size: 24px; line-height: 1; }
+  .hs-close .lab { font-size: 13px; line-height: 1.1; font-weight: 700; white-space: nowrap; }
+  .hs-close:active { transform: translateY(2px); }
+  .hs-list { position: relative; flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); grid-auto-rows: 84px; gap: 14px 10px; padding: 8px 16px 14px; align-content: start; }
+  .hs-b { width: 100%; height: 84px; padding: 0; border-radius: 42px; border: 4px solid rgba(91,58,41,.55); background: var(--c); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   .hs-b .ico { font-size: 30px; line-height: 1; }
-  .hs-b .ico img { width: 34px; height: 34px; object-fit: contain; display: block; pointer-events: none; }
-  .hs-b .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
+  .hs-b .ico img { width: 44px; height: 44px; object-fit: contain; display: block; pointer-events: none; }
+  .hs-b .lab { font-size: 13px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
   .hs-b.on { box-shadow: 0 0 0 4px #fff, 0 0 0 8px #FFC83D; transform: translateY(-2px); }
   .hs-b:active { transform: translateY(2px); }
   .hs-msg { position: absolute; left: 16px; right: 16px; top: 42%; transform: translateY(-50%); z-index: 4; text-align: center; font-size: clamp(24px, 7vw, 40px); font-weight: 800; line-height: 1.3; color: var(--ink); background: rgba(255,255,255,.85); border-radius: 32px; padding: 22px 16px; }
   .hs-prep { position: absolute; top: 18px; top: calc(18px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 3; padding: 6px 16px; border-radius: 20px; background: rgba(255,255,255,.7); color: var(--ink); font-size: 16px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .hs-sheet, .hs-sheet.open { transition: none; } }
   @media (min-aspect-ratio: 4/3) and (max-height: 520px) {
-    .hs-modes { left: auto; right: 10px; top: 10px; bottom: 10px; width: 272px; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 80px; gap: 6px; align-content: center; }
-    .hs-b { max-width: 88px; height: 80px; }
-    #hs-gl, #hs-ov { inset: auto; left: 10px; left: calc(10px + env(safe-area-inset-left)); top: 10px; width: calc(100% - 302px - env(safe-area-inset-left)); height: calc(100% - 20px); border-radius: 28px; }
-    .hs-prep { left: calc((100% - 282px) / 2); }
-    .hs-flip { top: auto; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); right: auto; left: 12px; left: calc(12px + env(safe-area-inset-left)); }
+    .hs-bar { left: auto; right: 10px; right: calc(10px + env(safe-area-inset-right)); top: 0; bottom: 0; flex-direction: column; gap: 12px; }
+    #hs-gl, #hs-ov { inset: auto; left: 10px; left: calc(10px + env(safe-area-inset-left)); top: 10px; width: calc(100% - 114px - env(safe-area-inset-left) - env(safe-area-inset-right)); height: calc(100% - 20px); border-radius: 28px; }
+    .hs-prep { left: calc((100% - 94px) / 2); }
+    .hs-sheet { height: max(33.4vh, 126px); min-height: 0; flex-direction: row; border-radius: 24px 24px 0 0; }
+    .hs-sh-head { order: 2; padding: 0 12px; padding-right: calc(12px + env(safe-area-inset-right)); align-items: center; }
+    .hs-sh-t { display: none; }
+    .hs-list { display: flex; flex-direction: row; align-items: center; overflow-x: auto; overflow-y: hidden; padding: 8px 14px; gap: 14px; padding-left: calc(14px + env(safe-area-inset-left)); }
+    .hs-b { flex: 0 0 92px; width: 92px; }
   }
 </style>
 </head>
@@ -1723,8 +1738,15 @@
     <video class="hs-video" id="hs-video" playsinline muted autoplay></video>
     <div class="hs-prep" id="hs-prep" hidden>じゅんび ちゅう…</div>
     <div class="hs-msg" id="hs-msg" hidden role="status"></div>
-    <div class="hs-modes" id="hs-modes"></div>
-    <button class="hs-flip" id="hs-flip" type="button" aria-label="うしろの かめらに する" hidden><span class="ico">🔄</span><span class="lab">うしろ</span></button>
+    <div class="hs-bar" id="hs-bar">
+      <button class="hs-rb hs-flip" id="hs-flip" type="button" aria-label="うしろの かめらに する" hidden><span class="ico">🔄</span><span class="lab">うしろ</span></button>
+      <button class="hs-rb" id="hs-rand" type="button" aria-label="ランダム"><span class="ico">🎲</span><span class="lab">ランダム</span></button>
+      <button class="hs-rb" id="hs-pick" type="button" aria-label="えらぶ" aria-expanded="false"><span class="ico">✨</span><span class="lab">えらぶ</span></button>
+    </div>
+    <div class="hs-sheet" id="hs-sheet" aria-hidden="true" role="dialog" aria-label="へんしんを えらぶ">
+      <div class="hs-sh-head"><span class="hs-sh-t">えらぶ</span><button class="hs-close" id="hs-close" type="button" aria-label="とじる"><span class="ico">✖</span><span class="lab">とじる</span></button></div>
+      <div class="hs-list" id="hs-list"></div>
+    </div>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -9190,14 +9212,12 @@
   /* MediaPipe Face Landmarker（assets/face/・ぜんぶ たんまつの なかで うごく）。よみこみは はじめて ひらいた ときだけ。
      しっぱいしても なにも みせず、がめんの まんなかで ききの「ゆかいな かがみ」として あそべる */
   var HS_INK = '#5b3a29';
-  var HS_MODES = [
-    { ico: '👀', lab: 'おめめ', say: 'おめめ ぷくー', c: '#FFE48A' },
-    { ico: '↕️', lab: 'のびーる', say: 'のびーる', c: '#B6F0E3' },
-    { ico: '↔️', lab: 'ぺちゃんこ', say: 'ぺちゃんこ', c: '#FFC4DA' },
-    { ico: '🌀', lab: 'ぐるぐる', say: 'ぐるぐる', c: '#BDD7FF' },
-    { ico: '👻', lab: 'おばけ', say: 'おばけ', c: '#DCCFFF' },
-    { ico: '🎩', lab: 'ぼうし', say: 'ぼうし', c: '#FFD9B8' },
-    { ico: '🐱', img: 'assets/omen/neko.webp', lab: 'おめん', say: 'おめん', c: '#C9F0B0' }
+  var HS_FX = [
+    { id: 'eye', ico: '👀', lab: 'おめめ', say: 'おめめ ぷくー', c: '#FFE48A' },
+    { id: 'nobi', ico: '↕️', lab: 'のびーる', say: 'のびーる', c: '#B6F0E3' },
+    { id: 'pecha', ico: '↔️', lab: 'ぺちゃんこ', say: 'ぺちゃんこ', c: '#FFC4DA' },
+    { id: 'guru', ico: '🌀', lab: 'ぐるぐる', say: 'ぐるぐる', c: '#BDD7FF' },
+    { id: 'obake', ico: '👻', lab: 'おばけ', say: 'おばけ', c: '#DCCFFF' }
   ];
   /* おめん: ひとみの いち（がぞうの 0..1）。ex1/ex2 = ひだり/みぎの め、ey = めの たかさ */
   var HS_OMEN = [
@@ -9212,11 +9232,18 @@
   ];
   var HS_OMEN_K = 1.32;   /* めんの はば = かおの はば × これ */
   var HS_HATS = ['おうかん', 'とんがり ぼうし', 'ねこみみ', 'うさみみ', 'おはなの かんむり'];
+  var HS_HAT_UI = [['👑', 'おうかん'], ['🧙', 'とんがり'], ['🐱', 'ねこみみ'], ['🐰', 'うさみみ'], ['🌸', 'おはな']];
+  var HS_OMEN_LAB = ['ねこ', 'いぬ', 'うさぎ', 'くま', 'らいおん', 'ぱんだ', 'おばけ', 'ろぼっと'];
+  /* えらぶ ボトムシートの ならび: こうか 5 → ぼうし 5 → おめん 8（1つずつ） */
+  var HS_ITEMS = [];
+  HS_FX.forEach(function (f, i) { HS_ITEMS.push({ id: f.id, mode: i, k: 0, ico: f.ico, lab: f.lab, say: f.say, c: f.c }); });
+  HS_HATS.forEach(function (h, k) { HS_ITEMS.push({ id: 'hat' + k, mode: 5, k: k, ico: HS_HAT_UI[k][0], lab: HS_HAT_UI[k][1], say: h, c: '#FFD9B8' }); });
+  HS_OMEN.forEach(function (o, k) { HS_ITEMS.push({ id: 'omen' + k, mode: 6, k: k, img: 'assets/omen/' + o.id + '.webp', lab: HS_OMEN_LAB[k], say: o.say, c: '#C9F0B0' }); });
   var hsStage = $('#stage-henshin'), hsVideo = $('#hs-video'), hsGlCv = $('#hs-gl'), hsOv = $('#hs-ov'), hsOvC = hsOv.getContext('2d');
-  var hsMsg = $('#hs-msg'), hsPrep = $('#hs-prep'), hsModesEl = $('#hs-modes'), hsFlipEl = $('#hs-flip');
+  var hsMsg = $('#hs-msg'), hsPrep = $('#hs-prep'), hsBar = $('#hs-bar'), hsFlipEl = $('#hs-flip'), hsRandEl = $('#hs-rand'), hsPickEl = $('#hs-pick'), hsShEl = $('#hs-sheet'), hsList = $('#hs-list'), hsCloseEl = $('#hs-close');
   var hs = {
     on: false, gen: 0, stream: null, raf: 0, last: 0, t0: 0, frames: 0, noCam: false, camOk: false,
-    facing: 'user', mir: 1, mode: 0, hat: 0, omen: 0, omenRect: null, omenImgs: null, strT0: 0, hatT0: 0, str: 0,
+    facing: 'user', mir: 1, mode: 0, cur: 0, sheet: false, hat: 0, omen: 0, omenRect: null, omenImgs: null, strT0: 0, hatT0: 0, str: 0,
     cw: 0, ch: 0, gl: null, c2: null, glLost: false, prog: null, U: null, tex: null, texW: 0, texH: 0, vidOk: false,
     P: null, T: null, hasFace: false, miss: 0, fake: null,
     lmObj: null, lmState: 0, detAt: 0, detInt: 66, vt: -1,
@@ -9626,34 +9653,43 @@
   function hsWord(text) {
     bigWord(text, '#FFFFFF', Math.min(17, 88 / text.length).toFixed(1) + 'vw');
   }
-  function hsSetMode(m, quiet) {
-    hs.mode = m; hs.strT0 = performance.now(); hs.hatT0 = hs.strT0;
-    hs.btns.forEach(function (b, i) { b.classList.toggle('on', i === m); b.setAttribute('aria-pressed', i === m ? 'true' : 'false'); });
+  function hsChoose(i, quiet) {
+    var it = HS_ITEMS[i]; hs.cur = i; hs.mode = it.mode;
+    if (it.mode === 5) hs.hat = it.k; else if (it.mode === 6) hs.omen = it.k;
+    hs.strT0 = performance.now(); hs.hatT0 = hs.strT0;
+    hs.btns.forEach(function (bt, j) { bt.classList.toggle('on', j === i); bt.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
     if (quiet) return;
-    tone(440 + m * 70, 0.14, 'triangle', 0.12); say(HS_MODES[m].say); hsWord(HS_MODES[m].say);
+    tone(440 + (i % 9) * 55, 0.14, 'triangle', 0.12); say(it.say); hsWord(it.say);
   }
-  function hsCycleHat() {
-    hs.hat = (hs.hat + 1) % HS_HATS.length; hs.hatT0 = performance.now();
-    tone(520 + hs.hat * 80, 0.14, 'triangle', 0.12); say(HS_HATS[hs.hat]); hsWord(HS_HATS[hs.hat]);
+  function hsRandom() {
+    var j = Math.floor(Math.random() * (HS_ITEMS.length - 1)); if (j >= hs.cur) j++;
+    hsChoose(j);
   }
-  function hsCycleOmen() {
-    hs.omen = (hs.omen + 1) % HS_OMEN.length; hs.hatT0 = performance.now();
-    tone(520 + hs.omen * 60, 0.14, 'triangle', 0.12); say(HS_OMEN[hs.omen].say); hsWord(HS_OMEN[hs.omen].say);
-  }
-  function hsTap(e) {
-    var b = e.target && e.target.closest ? e.target.closest('.hs-b') : null;
-    if (b && hsModesEl.contains(b)) {
-      var m = parseInt(b.getAttribute('data-m'), 10);
-      if (m === 5 && hs.mode === 5) hsCycleHat(); else hsSetMode(m);
-      return;
+  /* ボトムシート: ひらく／とじる（へんしんは そのまま） */
+  function hsSheetSet(open) {
+    hs.sheet = !!open;
+    hsStage.classList.toggle('hs-open', hs.sheet);
+    hsShEl.classList.toggle('open', hs.sheet);
+    hsShEl.setAttribute('aria-hidden', hs.sheet ? 'false' : 'true');
+    hsPickEl.setAttribute('aria-expanded', hs.sheet ? 'true' : 'false');
+    if (hs.sheet) {   /* えらんでいる ものが みえる いちへ */
+      var bt = hs.btns[hs.cur];
+      if (bt) { hsList.scrollTop = Math.max(0, bt.offsetTop - (hsList.clientHeight - bt.offsetHeight) / 2); hsList.scrollLeft = Math.max(0, bt.offsetLeft - (hsList.clientWidth - bt.offsetWidth) / 2); }
     }
-    if (hsFlipEl.contains(e.target)) { hsFlip(); return; }
-    if (hsModesEl.contains(e.target) || e.target === hsMsg) return;
-    if (hs.noCam) return;
-    if (hs.mode === 5) hsCycleHat(); else if (hs.mode === 6) hsCycleOmen(); else hsSetMode((hs.mode + 1) % HS_MODES.length);
   }
-  function hsDown(e) { e.preventDefault(); audio(); hsTap(e); }
-  function hsClick(e) { if (e.detail === 0) hsTap(e); }
+  function hsTap(e) {   /* シートが しまっている とき: かるい きらきらだけ（へんしんは かわらない） */
+    if (hs.noCam) return;
+    var r = hsOv.getBoundingClientRect();
+    if (!r.width || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    hsBurst((e.clientX - r.left) / r.width * hs.cw, (e.clientY - r.top) / r.height * hs.ch, false);
+  }
+  function hsDown(e) {
+    var t = e.target;
+    if (t && t.closest && t.closest('.hs-rb, .hs-sheet')) { audio(); return; }   /* ボタン・シートの なかは そのまま（スクロールを じゃましない） */
+    e.preventDefault(); audio();
+    if (hs.sheet) { hsSheetSet(false); return; }
+    hsTap(e);
+  }
 
   function hsCamStop() {
     hs.gen++;
@@ -9664,7 +9700,7 @@
   function hsNoCam() {
     hs.noCam = true; hs.camOk = false;
     if (hs.raf) { cancelAnimationFrame(hs.raf); hs.raf = 0; }
-    hsGlCv.hidden = true; hsOv.hidden = true; hsModesEl.hidden = true; hsFlipEl.hidden = true; hsPrep.hidden = true;
+    hsGlCv.hidden = true; hsOv.hidden = true; hsBar.hidden = true; hsSheetSet(false); hsFlipEl.hidden = true; hsPrep.hidden = true;
     hsMsg.textContent = S.camOn ? 'カメラが おやすみ だよ' : 'カメラは おやすみ だよ'; hsMsg.hidden = false;
   }
   function hsCamStart() {
@@ -9708,37 +9744,42 @@
     hsFlipLab(); hsCamStart();
   }
   (function () {
-    HS_MODES.forEach(function (m, i) {
+    HS_ITEMS.forEach(function (it, i) {
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'hs-b'; b.setAttribute('data-m', String(i)); b.setAttribute('aria-label', m.say); b.style.setProperty('--c', m.c);
-      b.innerHTML = '<span class="ico">' + (m.img ? '<img src="' + m.img + '" alt="" draggable="false">' : m.ico) + '</span><span class="lab">' + m.lab + '</span>';
-      hsModesEl.appendChild(b); hs.btns.push(b);
+      b.type = 'button'; b.className = 'hs-b'; b.setAttribute('data-id', it.id); b.setAttribute('aria-label', it.say); b.style.setProperty('--c', it.c);
+      b.innerHTML = '<span class="ico">' + (it.img ? '<img src="' + it.img + '" alt="" draggable="false">' : it.ico) + '</span><span class="lab">' + it.lab + '</span>';
+      b.addEventListener('click', function () { hsChoose(i); });
+      hsList.appendChild(b); hs.btns.push(b);
     });
+    hsFlipEl.addEventListener('click', hsFlip);
+    hsRandEl.addEventListener('click', hsRandom);
+    hsPickEl.addEventListener('click', function () { hsSheetSet(true); });
+    hsCloseEl.addEventListener('click', function () { hsSheetSet(false); });
   })();
   games.henshin = {
     el: hsStage,
     enter: function () {
       hs.on = true; hs.noCam = false; hs.t0 = performance.now(); hs.last = hs.t0; hs.frames = 0; hs.detAt = 0; hs.reactAt = -1e9; hs.mouthOpen = false; hs.parts = [];
       if (hs.lmState === 3) hs.lmState = 0;
-      hsMsg.hidden = true; hsGlCv.hidden = false; hsOv.hidden = false; hsModesEl.hidden = false; hsPrep.hidden = true;
+      hsMsg.hidden = true; hsGlCv.hidden = false; hsOv.hidden = false; hsBar.hidden = false; hsPrep.hidden = true;
       hs.facing = 'user'; hs.mir = 1; hsFlipEl.hidden = true; hsFlipLab();
       hsLoadOmen(); hsInitGL(); hs.P = null; hsSize();
-      hsSetMode(0, true); hs.str = 0;
-      hsStage.addEventListener('pointerdown', hsDown); hsStage.addEventListener('click', hsClick);
+      hs.hat = 0; hs.omen = 0; hsChoose(0, true); hs.str = 0; hsSheetSet(false); hsList.scrollTop = 0; hsList.scrollLeft = 0;
+      hsStage.addEventListener('pointerdown', hsDown);
       hsCamStart();
       if (!hs.noCam && !hs.raf) hs.raf = requestAnimationFrame(hsFrame);
     },
     leave: function () {
       hs.on = false;
       if (hs.raf) { cancelAnimationFrame(hs.raf); hs.raf = 0; }
-      hsStage.removeEventListener('pointerdown', hsDown); hsStage.removeEventListener('click', hsClick);
+      hsStage.removeEventListener('pointerdown', hsDown); hsSheetSet(false);
       hsCamStop();
       hs.parts = []; hs.omenRect = null; hs.fake = null; hs.hasFace = false; hs.miss = 0; hsPrep.hidden = true;
       try { hsOvC.clearRect(0, 0, hsOv.width, hsOv.height); } catch (e) {}
     },
     resize: function () { if (hs.on) hsSize(); },
     /* テスト用 */
-    _t: function () { return { mode: hs.mode, hat: hs.hat, omen: hs.omen, omenRect: hs.omenRect, gl: !!hs.gl, ready: hs.lmState === 2, state: hs.lmState, reactions: hs.reactions, frames: hs.frames, hasFace: hs.hasFace, cam: hs.camOk, facing: hs.facing, mir: hs.mir, flip: !hsFlipEl.hidden, noCam: hs.noCam, str: hs.str, cw: hs.cw, ch: hs.ch, P: hs.P, tracks: hs.stream ? hs.stream.getTracks().length : 0, raf: hs.raf, vid: hs.vidOk }; },
+    _t: function () { return { mode: hs.mode, sheet: hs.sheet, item: HS_ITEMS[hs.cur].id, cur: hs.cur, hat: hs.hat, omen: hs.omen, omenRect: hs.omenRect, gl: !!hs.gl, ready: hs.lmState === 2, state: hs.lmState, reactions: hs.reactions, frames: hs.frames, hasFace: hs.hasFace, cam: hs.camOk, facing: hs.facing, mir: hs.mir, flip: !hsFlipEl.hidden, noCam: hs.noCam, str: hs.str, cw: hs.cw, ch: hs.ch, P: hs.P, tracks: hs.stream ? hs.stream.getTracks().length : 0, raf: hs.raf, vid: hs.vidOk }; },
     _fake: function (lm) { hs.fake = lm; if (!lm) { hs.hasFace = false; hs.T = hsDefault(); } },
     _react: function () { hs.reactAt = -1e9; hsReact(performance.now(), hs.P.mx, hs.P.my); }
   };
