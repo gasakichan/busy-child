@@ -3278,6 +3278,56 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     I = await info();
     ok(I[0].lab === 'どこかな' && I[0].w >= 119.5 && I[0].d < 3, tag + ': rotating re-centers on the ⭐ game');
     ok(await noHScroll(p), tag + ': no horizontal page overflow after rotate');
+    // Apple Watch ふう: ゴムの はんぱつ・ばねで もどる・なめらかな モメンタム
+    await p.setViewportSize(vp); await sleep(1100);
+    const rec = () => p.evaluate(() => { window.__rec = []; const f = () => { const B = window.__hb(); if (B) window.__rec.push([performance.now(), B.px, B.py]); window.__recId = requestAnimationFrame(f); }; f(); });
+    const rec0 = () => p.evaluate(() => { cancelAnimationFrame(window.__recId); return { r: window.__rec, R: window.__hb().rmax, d: window.__hb().d }; });
+    const ovs = (r, R) => r.map(q => Math.max(0, Math.hypot(q[1], q[2]) - R));
+    const sps = r => { const out = []; let j = 0; for (let i = 1; i < r.length; i++) { if (r[i][0] - r[j][0] >= 50) { out.push(Math.hypot(r[i][1] - r[j][1], r[i][2] - r[j][2]) / (r[i][0] - r[j][0])); j = i; } } return out; };
+    const cx = vp.width / 2, cy = vp.height / 2;
+    await rec();
+    await p.mouse.move(cx, cy); await p.mouse.down();
+    await p.mouse.move(cx - 3000, cy, { steps: 30 }); await sleep(150);
+    const hold = await p.evaluate(() => { const B = window.__hb(); return { o: Math.hypot(B.px, B.py) - B.rmax, R: B.rmax, d: B.d }; });
+    ok(hold.o > 20 && hold.o < hold.d, tag + ': dragging far past the edge shows a rubber-band overshoot (' + Math.round(hold.o) + 'px of 3000, limit ' + Math.round(hold.d) + ')');
+    await p.mouse.up();
+    const t0 = Date.now(); await sleep(650);
+    let R = await rec0();
+    const ov = ovs(R.r, R.R);
+    ok(Math.max(...ov) > 20, tag + ': overshoot visible before release (' + Math.round(Math.max(...ov)) + 'px)');
+    ok(ov[ov.length - 1] < 1.5, tag + ': released overshoot springs back to the edge within 650ms (' + ov[ov.length - 1].toFixed(2) + ')');
+    const mx = ov.indexOf(Math.max(...ov));
+    ok(ov.slice(mx).every((v, i, a) => i === 0 || v <= a[i - 1] + 0.5), tag + ': spring return is monotonic, no bounce inward/outward');
+    // はじく（はしに とどかない）: なめらかに へって ゆっくり とまる
+    await p.setViewportSize({ width: vp.width, height: vp.height + 1 }); await sleep(900);
+    await p.setViewportSize(vp); await sleep(900);
+    await p.mouse.move(cx, cy); await p.mouse.down();
+    for (let k = 1; k <= 6; k++) { await p.mouse.move(cx - 6 * k, cy - 2 * k); await sleep(16); }
+    await rec(); await p.mouse.up(); await sleep(2500);
+    R = await rec0();
+    const sp = sps(R.r), pk = Math.max(...sp);
+    let jump = 0; for (let i = 1; i < sp.length; i++) if (i > 1 && sp[i - 1] > 0.08) jump = Math.max(jump, (sp[i - 1] - sp[i]) / sp[i - 1]);
+    const glide = R.r.filter((q, i) => i && (q[1] !== R.r[i - 1][1] || q[2] !== R.r[i - 1][2])).length;
+    ok(pk > 0.1 && jump < 0.5 && glide > 25, tag + ': fling glides and slows smoothly, no sudden stop (peak ' + pk.toFixed(2) + ' px/ms, worst frame drop ' + Math.round(jump * 100) + '%, ' + glide + ' moving frames)');
+    // はじく（はしに ぶつかる）: やわらかい ゆれもどし なしで はしに とまる
+    await p.setViewportSize({ width: vp.width, height: vp.height + 1 }); await sleep(900);
+    await p.setViewportSize(vp); await sleep(900);
+    await p.mouse.move(cx, cy); await p.mouse.down();
+    for (let k = 1; k <= 6; k++) { await p.mouse.move(cx - 60 * k, cy - 20 * k); await sleep(16); }
+    await rec(); await p.mouse.up(); await sleep(2500);
+    R = await rec0();
+    const o2 = ovs(R.r, R.R), m2 = o2.indexOf(Math.max(...o2));
+    ok(Math.max(...o2) > 5 && Math.max(...o2) < R.d && o2[o2.length - 1] < 1.5, tag + ': fling runs into a soft overshoot then settles at the edge (max ' + Math.round(Math.max(...o2)) + 'px, end ' + o2[o2.length - 1].toFixed(2) + ')');
+    ok(o2.slice(m2).every((v, i, a) => i === 0 || v <= a[i - 1] + 0.5), tag + ': fling returns from the overshoot without bouncing');
+    // うごいてる さいちゅうに タッチ: そこで とまる
+    await p.setViewportSize({ width: vp.width, height: vp.height + 1 }); await sleep(900);
+    await p.setViewportSize(vp); await sleep(900);
+    await p.mouse.move(cx, cy); await p.mouse.down();
+    for (let k = 1; k <= 6; k++) { await p.mouse.move(cx - 20 * k, cy); await sleep(16); }
+    await p.mouse.up(); await sleep(120);
+    await p.mouse.move(cx, cy); await p.mouse.down(); const pa = await p.evaluate(() => { const B = window.__hb(); return [B.px, B.py]; }); await sleep(200);
+    const pb = await p.evaluate(() => { const B = window.__hb(); return [B.px, B.py]; }); await p.mouse.up(); await sleep(100);
+    ok(Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) < 0.5 && await homeShown(p), tag + ': touching during momentum stops it in place and does not open a game');
     ok(p.errs.length === 0, tag + ': no page errors ' + p.errs.join(' | '));
     await p.context().close();
     // うごきを へらす: モメンタム なし（ドラッグ終了後に うごきつづけない）
@@ -3287,6 +3337,9 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await q.mouse.move(vp.width / 2, vp.height / 2); await q.mouse.down(); await q.mouse.move(vp.width / 2 - 80, vp.height / 2, { steps: 3 }); await q.mouse.up(); await sleep(60);
     const t1 = await q.evaluate(() => document.querySelector('.hb .tile').style.transform); await sleep(400);
     ok(t1 === await q.evaluate(() => document.querySelector('.hb .tile').style.transform), tag + ': reduced motion: no momentum after release');
+    await q.mouse.move(vp.width / 2, vp.height / 2); await q.mouse.down(); await q.mouse.move(vp.width / 2 - 3000, vp.height / 2, { steps: 20 });
+    const ro = await q.evaluate(() => { const B = window.__hb(); return Math.hypot(B.px, B.py) - B.rmax; }); await q.mouse.up();
+    ok(ro < 1, tag + ': reduced motion: no overshoot past the edge (' + ro.toFixed(1) + ')');
     await ctx.close();
   });
 
