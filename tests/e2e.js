@@ -199,7 +199,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
     ok(t4.length === 5 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[3].cx === tiles[0].cx && t4[4].cx === tiles[1].cx && t4[0].cy === tiles[0].cy && t4[3].cy === tiles[3].cy && t4[4].cy === tiles[3].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, どこかな + へんしん in row 2, same size ' + JSON.stringify(t4));
-    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete && !ts[4].querySelector('.ico-img') && ts[4].querySelector('.ico').textContent === '👻'; }), tag + ' page4: とんとん/かえる/どこかな icon images loaded, はみがき uses the 🪥 emoji, へんしん the 👻 emoji');
+    ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete && ts[4].querySelector('.ico-img') && ts[4].querySelector('.ico-img').complete && ts[4].querySelector('.ico-img').naturalWidth > 0; }), tag + ' page4: とんとん/かえる/どこかな/へんしん icon images loaded, はみがき uses the 🪥 emoji');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
     const sc4 = await scrollInfo(); ok(!sc4.h && !sc4.v, tag + ' page4 no scroll');
@@ -3005,13 +3005,17 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const T = () => p.evaluate(() => window.__hs._t());
     const fake = (o) => p.evaluate(([src, o]) => { const f = eval('(' + src + ')'); window.__hs._fake(f(o || {})); }, [HS_FAKE_SRC, o]);
     await p.evaluate(() => { const g = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); window.__streams = []; navigator.mediaDevices.getUserMedia = c => g(c).then(s => { window.__streams.push(s); return s; }); });
+    await p.evaluate(() => { window.__cons = []; const g = navigator.mediaDevices.getUserMedia; navigator.mediaDevices.getUserMedia = c => { window.__cons.push(JSON.stringify(c.video && c.video.facingMode)); return g.call(navigator.mediaDevices, c); };
+      navigator.mediaDevices.enumerateDevices = () => Promise.resolve([{ kind: 'videoinput', deviceId: 'a', label: '' }, { kind: 'videoinput', deviceId: 'b', label: '' }, { kind: 'audioinput', deviceId: 'c', label: '' }]); });
+    await gotoPage(p, pageOf('へんしん'));
+    ok(await p.evaluate(() => { const i = document.querySelector('.hm-page:not([hidden]) .tile[aria-label="へんしん"] img'); return !!i && /assets\/ico\/henshin\.webp$/.test(i.getAttribute('src')) && i.complete && i.naturalWidth > 0; }), tag + ': home tile shows the henshin icon image');
     await tapTile(p, 'へんしん'); await sleep(900);
     ok(await p.locator('#stage-henshin').isVisible() && await p.locator('#hm-p3').isHidden(), tag + ': tile on page 4 opens へんしん');
     ok(await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': shared 🏠, no adult button');
     ok(await p.locator('#hs-gl').isVisible() && await p.locator('#hs-ov').isVisible(), tag + ': camera canvas + overlay visible');
     let t = await T();
     ok(t.gl === true && t.cam === true && !t.noCam && t.frames > 5, tag + ': WebGL on, camera on, frames drawn ' + JSON.stringify({ gl: t.gl, cam: t.cam, f: t.frames }));
-    ok(t.cw > 0 && t.cw <= 960 && t.ch <= 960 && t.cw / t.ch > 0 && Math.abs(t.cw / t.ch - vp.width / vp.height) < 0.05, tag + ': canvas resolution capped (' + t.cw + 'x' + t.ch + ')');
+    ok(t.cw > 0 && t.cw <= 960 && t.ch <= 960 && t.cw / t.ch > 0 && Math.abs(t.cw / t.ch - (await p.evaluate(() => { const r = document.querySelector('#hs-ov').getBoundingClientRect(); return r.width / r.height; }))) < 0.05, tag + ': canvas resolution capped (' + t.cw + 'x' + t.ch + ')');
     ok(await until(async () => (await T()).vid === true, 4000), tag + ': video frames reach the GL texture');
     await sleep(400);
     const sd = await pixSpread(p, await p.screenshot());
@@ -3025,13 +3029,13 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
         hs: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth || document.querySelector('#stage-henshin').scrollWidth > document.querySelector('#stage-henshin').clientWidth }; });
     const g = await geo();
     console.log('info ' + tag + ' buttons min ' + Math.round(g.minw) + 'x' + Math.round(g.minh));
-    ok(g.n === 6 && g.minw >= 80 && g.minh >= 80, tag + ': 6 mode buttons, each >= 80px (' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ')');
+    ok(g.n === 7 && g.minw >= 80 && g.minh >= 80, tag + ': 7 mode buttons (incl. おめん), each >= 80px (' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ')');
     ok(g.inside && g.ovl === 0 && g.home === 0, tag + ': buttons inside the viewport, no overlap with each other or 🏠');
     ok(!g.hs, tag + ': no horizontal scroll');
-    ok(g.labs === '👀おめめ|↕️のびーる|↔️ぺちゃんこ|🌀ぐるぐる|👻おばけ|🎩ぼうし', tag + ': labels ' + g.labs);
+    ok(g.labs === '👀おめめ|↕️のびーる|↔️ぺちゃんこ|🌀ぐるぐる|👻おばけ|🎩ぼうし|おめん', tag + ': labels ' + g.labs);
     // モード切りかえ
-    const NAMES = ['おめめ ぷくー', 'のびーる', 'ぺちゃんこ', 'ぐるぐる', 'おばけ', 'ぼうし'];
-    for (let i = 5; i >= 0; i--) {   // 0 から はじまるので 5→0 の じゅんで 押して 毎回 変わる
+    const NAMES = ['おめめ ぷくー', 'のびーる', 'ぺちゃんこ', 'ぐるぐる', 'おばけ', 'ぼうし', 'おめん'];
+    for (let i = 6; i >= 0; i--) {   // 0 から はじまるので 5→0 の じゅんで 押して 毎回 変わる
       await clearSays(p);
       await p.click('.hs-b[data-m="' + i + '"]'); await sleep(120);
       t = await T();
@@ -3062,6 +3066,49 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(t.P.cx > t.cw / 2, tag + ': mirrored (a face on the video\'s left shows on the right)');
     await fake({ cx: 0.5, cy: 0.42 }); await sleep(900);
     // みんなの モードを スクショ
+    // おめん: かおに おめんが つく
+    const OM = ['ねこさん', 'いぬさん', 'うさぎさん', 'くまさん', 'らいおんさん', 'ぱんださん', 'おばけさん', 'ろぼっとさん'];
+    const mimg = await p.evaluate(() => { const i = document.querySelector('.hs-b[data-m="6"] img'); return i ? { ok: i.complete && i.naturalWidth > 0, src: i.getAttribute('src') } : null; });
+    ok(mimg && mimg.ok && /assets\/omen\/neko\.webp$/.test(mimg.src), tag + ': おめん button shows a small neko image ' + JSON.stringify(mimg));
+    await clearSays(p); await p.click('.hs-b[data-m="6"]'); await sleep(700);
+    t = await T();
+    ok(t.mode === 6 && t.omen === 0 && (await says(p)).some(x => x.t === 'おめん') && (await p.locator('#bigword').textContent()) === 'おめん', tag + ': entering おめん says/shows おめん, mask 0');
+    ok(t.omenRect && t.omenRect.w > 20, tag + ': mask drawn (images loaded) ' + JSON.stringify(t.omenRect));
+    t = await T();
+    const eyeMid = tt => [(tt.P.e1x + tt.P.e2x) / 2, (tt.P.e1y + tt.P.e2y) / 2];
+    let em = eyeMid(t);
+    ok(Math.hypot(t.omenRect.cx - em[0], t.omenRect.cy - em[1]) < 4 && Math.abs(t.omenRect.rot - t.P.roll) < 0.02, tag + ': mask eyes sit on the face eyes ' + JSON.stringify({ m: [Math.round(t.omenRect.cx), Math.round(t.omenRect.cy)], e: em.map(Math.round) }));
+    ok(t.omenRect.w > 2 * t.P.rx && t.omenRect.w < 4 * t.P.rx, tag + ': mask covers the whole face (w ' + Math.round(t.omenRect.w) + ' vs face ' + Math.round(2 * t.P.rx) + ')');
+    const w1 = t.omenRect.w, rx1 = t.P.rx;
+    await fake({ cx: 0.3, cy: 0.4, w: 0.34, h: 0.46 }); await sleep(1100); t = await T(); em = eyeMid(t);
+    ok(t.omenRect.w > w1 * 1.3 && Math.abs(t.omenRect.w / (2 * t.P.rx) - w1 / (2 * rx1)) < 0.05 && Math.abs(t.omenRect.cx - em[0]) < 4 && t.omenRect.cx > t.cw / 2, tag + ': mask width scales with the face and follows it (mirrored) ' + Math.round(w1) + '→' + Math.round(t.omenRect.w));
+    await fake({ cx: 0.5, cy: 0.42 }); await sleep(1100);
+    const vid1 = Math.round(vp.width * (vp.width > vp.height ? 0.3 : 0.5));
+    for (let k = 1; k <= 8; k++) {
+      await clearSays(p); await p.mouse.click(vid1, 130); await sleep(120);
+      const oi = k % 8; t = await T();
+      ok(t.mode === 6 && t.omen === oi && (await says(p)).some(x => x.t === OM[oi]) && (await p.locator('#bigword').textContent()) === OM[oi], tag + ': stage tap in おめん → mask ' + oi + ' 「' + OM[oi] + '」, still おめん');
+      if (k === 1) { await sleep(600); await shot('omen-inu'); }
+    }
+    await p.click('.hs-b[data-m="6"]'); await sleep(150);
+    ok((await T()).omen === 0 && (await T()).mode === 6, tag + ': tapping the おめん button itself does not cycle');
+    await sleep(500); await shot('omen-neko');
+    { const r0 = (await T()).reactions; await clearSays(p); await fake({ cy: 0.42, mouth: 0.22 });
+      ok(await until(async () => (await T()).reactions === r0 + 1, 1500), tag + ': mouth open in おめん → reaction fires');
+      await sleep(150); await shot('omen-react'); await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1700); }
+    await p.evaluate(() => window.__hs._fake(null)); await sleep(1800); t = await T();
+    ok(!t.hasFace && t.omenRect && Math.abs(t.omenRect.cx - t.cw / 2) < t.cw * 0.06, tag + ': no face → mask at the default face position');
+    // よこむき: カメラは ボタンの ひだりに おさまる（かお・おめんの まんなかも ひだり）
+    { const lg = await p.evaluate(() => { const r = d => d.getBoundingClientRect(), ov = r(document.querySelector('#hs-ov')), gl = r(document.querySelector('#hs-gl')), bs = [...document.querySelectorAll('#hs-modes .hs-b')].map(b => r(b)), fl = r(document.querySelector('#hs-flip'));
+        return { ovL: ov.left, ovR: ov.right, ovW: ov.width, glR: gl.right, glL: gl.left, btnL: Math.min(...bs.map(b => b.left)), flipOverlap: bs.some(b => fl.left < b.right && b.left < fl.right && fl.top < b.bottom && b.top < fl.bottom), stageR: document.querySelector('#stage-henshin').getBoundingClientRect().right, stageL: document.querySelector('#stage-henshin').getBoundingClientRect().left }; });
+      const tt = await T(), land = vp.width > vp.height;
+      if (land) {
+        const sc = lg.ovW / tt.cw, mx = lg.ovL + tt.omenRect.cx * sc, fx = lg.ovL + tt.P.cx * sc;
+        ok(lg.ovR <= lg.btnL && lg.glR <= lg.btnL && lg.glL >= 0 && Math.abs(lg.glR - lg.ovR) < 1, tag + ': landscape canvas right edge <= mode column left edge ' + JSON.stringify({ r: Math.round(lg.ovR), btnL: Math.round(lg.btnL) }));
+        ok(mx < lg.btnL && fx < lg.btnL && Math.abs(mx - (lg.ovL + lg.ovR) / 2) < lg.ovW * 0.06 && !lg.flipOverlap, tag + ': landscape default mask/face centre is left of the buttons, centred in the camera area, flip clear of buttons ' + Math.round(mx) + ' < ' + Math.round(lg.btnL));
+      } else ok(Math.abs(lg.ovR - lg.stageR) < 1 && Math.abs(lg.ovL - lg.stageL) < 1, tag + ': portrait canvas still fills the stage ' + JSON.stringify(lg));
+    }
+    await fake({ cx: 0.5, cy: 0.42 }); await sleep(700);
     for (let i = 0; i < 6; i++) {
       await p.click('.hs-b[data-m="' + i + '"]'); await sleep(550);
       if (i === 5) { for (let k = 0; k < 5; k++) { await shot('mode5-hat' + k); if (k < 4) { await p.mouse.click(view.x, view.y); await sleep(550); } } await p.mouse.click(view.x, view.y); await sleep(200); }
@@ -3090,6 +3137,29 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(!t.hasFace && Math.abs(t.P.cx - t.cw / 2) < t.cw * 0.05, tag + ': no face → effect eases back to the screen center, still running');
     await shot('noface');
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
+    // まえ／うしろ きりかえ
+    const fg = () => p.evaluate(() => { const r = d => { const x = d.getBoundingClientRect(); return { l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height }; };
+      const f = r(document.querySelector('#hs-flip')), ov = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+      return { w: f.w, h: f.h, inside: f.l >= 0 && f.r <= innerWidth && f.t >= 0 && f.b <= innerHeight, home: ov(f, r(document.querySelector('#homebtn'))), modes: [...document.querySelectorAll('#hs-modes .hs-b')].filter(b => ov(f, r(b))).length, prep: ov(f, r(document.querySelector('#hs-prep'))), lab: document.querySelector('#hs-flip .lab').textContent }; });
+    const fgeo = await fg();
+    ok(await p.locator('#hs-flip').isVisible() && (await T()).flip && fgeo.lab === 'うしろ', tag + ': 2 cameras → flip button shown (label うしろ)');
+    ok(fgeo.w >= 80 && fgeo.h >= 80 && fgeo.inside && !fgeo.home && fgeo.modes === 0, tag + ': flip button >= 80px, inside, no overlap with 🏠 or mode buttons ' + JSON.stringify(fgeo));
+    ok((await p.evaluate(() => window.__cons[0])) === '"user"', tag + ': first request is facingMode user');
+    ok((await T()).facing === 'user' && (await T()).mir === 1, tag + ': front camera is mirrored');
+    await p.click('.hs-b[data-m="2"]'); await sleep(150); await clearSays(p);
+    await p.click('#hs-flip'); await sleep(500);
+    t = await T();
+    ok(t.facing === 'environment' && t.mir === 0 && t.mode === 2 && t.cam && (await p.evaluate(() => window.__cons[window.__cons.length - 1])) === '"environment"', tag + ': flip → environment requested, not mirrored, mode unchanged ' + JSON.stringify({ f: t.facing, m: t.mir, mode: t.mode }));
+    ok((await says(p)).some(x => x.t === 'うしろの かめら') && (await p.locator('#bigword').textContent()).includes('うしろ') && (await p.locator('#hs-flip .lab').textContent()) === 'まえ', tag + ': spoken/shown うしろの かめら, label now まえ');
+    ok(await until(async () => (await T()).vid === true, 3000), tag + ': back camera frames reach the texture');
+    await fake({ cx: 0.25, cy: 0.4 }); await sleep(900); t = await T();
+    ok(t.P.cx < t.cw / 2, tag + ': back camera is not mirrored (a face on the video\'s left stays on the left)');
+    await fake({ cx: 0.5, cy: 0.42 }); await sleep(300);
+    await shot('flip-back');
+    ok((await p.evaluate(() => window.__streams.length)) >= 2 && (await p.evaluate(() => window.__streams.slice(0, -1).every(s => s.getTracks().every(x => x.readyState === 'ended')))), tag + ': previous stream stopped on flip');
+    await clearSays(p); await p.click('#hs-flip'); await sleep(500);
+    t = await T();
+    ok(t.facing === 'user' && t.mir === 1 && t.mode === 2 && (await says(p)).some(x => x.t === 'まえの かめら'), tag + ': flip again → front, mirrored, mode unchanged');
     // 出る
     await p.click('#homebtn'); await sleep(200);
     ok(await p.locator('#hm-p3').isVisible() && await p.locator('#stage-henshin').isHidden(), tag + ': 🏠 returns to page 4');
@@ -3108,6 +3178,29 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const st2 = await p.evaluate(() => window.__streams.reduce((a, s) => a + s.getTracks().filter(x => x.readyState !== 'ended').length, 0));
     ok(st2 === 0, tag + ': all camera tracks ended again after the second visit');
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+    await p.context().close();
+  });
+
+  T('henshin-flip', async (br) => {
+    const p = await newPage(br, { width: 390, height: 844 });
+    const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const T = () => p.evaluate(() => window.__hs._t());
+    await p.evaluate(() => { window.__cons = []; const g = navigator.mediaDevices.getUserMedia;
+      navigator.mediaDevices.getUserMedia = c => { window.__cons.push(c.video && c.video.facingMode); return c.video && c.video.facingMode === 'environment' && window.__noBack ? Promise.reject(new DOMException('x', 'OverconstrainedError')) : g.call(navigator.mediaDevices, c); };
+      navigator.mediaDevices.enumerateDevices = () => Promise.resolve([{ kind: 'videoinput', deviceId: 'a', label: '' }]); });
+    await tapTile(p, 'へんしん'); await sleep(900);
+    ok((await T()).cam && await p.locator('#hs-flip').isHidden() && !(await T()).flip, 'henshin-flip: 1 videoinput → flip button hidden');
+    await p.click('#homebtn'); await sleep(200);
+    await p.evaluate(() => { window.__noBack = true; navigator.mediaDevices.enumerateDevices = () => Promise.resolve([{ kind: 'videoinput' }, { kind: 'videoinput' }]); });
+    await tapTile(p, 'へんしん'); await sleep(900);
+    ok(await p.locator('#hs-flip').isVisible(), 'henshin-flip: 2 videoinputs → shown again after re-enter');
+    await clearSays(p); await p.click('#hs-flip');
+    ok(await until(async () => { const t = await T(); return t.cam && t.facing === 'user' && t.mir === 1; }, 3000), 'henshin-flip: back camera fails → silently falls back to front');
+    ok(await p.locator('#hs-msg').isHidden() && await p.locator('#hs-modes').isVisible() && (await says(p)).every(x => !/しっぱい|だめ|ごめん|おやすみ/.test(x.t)), 'henshin-flip: no error message or failure speech');
+    await p.click('#homebtn'); await sleep(250);
+    const live = await p.evaluate(() => document.querySelector('#hs-video').srcObject);
+    ok(live === null && (await T()).tracks === 0, 'henshin-flip: leave() cleans up');
+    ok(p.errs.length === 0, 'henshin-flip: no console errors ' + p.errs.join(' | '));
     await p.context().close();
   });
 
