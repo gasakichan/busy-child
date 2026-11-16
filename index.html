@@ -9213,11 +9213,15 @@
      しっぱいしても なにも みせず、がめんの まんなかで ききの「ゆかいな かがみ」として あそべる */
   var HS_INK = '#5b3a29';
   var HS_FX = [
-    { id: 'eye', ico: '👀', lab: 'おめめ', say: 'おめめ ぷくー', c: '#FFE48A' },
-    { id: 'nobi', ico: '↕️', lab: 'のびーる', say: 'のびーる', c: '#B6F0E3' },
-    { id: 'pecha', ico: '↔️', lab: 'ぺちゃんこ', say: 'ぺちゃんこ', c: '#FFC4DA' },
-    { id: 'guru', ico: '🌀', lab: 'ぐるぐる', say: 'ぐるぐる', c: '#BDD7FF' },
-    { id: 'obake', ico: '👻', lab: 'おばけ', say: 'おばけ', c: '#DCCFFF' }
+    { id: 'eye', mode: 0, ico: '👀', lab: 'おめめ', say: 'おめめ ぷくー', c: '#FFE48A' },
+    { id: 'nobi', mode: 1, ico: '↕️', lab: 'のびーる', say: 'のびーる', c: '#B6F0E3' },
+    { id: 'pecha', mode: 2, ico: '↔️', lab: 'ぺちゃんこ', say: 'ぺちゃんこ', c: '#FFC4DA' },
+    { id: 'guru', mode: 3, ico: '🌀', lab: 'ぐるぐる', say: 'ぐるぐる', c: '#BDD7FF' },
+    { id: 'obake', mode: 4, ico: '👻', lab: 'おばけ', say: 'おばけ', c: '#DCCFFF' },
+    { id: 'mirror', mode: 7, ico: '🪞', lab: 'ミラー', say: 'ミラー', c: '#CFF5FF' },
+    { id: 'warau', mode: 8, ico: '😄', lab: 'わらう', say: 'にこにこ', c: '#FFF0A8' },
+    { id: 'kanashi', mode: 9, ico: '😢', lab: 'かなしむ', say: 'えーん えーん', c: '#C8DDFF' },
+    { id: 'okoru', mode: 10, ico: '😠', lab: 'おこる', say: 'ぷんぷん', c: '#FFC9B8' }
   ];
   /* おめん: ひとみの いち（がぞうの 0..1）。ex1/ex2 = ひだり/みぎの め、ey = めの たかさ */
   var HS_OMEN = [
@@ -9234,16 +9238,16 @@
   var HS_HATS = ['おうかん', 'とんがり ぼうし', 'ねこみみ', 'うさみみ', 'おはなの かんむり'];
   var HS_HAT_UI = [['👑', 'おうかん'], ['🧙', 'とんがり'], ['🐱', 'ねこみみ'], ['🐰', 'うさみみ'], ['🌸', 'おはな']];
   var HS_OMEN_LAB = ['ねこ', 'いぬ', 'うさぎ', 'くま', 'らいおん', 'ぱんだ', 'おばけ', 'ろぼっと'];
-  /* えらぶ ボトムシートの ならび: こうか 5 → ぼうし 5 → おめん 8（1つずつ） */
+  /* えらぶ ボトムシートの ならび: こうか 9 → ぼうし 5 → おめん 8（1つずつ） */
   var HS_ITEMS = [];
-  HS_FX.forEach(function (f, i) { HS_ITEMS.push({ id: f.id, mode: i, k: 0, ico: f.ico, lab: f.lab, say: f.say, c: f.c }); });
+  HS_FX.forEach(function (f, i) { HS_ITEMS.push({ id: f.id, mode: f.mode, k: 0, ico: f.ico, lab: f.lab, say: f.say, c: f.c }); });
   HS_HATS.forEach(function (h, k) { HS_ITEMS.push({ id: 'hat' + k, mode: 5, k: k, ico: HS_HAT_UI[k][0], lab: HS_HAT_UI[k][1], say: h, c: '#FFD9B8' }); });
   HS_OMEN.forEach(function (o, k) { HS_ITEMS.push({ id: 'omen' + k, mode: 6, k: k, img: 'assets/omen/' + o.id + '.webp', lab: HS_OMEN_LAB[k], say: o.say, c: '#C9F0B0' }); });
   var hsStage = $('#stage-henshin'), hsVideo = $('#hs-video'), hsGlCv = $('#hs-gl'), hsOv = $('#hs-ov'), hsOvC = hsOv.getContext('2d');
   var hsMsg = $('#hs-msg'), hsPrep = $('#hs-prep'), hsBar = $('#hs-bar'), hsFlipEl = $('#hs-flip'), hsRandEl = $('#hs-rand'), hsPickEl = $('#hs-pick'), hsShEl = $('#hs-sheet'), hsList = $('#hs-list'), hsCloseEl = $('#hs-close');
   var hs = {
     on: false, gen: 0, stream: null, raf: 0, last: 0, t0: 0, frames: 0, noCam: false, camOk: false,
-    facing: 'user', mir: 1, mode: 0, cur: 0, sheet: false, hat: 0, omen: 0, omenRect: null, omenImgs: null, strT0: 0, hatT0: 0, str: 0,
+    facing: 'user', mir: 1, mode: 0, cur: 0, sheet: false, hat: 0, omen: 0, omenRect: null, omenImgs: null, strT0: 0, hatT0: 0, str: 0, vis: 0, eff: 0,
     cw: 0, ch: 0, gl: null, c2: null, glLost: false, prog: null, U: null, tex: null, texW: 0, texH: 0, vidOk: false,
     P: null, T: null, hasFace: false, miss: 0, fake: null,
     lmObj: null, lmState: 0, detAt: 0, detInt: 66, vt: -1,
@@ -9253,19 +9257,65 @@
   var HS_FS = [
     '#ifdef GL_FRAGMENT_PRECISION_HIGH', 'precision highp float;', '#else', 'precision mediump float;', '#endif',
     'varying vec2 vUv; uniform sampler2D uTex;',
-    'uniform float uAsp, uMir, uMode, uStr, uTime, uRoll, uER; uniform vec2 uOs, uSs, uC, uR, uE1, uE2;',
+    'uniform float uAsp, uMir, uMode, uStr, uTime, uRoll, uER; uniform vec2 uOs, uSs, uC, uR, uE1, uE2, uM1, uM2;',
     'vec2 rot(vec2 v, float a) { float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }',
     'vec3 tex(vec2 P) { vec2 u = vec2(P.x / uAsp, P.y); float ux = uMir > 0.5 ? 1.0 - u.x : u.x; return texture2D(uTex, vec2((ux - uOs.x) * uSs.x, (u.y - uOs.y) * uSs.y)).rgb; }',
     'vec2 bulge(vec2 P, vec2 e) { vec2 d = P - e; float r = length(d); float t = r / uER; if (t >= 1.0 || r < 0.00001) return P; return e + d * (1.0 - 0.62 * uStr * (1.0 - t * t)); }',
+    'vec2 push(vec2 Q, vec2 c, vec2 D, float r) { vec2 d = Q - c; return Q - D * exp(-dot(d, d) / (r * r)); }',
+    'vec2 ldir(vec2 v) { return rot(v, uRoll); }',
     'void main() {',
     '  vec2 P = vec2(vUv.x * uAsp, vUv.y); vec2 Q = P; vec2 d = P - uC;',
     '  vec2 l = rot(d, -uRoll); float n = length(l / uR); float w = 1.0 - smoothstep(0.55, 1.45, n);',
+    '#ifndef HS_EXPR',
     '  if (uMode < 0.5) { Q = bulge(bulge(P, uE1), uE2); }',
     '  else if (uMode < 1.5) { l.y *= 1.0 - 0.42 * uStr * w; l.x *= 1.0 + 0.12 * uStr * w; Q = uC + rot(l, uRoll); }',
     '  else if (uMode < 2.5) { l.y *= 1.0 + 0.6 * uStr * w; l.x *= 1.0 - 0.32 * uStr * w; Q = uC + rot(l, uRoll); }',
     '  else if (uMode < 3.5) { float R = 1.6 * max(uR.x, uR.y); float f = 1.0 - smoothstep(0.0, R, length(d)); float a = uStr * (1.5 + 0.8 * sin(uTime * 1.6)) * f * f; Q = uC + rot(d, a); }',
     '  else if (uMode < 4.5) { Q = P + vec2(sin(P.y * 28.0 + uTime * 3.0), cos(P.x * 24.0 + uTime * 2.4)) * 0.006 * w * uStr; }',
+    '#else',
+    '  if (uMode > 6.5) {',
+    '    float ed = length(uE2 - uE1); float rx = uR.x, ry = uR.y; float k = uStr;',
+    '#if HS_EXPR == 7',
+    '    {',
+    '      vec2 lm = rot(P - uC, -uRoll);',
+    '      if (lm.x > 0.0 && lm.x < uStr * 3.0) { lm.x = -lm.x; Q = uC + rot(lm, uRoll); }',
+    '    }',
+    '#elif HS_EXPR == 8',
+    '    {',
+    '      float rr = 0.30 * rx;',
+    '      Q = push(Q, uM1, ldir(vec2(-0.10 * rx, -0.16 * ry) * k), rr);',
+    '      Q = push(Q, uM2, ldir(vec2(0.10 * rx, -0.16 * ry) * k), rr);',
+    '      Q = push(Q, uE1 + ldir(vec2(0.0, 0.42 * ry)), ldir(vec2(0.0, -0.06 * ry) * k), rr);',
+    '      Q = push(Q, uE2 + ldir(vec2(0.0, 0.42 * ry)), ldir(vec2(0.0, -0.06 * ry) * k), rr);',
+    '      vec2 o1 = rot(Q - uE1, -uRoll); float g1 = exp(-dot(o1, o1) / (0.25 * ed * ed)); o1.y *= 1.0 + 0.7 * k * g1; Q = uE1 + rot(o1, uRoll);',
+    '      vec2 o2 = rot(Q - uE2, -uRoll); float g2 = exp(-dot(o2, o2) / (0.25 * ed * ed)); o2.y *= 1.0 + 0.7 * k * g2; Q = uE2 + rot(o2, uRoll);',
+    '    }',
+    '#elif HS_EXPR == 9',
+    '    {',
+    '      float rb = 0.22 * rx;',
+    '      Q = push(Q, uM1, ldir(vec2(0.03 * rx, 0.15 * ry) * k), 0.30 * rx);',
+    '      Q = push(Q, uM2, ldir(vec2(-0.03 * rx, 0.15 * ry) * k), 0.30 * rx);',
+    '      Q = push(Q, uE1 + ldir(vec2(0.25 * ed, -0.45 * ed)), ldir(vec2(0.0, -0.09 * ry) * k), rb);',
+    '      Q = push(Q, uE2 + ldir(vec2(-0.25 * ed, -0.45 * ed)), ldir(vec2(0.0, -0.09 * ry) * k), rb);',
+    '      Q = push(Q, uE1 + ldir(vec2(-0.2 * ed, -0.4 * ed)), ldir(vec2(0.0, 0.04 * ry) * k), rb);',
+    '      Q = push(Q, uE2 + ldir(vec2(0.2 * ed, -0.4 * ed)), ldir(vec2(0.0, 0.04 * ry) * k), rb);',
+    '    }',
+    '#else',
+    '    {',
+    '      float rb = 0.22 * rx;',
+    '      Q = push(Q, uE1 + ldir(vec2(0.25 * ed, -0.35 * ed)), ldir(vec2(0.04 * rx, 0.11 * ry) * k), rb);',
+    '      Q = push(Q, uE2 + ldir(vec2(-0.25 * ed, -0.35 * ed)), ldir(vec2(-0.04 * rx, 0.11 * ry) * k), rb);',
+    '      Q = push(Q, uE1 + ldir(vec2(-0.2 * ed, -0.4 * ed)), ldir(vec2(0.0, -0.05 * ry) * k), rb);',
+    '      Q = push(Q, uE2 + ldir(vec2(0.2 * ed, -0.4 * ed)), ldir(vec2(0.0, -0.05 * ry) * k), rb);',
+    '      Q = push(Q, uM1, ldir(vec2(0.03 * rx, 0.07 * ry) * k), 0.30 * rx);',
+    '      Q = push(Q, uM2, ldir(vec2(-0.03 * rx, 0.07 * ry) * k), 0.30 * rx);',
+    '    }',
+    '#endif',
+    '  }',
+    '#endif',
     '  vec3 c = tex(Q);',
+    '  if (uMode > 8.5 && uMode < 9.5) { float lum = dot(c, vec3(0.299, 0.587, 0.114)); c = mix(c, vec3(lum) * vec3(0.85, 0.95, 1.15), 0.35 * uStr); }',
+    '  else if (uMode > 9.5) { c = mix(c, c * vec3(1.18, 0.82, 0.8) + vec3(0.10, 0.0, 0.0), 0.55 * uStr * w); }',
     '  if (uMode > 3.5 && uMode < 4.5) {',
     '    float lum = dot(c, vec3(0.299, 0.587, 0.114));',
     '    vec3 night = mix(vec3(0.03, 0.05, 0.18), c * vec3(0.22, 0.3, 0.6) + vec3(0.02, 0.04, 0.14), 0.5);',
@@ -9282,7 +9332,7 @@
 
   function hsDefault() {
     var cw = hs.cw, ch = hs.ch, sh = Math.min(cw, ch), cx = cw / 2, cy = ch * 0.46, rx = 0.23 * sh, ry = 0.3 * sh;
-    return { cx: cx, cy: cy, rx: rx, ry: ry, roll: 0, e1x: cx - 0.4 * rx, e1y: cy - 0.12 * ry, e2x: cx + 0.4 * rx, e2y: cy - 0.12 * ry, mx: cx, my: cy + 0.45 * ry, mr: 0 };
+    return { cx: cx, cy: cy, rx: rx, ry: ry, roll: 0, e1x: cx - 0.4 * rx, e1y: cy - 0.12 * ry, e2x: cx + 0.4 * rx, e2y: cy - 0.12 * ry, mx: cx, my: cy + 0.45 * ry, mr: 0, c1x: cx - 0.38 * rx, c1y: cy + 0.45 * ry, c2x: cx + 0.38 * rx, c2y: cy + 0.45 * ry };
   }
   function hsDist(ax, ay, bx, by) { var dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
   /* ランドマーク（映像の 0..1）→ がめんの px（まえカメラは かがみ: 左右はんてん・cover） */
@@ -9304,6 +9354,15 @@
     T.roll = Math.atan2(e2[1] - e1[1], e2[0] - e1[0]);
     if (T.roll > 1.2) T.roll = 1.2; else if (T.roll < -1.2) T.roll = -1.2;
     T.mx = (m1[0] + m2[0]) / 2; T.my = (m1[1] + m2[1]) / 2; T.mr = hsDist(m1[0], m1[1], m2[0], m2[1]) / hh;
+    var k1 = lm[61] ? hsPt(lm[61]) : null, k2 = lm[291] ? hsPt(lm[291]) : null;
+    if (k1 && k2 && hsDist(k1[0], k1[1], k2[0], k2[1]) > 0.3 * T.rx) {
+      if (k1[0] > k2[0]) { var tk = k1; k1 = k2; k2 = tk; }
+      T.c1x = k1[0]; T.c1y = k1[1]; T.c2x = k2[0]; T.c2y = k2[1];
+    } else {
+      var cr = Math.cos(T.roll), sr = Math.sin(T.roll), mw = 0.38 * T.rx;
+      T.c1x = T.mx - cr * mw; T.c1y = T.my - sr * mw; T.c2x = T.mx + cr * mw; T.c2y = T.my + sr * mw;
+    }
+    if (!hs.hasFace) { for (var kq in T) { if (T.hasOwnProperty(kq)) hs.P[kq] = T[kq]; } hs.hatT0 = performance.now(); }
     hs.hasFace = true; hs.miss = 0;
   }
   function hsLost() {
@@ -9346,21 +9405,29 @@
       var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
       return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
     }
-    var vs = sh(gl.VERTEX_SHADER, HS_VS), fs = sh(gl.FRAGMENT_SHADER, HS_FS);
-    if (!vs || !fs) return false;
-    var pg = gl.createProgram(); gl.attachShader(pg, vs); gl.attachShader(pg, fs); gl.linkProgram(pg);
-    if (!gl.getProgramParameter(pg, gl.LINK_STATUS)) return false;
-    gl.useProgram(pg);
+    /* ひょうじょう（mode 7〜）は べつの プログラム（ふるい こうかが おそく ならないように） */
+    function prog(src) {
+      var vs = sh(gl.VERTEX_SHADER, HS_VS), fs = sh(gl.FRAGMENT_SHADER, src);
+      if (!vs || !fs) return null;
+      var pg = gl.createProgram(); gl.attachShader(pg, vs); gl.attachShader(pg, fs); gl.bindAttribLocation(pg, 0, 'aP'); gl.linkProgram(pg);
+      if (!gl.getProgramParameter(pg, gl.LINK_STATUS)) return null;
+      var U = {};
+      ['uTex', 'uAsp', 'uMir', 'uMode', 'uStr', 'uTime', 'uRoll', 'uER', 'uOs', 'uSs', 'uC', 'uR', 'uE1', 'uE2', 'uM1', 'uM2'].forEach(function (k) { U[k] = gl.getUniformLocation(pg, k); });
+      gl.useProgram(pg); gl.uniform1i(U.uTex, 0);
+      return { pg: pg, U: U };
+    }
+    var ps = [prog(HS_FS)];
+    for (var m = 7; m <= 10; m++) ps.push(prog('#define HS_EXPR ' + m + '\n' + HS_FS));
+    if (ps.some(function (x) { return !x; })) return false;
+    var p0 = ps[0];
+    var pg = p0.pg; gl.useProgram(pg);
     var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    var loc = gl.getAttribLocation(pg, 'aP'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     var tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    var U = {};
-    ['uTex', 'uAsp', 'uMir', 'uMode', 'uStr', 'uTime', 'uRoll', 'uER', 'uOs', 'uSs', 'uC', 'uR', 'uE1', 'uE2'].forEach(function (k) { U[k] = gl.getUniformLocation(pg, k); });
-    gl.uniform1i(U.uTex, 0);
-    hs.prog = pg; hs.U = U; hs.tex = tx; hs.texW = 0; hs.texH = 0; hs.gl = gl;
+    hs.progs = ps; hs.pi = 0; hs.prog = pg; hs.U = p0.U; hs.tex = tx; hs.texW = 0; hs.texH = 0; hs.gl = gl;
     return true;
   }
   function hsInitGL() {
@@ -9387,7 +9454,7 @@
     if (cw === hs.cw && ch === hs.ch && hs.P) return;
     hs.cw = cw; hs.ch = ch;
     hsGlCv.width = cw; hsGlCv.height = ch; hsOv.width = cw; hsOv.height = ch;
-    hs.P = hsDefault(); hs.T = hsDefault(); hs.hasFace = false; hs.miss = 0; hs.parts = [];
+    hs.P = hsDefault(); hs.T = hsDefault(); hs.hasFace = false; hs.vis = 0; hs.eff = 0; hs.miss = 0; hs.parts = [];
   }
 
   function hsDetect(now) {
@@ -9425,8 +9492,11 @@
 
   /* ---------- WebGL / 2D ---------- */
   function hsRenderGL(now) {
-    var gl = hs.gl, U = hs.U, P = hs.P, cw = hs.cw, ch = hs.ch, v = hsVideo;
+    var gl = hs.gl, P = hs.P, cw = hs.cw, ch = hs.ch, v = hsVideo;
     if (!gl || hs.glLost) return;
+    var pi = hs.mode >= 7 && hs.mode <= 10 ? hs.mode - 6 : 0;
+    if (pi !== hs.pi) { hs.pi = pi; hs.prog = hs.progs[pi].pg; hs.U = hs.progs[pi].U; gl.useProgram(hs.prog); }
+    var U = hs.U;
     gl.viewport(0, 0, cw, ch);
     var vw = v.videoWidth, vh = v.videoHeight;
     if (vw && v.readyState >= 2) {
@@ -9439,16 +9509,17 @@
     }
     if (!hs.vidOk) { gl.clearColor(0.91, 0.88, 1, 1); gl.clear(gl.COLOR_BUFFER_BIT); return; }
     var sc = Math.max(cw / vw, ch / vh), dw = vw * sc, dh = vh * sc;
-    gl.uniform1f(U.uAsp, cw / ch); gl.uniform1f(U.uMir, hs.mir); gl.uniform1f(U.uMode, hs.mode); gl.uniform1f(U.uStr, hs.str); gl.uniform1f(U.uTime, (now - hs.t0) / 1000);
+    gl.uniform1f(U.uAsp, cw / ch); gl.uniform1f(U.uMir, hs.mir); gl.uniform1f(U.uMode, hs.mode); gl.uniform1f(U.uStr, hs.eff); gl.uniform1f(U.uTime, (now - hs.t0) / 1000);
     gl.uniform1f(U.uRoll, P.roll);
     gl.uniform2f(U.uOs, (cw - dw) / 2 / cw, (ch - dh) / 2 / ch); gl.uniform2f(U.uSs, cw / dw, ch / dh);
     gl.uniform2f(U.uC, P.cx / ch, P.cy / ch); gl.uniform2f(U.uR, P.rx / ch, P.ry / ch);
     gl.uniform2f(U.uE1, P.e1x / ch, P.e1y / ch); gl.uniform2f(U.uE2, P.e2x / ch, P.e2y / ch);
+    gl.uniform2f(U.uM1, P.c1x / ch, P.c1y / ch); gl.uniform2f(U.uM2, P.c2x / ch, P.c2y / ch);
     gl.uniform1f(U.uER, Math.max(0.01, 0.55 * hsDist(P.e1x, P.e1y, P.e2x, P.e2y) / ch));
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
   function hsRender2D(now) {
-    var c = hs.c2, cw = hs.cw, ch = hs.ch, v = hsVideo, vw = v.videoWidth, vh = v.videoHeight, P = hs.P, s = hs.str, m = hs.mode;
+    var c = hs.c2, cw = hs.cw, ch = hs.ch, v = hsVideo, vw = v.videoWidth, vh = v.videoHeight, P = hs.P, s = hs.eff, m = hs.mode;
     if (!c) return;
     c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.fillStyle = '#E9E1FF'; c.fillRect(0, 0, cw, ch);
     if (!vw || v.readyState < 2) return;
@@ -9469,6 +9540,14 @@
       c.fillStyle = 'rgba(12,20,70,' + (0.62 * s).toFixed(3) + ')'; c.fillRect(0, 0, cw, ch);
       c.save(); face(1.05); c.clip(); c.globalAlpha = 0.8 * s; vid(); c.globalAlpha = 1;
       c.fillStyle = 'rgba(190,220,255,' + (0.5 * s).toFixed(3) + ')'; c.fillRect(0, 0, cw, ch); c.restore();
+    } else if (m === 7) {
+      c.save(); c.translate(P.cx, P.cy); c.rotate(P.roll); c.beginPath(); c.rect(0, -3 * ch, Math.max(0, s * 3 * ch), 6 * ch); c.clip();
+      c.setTransform(1, 0, 0, 1, 0, 0); c.translate(P.cx, P.cy); c.rotate(P.roll); c.scale(-1, 1); c.rotate(-P.roll); c.translate(-P.cx, -P.cy);
+      vid(); c.restore();
+    } else if (m === 9) {
+      c.fillStyle = 'rgba(110,150,230,' + (0.25 * s).toFixed(3) + ')'; c.fillRect(0, 0, cw, ch);
+    } else if (m === 10) {
+      face(1.05); c.fillStyle = 'rgba(255,70,60,' + (0.3 * s).toFixed(3) + ')'; c.fill();
     }
   }
 
@@ -9580,7 +9659,7 @@
   }
   function hsDrawOmen(c, now) {
     var r = hs.omenImgs && hs.omenImgs[hs.omen], o = HS_OMEN[hs.omen], P = hs.P;
-    if (!r || !r.ok || !r.img.naturalWidth) { hs.omenRect = null; return; }
+    if (!r || !r.ok || !r.img.naturalWidth || hs.vis < 0.02) { hs.omenRect = null; return; }
     var im = r.img, iw = im.naturalWidth, ih = im.naturalHeight;
     var w = 2 * P.rx * HS_OMEN_K, sc = w / iw;
     var pp = (now - (hs.omenPulse || -1e9)) / 450, pulse = 1;
@@ -9588,15 +9667,89 @@
     var pop = hsEase((now - hs.hatT0) / 380), k = (0.4 + 0.6 * pop) * pulse;
     var mx = (P.e1x + P.e2x) / 2, my = (P.e1y + P.e2y) / 2;
     var ax = (o.ex1 + o.ex2) / 2 * iw, ay = o.ey * ih;
-    c.save(); c.translate(mx, my); c.rotate(P.roll); c.scale(k, k); c.globalAlpha = Math.min(1, pop * 1.5);
+    c.save(); c.translate(mx, my); c.rotate(P.roll); c.scale(k, k); c.globalAlpha = Math.min(1, pop * 1.5) * hs.vis;
     c.drawImage(im, -ax * sc, -ay * sc, iw * sc, ih * sc);
     c.restore();
     hs.omenRect = { cx: mx, cy: my, w: w, rot: P.roll, h: ih * sc };
   }
+  /* ---------- あたらしい ひょうじょう（わらう・かなしむ・おこる）のオーバーレイ ---------- */
+  function hsDrop(c, x, y, s, lw) {
+    c.beginPath(); c.moveTo(x, y - 1.7 * s); c.quadraticCurveTo(x + s * 0.9, y - 0.5 * s, x + s, y + 0.3 * s);
+    c.arc(x, y + 0.3 * s, s, 0, Math.PI); c.quadraticCurveTo(x - s * 0.9, y - 0.5 * s, x, y - 1.7 * s); c.closePath();
+    hsFS(c, '#8FCBFF', lw);
+    c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.ellipse(x - s * 0.35, y + 0.2 * s, s * 0.17, s * 0.3, 0.2, 0, Math.PI * 2); c.fill();
+  }
+  function hsCloud(c, x, y, W, lw) {
+    var cs = [[-0.62, 0.1, 0.3], [-0.2, -0.12, 0.38], [0.28, -0.04, 0.34], [0.64, 0.12, 0.27], [0.0, 0.14, 0.3]], i;
+    c.save(); c.translate(x, y); c.scale(W, W); c.lineJoin = 'round';
+    c.fillStyle = HS_INK; c.strokeStyle = HS_INK; c.lineWidth = lw / W * 2;
+    for (i = 0; i < cs.length; i++) { c.beginPath(); c.arc(cs[i][0], cs[i][1], cs[i][2], 0, Math.PI * 2); c.stroke(); }
+    c.fillStyle = '#E8F0FF';
+    for (i = 0; i < cs.length; i++) { c.beginPath(); c.arc(cs[i][0], cs[i][1], cs[i][2], 0, Math.PI * 2); c.fill(); }
+    c.restore();
+  }
+  function hsAnger(c, s, lw) {
+    var k;
+    c.lineCap = 'round';
+    for (k = 0; k < 4; k++) {
+      c.save(); c.rotate(k * Math.PI / 2);
+      c.beginPath(); c.arc(-0.5 * s, 0, s, -0.5, 0.5);
+      c.lineWidth = s * 0.22 + lw * 2; c.strokeStyle = HS_INK; c.stroke();
+      c.lineWidth = s * 0.22; c.strokeStyle = '#FF4B4B'; c.stroke();
+      c.restore();
+    }
+  }
+  function hsFace2(c, now, P, eff, t, W) {
+    var m = hs.mode, i, a = Math.min(1, eff), rx = P.rx, ry = P.ry, lw = Math.max(2.5, rx * 0.05), ph;
+    var l1 = hsLocal(P, P.e1x, P.e1y), l2 = hsLocal(P, P.e2x, P.e2y);
+    c.save(); c.translate(P.cx, P.cy); c.rotate(P.roll); c.lineJoin = 'round'; c.lineCap = 'round'; c.globalAlpha = a;
+    if (m === 8) {
+      c.fillStyle = 'rgba(255,120,160,.5)';
+      for (i = -1; i <= 1; i += 2) { c.beginPath(); c.ellipse(i * rx * 0.58, ry * 0.2, rx * 0.22, ry * 0.11, 0, 0, Math.PI * 2); c.fill(); }
+      for (i = 0; i < 4; i++) {
+        var an = -Math.PI / 2 + (i - 1.5) * 0.62, tw = 0.5 + 0.5 * Math.sin(t * 3.2 + i * 1.7), rr = rx * (0.07 + 0.06 * tw);
+        c.save(); c.globalAlpha = a * (0.55 + 0.45 * tw);
+        hsStar(c, Math.cos(an) * rx * 1.25, Math.sin(an) * ry * 1.15 - ry * 0.05, rr * 1.4); hsFS(c, i % 2 ? '#FFB3D0' : '#FFE45E', lw * 0.6);
+        c.restore();
+      }
+    } else if (m === 9) {
+      var eyes = [l1, l2];
+      for (var e = 0; e < 2; e++) for (i = 0; i < 2; i++) {
+        ph = (t * 0.55 + i * 0.5 + e * 0.23) % 1;
+        var gs = rx * 0.085 * (0.45 + 0.55 * Math.min(1, ph * 3)), al = Math.min(1, ph * 6) * (1 - ph * ph);
+        c.save(); c.globalAlpha = a * al;
+        hsDrop(c, eyes[e][0] + (e ? 0.02 : -0.02) * rx, eyes[e][1] + ry * 0.1 + ph * ry * 0.5, gs, lw * 0.6);
+        c.restore();
+      }
+      var cy0 = -ry * 1.28, bob = Math.sin(t * 1.3) * ry * 0.03;
+      hsCloud(c, rx * 0.15, cy0 + bob, rx * 0.5, lw * 0.8);
+      c.strokeStyle = '#7DB8FF'; c.lineWidth = lw * 0.9;
+      for (i = 0; i < 3; i++) {
+        ph = (t * 0.9 + i / 3) % 1; c.globalAlpha = a * Math.min(1, ph * 5) * (1 - ph);
+        var rxp = rx * (-0.2 + i * 0.35);
+        c.beginPath(); c.moveTo(rxp, cy0 + rx * 0.3 + ph * ry * 0.35); c.lineTo(rxp - rx * 0.03, cy0 + rx * 0.3 + ph * ry * 0.35 + ry * 0.1); c.stroke();
+      }
+    } else if (m === 10) {
+      var pu = 1 + 0.14 * Math.sin(t * 7);
+      c.save(); c.translate(rx * 0.78, -ry * 0.82); c.scale(pu, pu); c.rotate(0.15); hsAnger(c, rx * 0.26, lw * 0.6); c.restore();
+      for (var sd = -1; sd <= 1; sd += 2) for (i = 0; i < 2; i++) {
+        ph = (t * 0.7 + i * 0.5 + (sd > 0 ? 0.2 : 0)) % 1;
+        var px = sd * (rx * 1.05 + ph * rx * 0.18 + Math.sin(ph * 6 + i) * rx * 0.05), py = -ry * (0.1 + ph * 0.75), pr = rx * (0.1 + 0.12 * ph);
+        c.globalAlpha = a * Math.min(1, ph * 5) * (1 - ph * 0.85);
+        c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2); c.arc(px + sd * pr * 0.9, py - pr * 0.3, pr * 0.75, 0, Math.PI * 2);
+        c.fillStyle = '#FFFFFF'; c.fill(); c.lineWidth = lw * 0.5; c.strokeStyle = 'rgba(91,58,41,.55)'; c.stroke();
+      }
+    }
+    c.restore();
+  }
+  function hsLocal(P, x, y) {
+    var dx = x - P.cx, dy = y - P.cy, cs = Math.cos(-P.roll), sn = Math.sin(-P.roll);
+    return [cs * dx - sn * dy, sn * dx + cs * dy];
+  }
   function hsOverlay(now, dt) {
     var c = hsOvC, cw = hs.cw, ch = hs.ch, P = hs.P, t = (now - hs.t0) / 1000, sh = Math.min(cw, ch), i;
     c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cw, ch);
-    var pop = hs.str > 0 ? hsEase(hs.str) : 0;
+    var eff = hs.eff, pop = eff > 0.001 ? hsEase(eff) : 0;
     if (hs.mode === 4 && pop > 0) {
       var spots = [[0.14, 0.2, 0.05, 0], [0.86, 0.3, 0.06, 1.7], [0.2, 0.62, 0.045, 3.1], [0.82, 0.6, 0.05, 4.4]];
       c.save(); c.globalAlpha = Math.min(1, pop);
@@ -9616,6 +9769,7 @@
       c.scale(k, k); c.globalAlpha = Math.min(1, hp * 1.5);
       hsHat(c, hs.hat, W, Math.max(3, W * 0.085)); c.restore();
     }
+    if (hs.mode >= 8 && eff > 0.01) hsFace2(c, now, P, eff, t);
     if (hs.mode === 6) hsDrawOmen(c, now);
     if (hs.parts.length) {
       var keep = [];
@@ -9641,6 +9795,10 @@
     var P = hs.P, T = hs.T, kk = 1 - Math.exp(-dt * (hs.hasFace ? 14 : 4));
     for (var k in T) { if (T.hasOwnProperty(k)) P[k] += (T[k] - P[k]) * kk; }
     var sx = Math.max(0, Math.min(1, (now - hs.strT0) / 300)); hs.str = sx * sx * (3 - 2 * sx);
+    var vt = (hs.hasFace || hs.lmState === 3) ? 1 : 0;
+    var rd = Math.min(0.5, (now - (hs.vl || now)) / 1000); hs.vl = now;   /* フレームが おそくても じかんどおりに */
+    hs.vis = vt ? Math.min(1, hs.vis + rd / 0.25) : Math.max(0, hs.vis - rd / 0.2);
+    hs.eff = hs.str * hs.vis;
     if (hs.hasFace) {
       if (!hs.mouthOpen && P.mr > 0.11) { hs.mouthOpen = true; hsReact(now, P.mx, P.my); }
       else if (hs.mouthOpen && P.mr < 0.06) hs.mouthOpen = false;
@@ -9738,7 +9896,7 @@
   function hsFlip() {
     if (hs.noCam) return;
     hs.facing = hs.facing === 'user' ? 'environment' : 'user';
-    hs.hasFace = false;
+    hs.hasFace = false; hs.vis = 0; hs.eff = 0; hs.vl = 0;
     var w = hs.facing === 'user' ? 'まえの かめら' : 'うしろの かめら';
     tone(520, 0.14, 'triangle', 0.12); say(w); hsWord(w);
     hsFlipLab(); hsCamStart();
@@ -9764,7 +9922,7 @@
       hsMsg.hidden = true; hsGlCv.hidden = false; hsOv.hidden = false; hsBar.hidden = false; hsPrep.hidden = true;
       hs.facing = 'user'; hs.mir = 1; hsFlipEl.hidden = true; hsFlipLab();
       hsLoadOmen(); hsInitGL(); hs.P = null; hsSize();
-      hs.hat = 0; hs.omen = 0; hsChoose(0, true); hs.str = 0; hsSheetSet(false); hsList.scrollTop = 0; hsList.scrollLeft = 0;
+      hs.hat = 0; hs.omen = 0; hsChoose(0, true); hs.str = 0; hs.vis = 0; hs.eff = 0; hsSheetSet(false); hsList.scrollTop = 0; hsList.scrollLeft = 0;
       hsStage.addEventListener('pointerdown', hsDown);
       hsCamStart();
       if (!hs.noCam && !hs.raf) hs.raf = requestAnimationFrame(hsFrame);
@@ -9779,7 +9937,8 @@
     },
     resize: function () { if (hs.on) hsSize(); },
     /* テスト用 */
-    _t: function () { return { mode: hs.mode, sheet: hs.sheet, item: HS_ITEMS[hs.cur].id, cur: hs.cur, hat: hs.hat, omen: hs.omen, omenRect: hs.omenRect, gl: !!hs.gl, ready: hs.lmState === 2, state: hs.lmState, reactions: hs.reactions, frames: hs.frames, hasFace: hs.hasFace, cam: hs.camOk, facing: hs.facing, mir: hs.mir, flip: !hsFlipEl.hidden, noCam: hs.noCam, str: hs.str, cw: hs.cw, ch: hs.ch, P: hs.P, tracks: hs.stream ? hs.stream.getTracks().length : 0, raf: hs.raf, vid: hs.vidOk }; },
+    _t: function () { return { mode: hs.mode, sheet: hs.sheet, item: HS_ITEMS[hs.cur].id, cur: hs.cur, hat: hs.hat, omen: hs.omen, omenRect: hs.omenRect, gl: !!hs.gl, ready: hs.lmState === 2, state: hs.lmState, reactions: hs.reactions, frames: hs.frames, hasFace: hs.hasFace, vis: hs.vis, cam: hs.camOk, facing: hs.facing, mir: hs.mir, flip: !hsFlipEl.hidden, noCam: hs.noCam, str: hs.str, cw: hs.cw, ch: hs.ch, P: hs.P, tracks: hs.stream ? hs.stream.getTracks().length : 0, raf: hs.raf, vid: hs.vidOk }; },
+    _lm: function (n) { hs.lmState = n; hs.vis = 0; hs.eff = 0; },
     _fake: function (lm) { hs.fake = lm; if (!lm) { hs.hasFace = false; hs.T = hsDefault(); } },
     _react: function () { hs.reactAt = -1e9; hsReact(performance.now(), hs.P.mx, hs.P.my); }
   };

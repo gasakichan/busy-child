@@ -2994,7 +2994,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   const HS_FAKE = (o) => { const a = Object.assign({ cx: 0.5, cy: 0.45, w: 0.22, h: 0.31, mouth: 0.02 }, o); const P = (x, y) => ({ x, y, z: 0 }); const lm = new Array(478).fill(null).map(() => P(a.cx, a.cy));
     lm[10] = P(a.cx, a.cy - a.h / 2); lm[152] = P(a.cx, a.cy + a.h / 2); lm[234] = P(a.cx - a.w / 2, a.cy); lm[454] = P(a.cx + a.w / 2, a.cy);
     lm[468] = P(a.cx - a.w * 0.2, a.cy - a.h * 0.1); lm[473] = P(a.cx + a.w * 0.2, a.cy - a.h * 0.1);
-    lm[33] = lm[468]; lm[263] = lm[473]; lm[13] = P(a.cx, a.cy + a.h * 0.25 - a.mouth * a.h / 2); lm[14] = P(a.cx, a.cy + a.h * 0.25 + a.mouth * a.h / 2); return lm; };
+    lm[33] = lm[468]; lm[263] = lm[473]; lm[13] = P(a.cx, a.cy + a.h * 0.25 - a.mouth * a.h / 2); lm[14] = P(a.cx, a.cy + a.h * 0.25 + a.mouth * a.h / 2);
+    lm[61] = P(a.cx - a.w * 0.19, a.cy + a.h * 0.25); lm[291] = P(a.cx + a.w * 0.19, a.cy + a.h * 0.25); return lm; };
   const HS_FAKE_SRC = HS_FAKE.toString();
   // スクショ（PNG）の 一部の ばらつき（ふつうの 映像なら 一様ではない）
   const pixSpread = (p, buf) => p.evaluate(src => new Promise(res => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, Math.floor(c.height * 0.5)).data; let s = 0, s2 = 0, n = 0; for (let i = 0; i < d.length; i += 16) { const l = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; s += l; s2 += l * l; n++; } const m = s / n; res(Math.sqrt(Math.max(0, s2 / n - m * m))); }; im.src = src; }), 'data:image/png;base64,' + buf.toString('base64'));
@@ -3021,6 +3022,14 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const sd = await pixSpread(p, await p.screenshot());
     ok(sd > 4, tag + ': camera view is not a uniform color (spread ' + sd.toFixed(1) + ')');
     await shot('start');
+    t = await T();
+    ok(t.state === 3 && !t.hasFace && t.vis > 0.98, tag + ': landmarker failed for good (file://) → fallback shows effects at the centre (vis ' + t.vis.toFixed(2) + ')');
+    await p.evaluate(() => window.__hs._lm(2)); await sleep(500); t = await T();   // ここから さきは「モデルは ある けど かおが まだ」の じょうたい
+    ok(t.vis === 0 && !t.hasFace, tag + ': before any face is detected → vis 0 (' + t.vis + ')');
+    await p.evaluate(() => { const b = document.querySelector('#hs-list .hs-b[data-id="omen0"]'); b.click(); });
+    await sleep(500); t = await T();
+    ok(t.mode === 6 && t.omenRect === null && t.vis === 0, tag + ': mask chosen before any face is not drawn (omenRect null)');
+    await p.evaluate(() => { document.querySelector('#hs-list .hs-b[data-id="eye"]').click(); });
     // したの バー（🔄 🎲 ✨）
     const view = { x: Math.round(vp.width * (vp.width > vp.height ? 0.3 : 0.5)), y: 130 };
     const land = vp.width > vp.height;
@@ -3042,8 +3051,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(!(await p.locator('#hs-sheet').isVisible()), tag + ': sheet is not visible when closed');
     await shot('closed');
     // ひらく
-    const ITEMS = ['eye', 'nobi', 'pecha', 'guru', 'obake', 'hat0', 'hat1', 'hat2', 'hat3', 'hat4', 'omen0', 'omen1', 'omen2', 'omen3', 'omen4', 'omen5', 'omen6', 'omen7'];
-    const SAY = { eye: 'おめめ ぷくー', nobi: 'のびーる', pecha: 'ぺちゃんこ', guru: 'ぐるぐる', obake: 'おばけ', hat0: 'おうかん', hat1: 'とんがり ぼうし', hat2: 'ねこみみ', hat3: 'うさみみ', hat4: 'おはなの かんむり', omen0: 'ねこさん', omen1: 'いぬさん', omen2: 'うさぎさん', omen3: 'くまさん', omen4: 'らいおんさん', omen5: 'ぱんださん', omen6: 'おばけさん', omen7: 'ろぼっとさん' };
+    const ITEMS = ['eye', 'nobi', 'pecha', 'guru', 'obake', 'mirror', 'warau', 'kanashi', 'okoru', 'hat0', 'hat1', 'hat2', 'hat3', 'hat4', 'omen0', 'omen1', 'omen2', 'omen3', 'omen4', 'omen5', 'omen6', 'omen7'];
+    const SAY = { eye: 'おめめ ぷくー', nobi: 'のびーる', pecha: 'ぺちゃんこ', guru: 'ぐるぐる', obake: 'おばけ', mirror: 'ミラー', warau: 'にこにこ', kanashi: 'えーん えーん', okoru: 'ぷんぷん', hat0: 'おうかん', hat1: 'とんがり ぼうし', hat2: 'ねこみみ', hat3: 'うさみみ', hat4: 'おはなの かんむり', omen0: 'ねこさん', omen1: 'いぬさん', omen2: 'うさぎさん', omen3: 'くまさん', omen4: 'らいおんさん', omen5: 'ぱんださん', omen6: 'おばけさん', omen7: 'ろぼっとさん' };
     const flat = s => s.replace(/\s+/g, '');
     const openSheet = async () => { if (!(await T()).sheet) { await p.click('#hs-pick'); await sleep(420); } };
     const closeSheet = async () => { if ((await T()).sheet) { await p.click('#hs-close'); await sleep(420); } };
@@ -3059,7 +3068,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(alpha < 1 && alpha > 0.3 && parseFloat(sty.r) >= 16, tag + ': sheet is translucent with rounded top ' + JSON.stringify(sty));
     ok(!(await p.locator('#hs-pick').isVisible()), tag + ': bar is hidden while the sheet is open');
     const tiles = await p.evaluate(() => [...document.querySelectorAll('#hs-list .hs-b')].map(b => { const r = b.getBoundingClientRect(); return { id: b.getAttribute('data-id'), w: r.width, h: r.height }; }));
-    ok(tiles.length === 18 && tiles.map(x => x.id).join() === ITEMS.join() && tiles.every(x => x.w >= 80 && x.h >= 80), tag + ': 18 item tiles in order, each >= 80px');
+    ok(tiles.length === 22 && tiles.map(x => x.id).join() === ITEMS.join() && tiles.every(x => x.w >= 80 && x.h >= 80), tag + ': 22 item tiles in order, each >= 80px');
     ok(R['#hs-close'].w >= 80 && R['#hs-close'].h >= 80 && R['#hs-close'].vis && R['#hs-close'].r <= vp.width && R['#hs-close'].t >= sh.t - 1 && !ov(R['#hs-close'], R['#homebtn']), tag + ': ✖ close button >= 80px inside the sheet');
     ok(await p.evaluate(() => [...document.querySelectorAll('#hs-list .hs-b[data-id^="omen"] img')].filter(i => i.complete && i.naturalWidth > 0).length) === 8, tag + ': 8 mask tiles show their image thumbnails');
     ok(await noHScroll(), tag + ': no horizontal page scroll with the sheet open');
@@ -3115,6 +3124,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     // フェイクの かお
     await fake({ cx: 0.5, cy: 0.45 });
     ok(await until(async () => (await T()).hasFace, 1500), tag + ': injected face is picked up');
+    ok(await until(async () => (await T()).vis > 0.98, 1500), tag + ': vis fades in to 1 once a face is detected');
     await sleep(900); t = await T();
     ok(t.P.cx > 0 && t.P.cx < t.cw && Math.abs(t.P.cx - t.cw / 2) < t.cw * 0.12 && t.P.rx > 10 && t.P.ry > 10 && Math.abs(t.P.ry / t.P.rx - (0.31 * 480) / (0.22 * 640)) < 0.15, tag + ': face center/radii follow the landmarks ' + JSON.stringify({ cx: Math.round(t.P.cx), rx: Math.round(t.P.rx), ry: Math.round(t.P.ry) }));
     await fake({ cx: 0.25, cy: 0.4 }); await sleep(900); t = await T();
@@ -3148,19 +3158,32 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok(await until(async () => (await T()).reactions === r0 + 1, 1500), tag + ': mouth open in おめん → reaction fires');
       await sleep(150); await shot('omen-react'); await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1700); }
     await p.evaluate(() => window.__hs._fake(null)); await sleep(1800); t = await T();
-    ok(!t.hasFace && t.omenRect && Math.abs(t.omenRect.cx - t.cw / 2) < t.cw * 0.06, tag + ': no face → mask at the default face position');
+    ok(!t.hasFace && t.vis < 0.05 && t.omenRect === null, tag + ': no face → mask hidden (vis ' + t.vis.toFixed(2) + ', omenRect null)');
+    await fake({ cx: 0.5, cy: 0.42 });
+    ok(await until(async () => { const x = await T(); return x.vis > 0.98 && x.omenRect && x.omenRect.w > 20; }, 1500), tag + ': face back → vis ~1 and mask appears');
+    await p.evaluate(() => window.__hs._fake(null)); await sleep(1800);
     // よこむき: カメラは バーの ひだりに おさまる（かお・おめんの まんなかも ひだり）
     { const lg = await p.evaluate(() => { const r = d => d.getBoundingClientRect(), ov = r(document.querySelector('#hs-ov')), gl = r(document.querySelector('#hs-gl')), bs = ['#hs-rand', '#hs-pick'].map(k => r(document.querySelector(k)));
         return { ovL: ov.left, ovR: ov.right, ovW: ov.width, glR: gl.right, glL: gl.left, btnL: Math.min(...bs.map(b => b.left)), stageR: document.querySelector('#stage-henshin').getBoundingClientRect().right, stageL: document.querySelector('#stage-henshin').getBoundingClientRect().left }; });
       const tt = await T();
       if (land) {
-        const sc = lg.ovW / tt.cw, mx = lg.ovL + tt.omenRect.cx * sc, fx = lg.ovL + tt.P.cx * sc;
+        const sc = lg.ovW / tt.cw, mx = lg.ovL + (tt.P.e1x + tt.P.e2x) / 2 * sc, fx = lg.ovL + tt.P.cx * sc;
         ok(lg.ovR <= lg.btnL && lg.glR <= lg.btnL && lg.glL >= 0 && Math.abs(lg.glR - lg.ovR) < 1, tag + ': landscape canvas right edge <= bar column left edge ' + JSON.stringify({ r: Math.round(lg.ovR), btnL: Math.round(lg.btnL) }));
         ok(mx < lg.btnL && fx < lg.btnL && Math.abs(mx - (lg.ovL + lg.ovR) / 2) < lg.ovW * 0.06, tag + ': landscape default mask/face centre is left of the bar, centred in the camera area ' + Math.round(mx) + ' < ' + Math.round(lg.btnL));
       } else ok(Math.abs(lg.ovR - lg.stageR) < 1 && Math.abs(lg.ovL - lg.stageL) < 1, tag + ': portrait canvas still fills the stage ' + JSON.stringify(lg));
     }
     await fake({ cx: 0.5, cy: 0.42 }); await sleep(700);
     for (const id of ['eye', 'nobi', 'pecha', 'guru', 'obake']) { await pick(id); await closeSheet(); await sleep(450); await shot('mode-' + id); }
+    { const MODE = { mirror: 7, warau: 8, kanashi: 9, okoru: 10 };
+      for (const id of ['mirror', 'warau', 'kanashi', 'okoru']) {
+        await pick(id); t = await T();
+        ok(t.item === id && t.mode === MODE[id] && (await says(p)).some(x => x.t === SAY[id]) && flat(await p.locator('#bigword').textContent()) === flat(SAY[id]), tag + ': ' + id + ' → mode ' + MODE[id] + ', says ' + SAY[id]);
+        await closeSheet(); await sleep(700); await shot('mode-' + id);
+        t = await T(); ok(t.vis > 0.98 && t.str > 0.99 && t.frames > 5, tag + ': ' + id + ' renders with a face (vis ' + t.vis.toFixed(2) + ')');
+        const r1 = (await T()).reactions; await fake({ cy: 0.42, mouth: 0.22 });
+        ok(await until(async () => (await T()).reactions > r1, 1500), tag + ': mouth open in ' + id + ' → sparkle reaction');
+        await fake({ cy: 0.42, mouth: 0.02 }); await sleep(1600);
+      } }
     for (let k = 0; k < 5; k++) { await pick('hat' + k); await closeSheet(); await sleep(450); await shot('mode5-hat' + k); }
     await pick('hat0'); await sleep(400); await shot('sheet-hats');
     await pick('omen7'); await sleep(300); await shot('sheet-omen'); await closeSheet();
@@ -3185,6 +3208,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.evaluate(() => window.__hs._fake(null)); await sleep(1800);
     t = await T();
     ok(!t.hasFace && Math.abs(t.P.cx - t.cw / 2) < t.cw * 0.05, tag + ': no face → effect eases back to the screen center, still running');
+    ok(t.vis < 0.05, tag + ': no face → effects hidden (vis ' + t.vis.toFixed(2) + ')');
     await shot('noface');
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
     // まえ／うしろ きりかえ
@@ -3721,7 +3745,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'henshin-real': 35, 'henshin-390x844': 28, 'henshin-360x740': 28, 'henshin-568x320': 28, 'henshin-740x360': 28, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'henshin-real': 35, 'henshin-390x844': 60, 'henshin-360x740': 60, 'henshin-568x320': 60, 'henshin-740x360': 60, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
