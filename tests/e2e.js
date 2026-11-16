@@ -3742,6 +3742,66 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await ctx.close();
   });
 
+
+  /* ---------- すうじ 1〜20: ボタンの おおきさ・ほしの かず・5びょう いない ---------- */
+  T('num20', async (br) => {
+    for (const vp of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 740, height: 360 }, { width: 568, height: 320 }]) {
+      const tag = 'num20 ' + vp.width + 'x' + vp.height;
+      const small = vp.width === 568;
+      const p = await newPage(br, vp);
+      await tapTile(p, LAB[6]); await sleep(300);
+      const g = await p.evaluate(() => {
+        const st = document.querySelector('#stage-num').getBoundingClientRect();
+        const bs = [...document.querySelectorAll('#numpad .nb')].map(b => { const r = b.getBoundingClientRect(); return { t: b.textContent, l: b.getAttribute('aria-label'), w: r.width, h: r.height, in: r.left >= -0.5 && r.top >= -0.5 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5 }; });
+        return { bs, hs: document.documentElement.scrollWidth > innerWidth || document.body.scrollWidth > innerWidth };
+      });
+      const minW = Math.round(Math.min(...g.bs.map(b => b.w))), minH = Math.round(Math.min(...g.bs.map(b => b.h)));
+      console.log('     ' + tag + ' buttons min ' + minW + 'x' + minH);
+      ok(!g.hs, tag + ': no hscroll');
+      if (small) {
+        ok(g.bs.length === 20 && g.bs.every(b => b.in), tag + ': 20 buttons inside viewport (best effort)');
+        await tapAll20(p);
+        await p.screenshot({ path: SP + '/num20-' + vp.width + 'x' + vp.height + '.png' });
+        ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+        await p.context().close(); continue;
+      }
+      ok(g.bs.length === 20 && g.bs.every((b, i) => b.t === String(i + 1)), tag + ': 20 buttons labelled 1..20');
+      ok(g.bs.every(b => b.w >= 80 && b.h >= 80), tag + ': every button >= 80x80 (min ' + minW + 'x' + minH + ')');
+      ok(g.bs.every(b => b.in), tag + ': every button inside viewport');
+      await clearSays(p);
+      const t0 = Date.now();
+      await p.locator('#numpad .nb').nth(19).dispatchEvent('pointerdown');
+      await p.waitForFunction(() => window.__says.some(x => x.t === 'にじゅう！'), null, { timeout: 7000 });
+      const dt = Date.now() - t0;
+      ok(dt <= 5300, tag + ': 20 tap -> final say within 5s (' + dt + 'ms)');
+      await sleep(400);
+      const sy = (await says(p)).map(x => x.t);
+      ok(sy[sy.length - 1] === 'にじゅう！' && sy[0] === 'いち' && sy.length === 21, tag + ': speech いち..にじゅう！ ' + sy.length);
+      const st = await p.evaluate(() => {
+        const top = document.querySelector('.numtop').getBoundingClientRect(), sc = document.querySelector('#stage-num').getBoundingClientRect();
+        const ss = [...document.querySelectorAll('#num-stars span')];
+        const bn = document.querySelector('#num-big').getBoundingClientRect();
+        return { n: ss.length, vis: ss.filter(x => getComputedStyle(x).opacity === '1').length,
+          inside: ss.every(x => { const r = x.getBoundingClientRect(); return r.left >= top.left - 1 && r.right <= top.right + 1 && r.top >= top.top - 1 && r.bottom <= top.bottom + 1 && r.left >= sc.left && r.right <= sc.right && r.bottom <= sc.bottom; }),
+          bigIn: bn.top >= top.top - 1 && bn.bottom <= top.bottom + 1 && bn.left >= 0 && bn.right <= innerWidth,
+          fs: parseFloat(getComputedStyle(ss[0]).fontSize) };
+      });
+      ok(st.n === 20 && st.vis === 20, tag + ': 20 stars visible (' + st.vis + ')');
+      ok(st.inside && st.bigIn, tag + ': stars + big number inside stage, not clipped (font ' + st.fs + 'px)');
+      await p.screenshot({ path: SP + '/num20-' + vp.width + 'x' + vp.height + '.png' });
+      await clearSays(p);
+      await p.locator('#numpad .nb').nth(2).dispatchEvent('pointerdown');
+      await sleep(2300);
+      const s3 = (await says(p)).map(x => x.t);
+      const n3 = await p.evaluate(() => [...document.querySelectorAll('#num-stars span')].filter(x => getComputedStyle(x).opacity === '1').length);
+      ok(s3[s3.length - 1] === 'さん！' && n3 === 3, tag + ': tap 3 -> さん！ and 3 stars ' + JSON.stringify(s3));
+      ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+      await p.context().close();
+    }
+    async function tapAll20(p) {
+      await p.locator('#numpad .nb').nth(19).dispatchEvent('pointerdown'); await sleep(5400);
+    }
+  });
 }
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
