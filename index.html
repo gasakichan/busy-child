@@ -327,21 +327,27 @@
   #stage-num { background: #EAF8EE; display: flex; flex-direction: column; }
   .numtop { flex: 1 1 0; min-height: 0; padding-top: 64px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; overflow: hidden; }
   .bignum { font-size: clamp(64px, min(22vw, 13vh), 150px); line-height: 1; color: var(--ink); min-height: 1em; }
-  .starsarea { width: 100%; max-width: 380px; display: grid; grid-template-columns: repeat(5, 1fr); padding: 0 12px; }
+  .starsarea { width: 100%; max-width: 380px; display: grid; grid-template-columns: repeat(5, 1fr); padding: 0 12px; container-type: inline-size; }
   .starsarea span { text-align: center; line-height: 1.15; font-size: clamp(30px, min(10vw, 7vh), 60px); opacity: 0; }
+  /* 11こ いじょう: 10 こずつ 2 だん（1〜10 / 11〜20） */
+  .starsarea.many { max-width: 460px; grid-template-columns: repeat(10, 1fr); padding: 0 6px; }
+  .starsarea.many span { font-size: clamp(18px, 7.2cqw, 40px); }
   .numpad {
-    flex: 1.15 1 0; min-height: 0; padding: 12px;
-    display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr);
+    flex: 1.7 1 0; min-height: 448px; padding: 8px;
+    display: grid; gap: 6px; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(5, 1fr);
   }
-  .numpad .nb:last-child { grid-column: 1 / -1; }
+  @media (max-width: 380px) { .numpad { padding: 8px 0; column-gap: 2px; } }   /* 360px はば: 4 れつで 80px を たもつ */
   @media (min-aspect-ratio: 4/3) {
-    .numpad { grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; }
-    .numpad .nb:last-child { grid-column: auto; }
-    .numtop { padding-top: 12px; }
+    #stage-num { flex-direction: row; }
+    .numtop { flex: 1 1 0; min-width: 0; padding-top: 12px; padding-left: 64px; padding-right: 4px; }
+    .numpad { flex: 0 0 auto; width: min(62vw, 880px); min-height: 0; padding: 0 6px; gap: 4px 6px; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); }
+    .starsarea.many { max-width: 380px; grid-template-columns: repeat(5, 1fr); padding: 0 6px; }
+    .starsarea.many span { font-size: clamp(24px, min(8cqw, 7vh), 44px); }
+    .starsarea.many span:nth-child(n+11) { transform: translateY(6px); }
   }
   .nb {
     min-width: 0; min-height: 0; border: 0; border-radius: 24px; background: var(--c); color: var(--fg);
-    font-size: clamp(36px, 9vh, 72px); line-height: 1;
+    font-size: clamp(30px, min(9vh, 13vw), 72px); line-height: 1;
     box-shadow: 0 5px 0 var(--shadow);
   }
   .nb:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--shadow); }
@@ -2013,12 +2019,12 @@
   function countTone(n) { tone(SCALE[Math.max(0, Math.min(9, n - 1))], 0.22, 'triangle', 0.18); }
   /* 画面に出す文字では「！」をはぶく（読み上げは そのまま） */
   function vis(s) { return String(s).replace(/！/g, ''); }
-  function say(text) {
+  function say(text, rate) {
     if (quiet() || voiceOff || !('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ja-JP'; u.rate = 0.9; u.pitch = 1.5; u.volume = 0.9;
+      u.lang = 'ja-JP'; u.rate = rate || 0.9; u.pitch = 1.5; u.volume = 0.9;
       window.speechSynthesis.speak(u);
     } catch (e) {}
   }
@@ -2596,11 +2602,15 @@
     ['#F2463C', '#FFFFFF'], ['#FF9124', DARK], ['#FFD21F', DARK], ['#34B556', '#FFFFFF'], ['#2F7BF5', '#FFFFFF'],
     ['#9358E0', '#FFFFFF'], ['#FF7EB6', DARK], ['#9A5B32', '#FFFFFF'], ['#1FA8B8', '#FFFFFF'], ['#E0457B', '#FFFFFF']
   ];
+  var NUMV20 = NUMV.concat(['じゅういち', 'じゅうに', 'じゅうさん', 'じゅうよん', 'じゅうご', 'じゅうろく', 'じゅうなな', 'じゅうはち', 'じゅうきゅう', 'にじゅう']);
   function numPlay(n) {
     clearTimers();
     numBig.textContent = String(n);
     numBig.animate([{ transform: 'scale(.7)' }, { transform: 'scale(1.15)', offset: 0.5 }, { transform: 'scale(1)' }], { duration: reduce ? 150 : 350, easing: 'ease-out' });
     numStars.innerHTML = '';
+    numStars.classList.toggle('many', n > 10);
+    /* ほしは さいだい 5びょう（おおいときは はやく） */
+    var step = Math.min(450, 4600 / n), rate = step < 450 ? Math.min(1.8, 0.9 * 450 / step) : 0;
     var cells = [];
     for (var i = 0; i < n; i++) {
       var s = document.createElement('span'); s.textContent = '⭐';
@@ -2610,22 +2620,22 @@
       later(function () {
         s.style.opacity = '1';
         s.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.35)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: reduce ? 100 : 300, easing: 'ease-out' });
-        say(NUMV[i + 1]);
+        say(NUMV20[i + 1], rate);
         countTone(i + 1);
-      }, 150 + i * 450);
+      }, 150 + i * step);
     });
     later(function () {
-      say(NUMV[n] + '！');
+      say(NUMV20[n] + '！', rate);
       arpeggio();
       numBig.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: reduce ? 150 : 500, easing: 'ease-out' });
       burst(fxNum, fxNum.clientWidth / 2, 110, { n: 10, emoji: ['✨', '⭐'] });
-    }, 150 + n * 450 + 250);
+    }, 150 + n * step + 250);
   }
-  NUMV.forEach(function (v, i) {
+  NUMV20.forEach(function (v, i) {
     if (!i) return;
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'nb'; b.textContent = String(i);
-    b.style.setProperty('--c', NUMCOL[i - 1][0]); b.style.setProperty('--fg', NUMCOL[i - 1][1]);
+    b.style.setProperty('--c', NUMCOL[(i - 1) % 10][0]); b.style.setProperty('--fg', NUMCOL[(i - 1) % 10][1]);
     b.setAttribute('aria-label', v);
     onTap(b, function () { numPlay(i); });
     numpad.appendChild(b);
