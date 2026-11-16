@@ -34,7 +34,8 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['games.voice = {', 'window.__vcV = VC_VOICES; window.__vcPlan = vcPlan; window.__vcGrains = vcGrains; window.__vcA = { A: VC_AUTO, vad: vcVad, vadNew: vcVadNew, ring: vcRingDrop, keep: vcKeep, thr: vcThr, squeeze: vcSqueeze }; games.voice = {'],
   ['var NK_SOLID = {', 'var NK_SOLID = window.__nkSolid = {'],
   ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;'],
-  ['games.henshin = {', 'window.__hs = games.henshin = {']];
+  ['games.henshin = {', 'window.__hs = games.henshin = {'],
+  ['games.aiueo = {', 'window.__ai = games.aiueo = {']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
@@ -304,24 +305,119 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     await p.click('#ai-tb', { force: true }); await sleep(500);
     const g = await p.evaluate(() => {
       const R = r => ({ l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height });
-      const tl = document.querySelector('#ai-tl'), tn = [...tl.childNodes].find(n => n.nodeType === 3);
-      const rg = document.createRange(); rg.selectNodeContents(tn);
-      const L = R(rg.getBoundingClientRect()), D = R(document.querySelector('#ai-done').getBoundingClientRect()), B = R(document.querySelector('#ai-back').getBoundingClientRect());
+      const tl = document.querySelector('#ai-tl'), sv = tl.querySelector('svg'), tn = [...tl.childNodes].find(n => n.nodeType === 3);
+      let gr; if (sv) gr = sv.getBoundingClientRect(); else { const rg = document.createRange(); rg.selectNodeContents(tn); gr = rg.getBoundingClientRect(); }
+      const L = R(gr), D = R(document.querySelector('#ai-done').getBoundingClientRect()), B = R(document.querySelector('#ai-back').getBoundingClientRect()), P = R(document.querySelector('#ai-play').getBoundingClientRect());
       const X = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
       const vw = innerWidth, vh = innerHeight, inV = r => r.l >= 0 && r.r <= vw && r.t >= 0 && r.b <= vh;
-      return { L, D, B, oD: X(L, D), oB: X(L, B), oDB: X(D, B), inV: inV(D) && inV(B), hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw,
+      return { L, D, B, P, svg: !!sv, strokes: sv ? sv.querySelectorAll('svg > g:first-child path').length : 0, oD: X(L, D) || X(L, P), oB: X(L, B), oDB: X(D, B) || X(D, P) || X(B, P), inV: inV(D) && inV(B) && inV(P), hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw,
         cls: document.querySelector('#stage-aiueo').classList.contains('tracing'), cv: R(document.querySelector('#ai-cv').getBoundingClientRect()) };
     });
     console.log('info ' + tag + ' letter ' + Math.round(g.L.w) + 'x' + Math.round(g.L.h) + ' pad ' + Math.round(g.cv.w) + 'x' + Math.round(g.cv.h));
     ok(g.cls, tag + ': stage has .tracing');
     ok(!g.oD && !g.oB, tag + ': letter does not overlap buttons ' + JSON.stringify([g.L, g.D, g.B]));
     ok(!g.oDB, tag + ': buttons do not overlap each other');
-    ok(g.D.h >= 80 && g.B.h >= 80 && g.D.w >= 80 && g.B.w >= 80, tag + ': buttons >= 80px (' + Math.round(g.D.h) + '/' + Math.round(g.B.h) + ')');
+    ok(g.D.h >= 80 && g.B.h >= 80 && g.D.w >= 80 && g.B.w >= 80 && g.P.h >= 80 && g.P.w >= 80, tag + ': buttons incl. かきじゅん >= 80px (' + Math.round(g.D.w) + 'x' + Math.round(g.D.h) + '/' + Math.round(g.B.w) + 'x' + Math.round(g.B.h) + '/' + Math.round(g.P.w) + 'x' + Math.round(g.P.h) + ')');
+    ok(g.svg && g.strokes === 3, tag + ': guide is the SVG with 3 strokes for あ (' + g.svg + '/' + g.strokes + ')');
     ok(g.inV && !g.hs, tag + ': buttons inside viewport, no hscroll');
     ok(g.L.l >= g.cv.l - 1 && g.L.r <= g.cv.r + 1 && g.L.t >= g.cv.t - 1 && g.L.b <= g.cv.b + 1, tag + ': letter fits inside the pad');
     await p.screenshot({ path: SP + '/aiueo-trace-' + vp.width + 'x' + vp.height + '.png' });
     await p.click('#ai-back', { force: true }); await sleep(300);
     ok(await p.evaluate(() => !document.querySelector('#stage-aiueo').classList.contains('tracing') && document.querySelector('#ai-trace').hidden), tag + ': もどる leaves tracing');
+    ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+  });
+
+
+  T('aiueo-kaki', async (br) => {
+    const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const p = await newPage(br, { width: 390, height: 844 }, { deny: true });
+    await tapTile(p, LAB[13]); await sleep(500);
+    const t = () => p.evaluate(() => window.__ai._t());
+    ok(await until(p, async () => (await t()).kaki, 3000), 'kaki: KAKI data loaded lazily');
+    ok((await t()).strokes === 3 && (await t()).mode === 'kana' && (await t()).ch === 'あ' && (await t()).anim === 'idle', 'kaki: starts at あ, idle ' + JSON.stringify(await t()));
+    await p.click('#ai-tb', { force: true }); await sleep(300);
+    const sv = await p.evaluate(() => { const ps = [...document.querySelectorAll('#ai-tl svg > g:first-child path')]; return { n: ps.length, col: ps.map(x => getComputedStyle(x).stroke), w: ps.map(x => +x.getAttribute('stroke-width')) }; });
+    ok(sv.n === 3 && sv.col.every(c => c === 'rgb(218, 223, 232)') && sv.w.every(w => w >= 8), 'kaki: guide has 3 gray strokes ' + JSON.stringify(sv));
+    ok((await t()).anim === 'playing', 'kaki: animation auto-plays on entering trace ' + JSON.stringify(await t()));
+    ok(await p.evaluate(() => document.querySelectorAll('#ai-tl svg path[stroke-dasharray], #ai-tl svg path').length >= 6), 'kaki: colored animated strokes added over the guide');
+    ok(await until(p, async () => (await t()).anim === 'done', 12000), 'kaki: animation reaches done ' + JSON.stringify(await t()));
+    ok((await t()).drawn === 0 || (await t()).drawn === 3, 'kaki: 3 strokes started');
+    ok(await p.evaluate(() => document.querySelectorAll('#ai-tl svg path').length === 3), 'kaki: animated strokes removed after the fade');
+    // replay
+    await p.click('#ai-play', { force: true }); await sleep(250);
+    ok((await t()).anim === 'playing' && (await t()).drawn >= 1, 'kaki: かきじゅん button replays ' + JSON.stringify(await t()));
+    await p.screenshot({ path: SP + '/aiueo-kaki-mid.png' });
+    const cb = await p.locator('#ai-cv').boundingBox();
+    await p.mouse.move(cb.x + cb.width / 2, cb.y + cb.height / 2); await p.mouse.down(); await sleep(80);
+    ok((await t()).anim === 'idle' && await p.evaluate(() => document.querySelectorAll('#ai-tl svg path').length === 3), 'kaki: touching the canvas stops the animation and removes colored strokes ' + JSON.stringify(await t()));
+    await p.mouse.up();
+    // pick き (4 strokes) while tracing -> replays with 4
+    await p.click('.ai-b >> text="き"', { force: true }); await sleep(300);
+    ok((await t()).ch === 'き' && (await t()).strokes === 4 && (await t()).anim === 'playing', 'kaki: picking き while tracing replays with 4 strokes ' + JSON.stringify(await t()));
+    ok(await p.evaluate(() => document.querySelectorAll('#ai-tl svg > g:first-child path').length === 4), 'kaki: き guide has 4 strokes');
+    // leaving the game stops everything
+    await p.click('#homebtn', { force: true }); await sleep(400);
+    ok((await t()).anim === 'idle' && !(await t()).tracing, 'kaki: leaving the game leaves no animation ' + JSON.stringify(await t()));
+    ok(await p.evaluate(() => new Promise(r => { const a = window.__pn = []; requestAnimationFrame(() => r(document.querySelectorAll('#ai-tl svg path').length <= 4)); })), 'kaki: no stray animated strokes');
+    ok(p.errs.length === 0, 'aiueo-kaki: no console errors ' + p.errs.join(' | '));
+  });
+
+  TV('aiueo-num', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1024, height: 768 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+    const tag = 'aiueo-num ' + vp.width + 'x' + vp.height, tiny = vp.height <= 340, short = vp.height <= 400 && vp.width > vp.height;
+    const until = async (p, f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(40); } };
+    const p = await newPage(br, vp, { deny: true });
+    await tapTile(p, LAB[13]); await sleep(500);
+    await p.click('#ai-mode .ai-m[data-m="num"]', { force: true }); await sleep(450);
+    const geo = () => p.evaluate(() => { const vw = innerWidth, vh = innerHeight, st = document.querySelector('#stage-aiueo').getBoundingClientRect(), hb = document.querySelector('#homebtn').getBoundingClientRect();
+      const R = e => { const r = e.getBoundingClientRect(); return { t: e.textContent, l: r.left, tp: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
+      const bs = [...document.querySelectorAll('.ai-nb')].map(R), card = R(document.querySelector('.ai-card'));
+      const inside = r => r.l >= st.left - 0.5 && r.r <= st.right + 0.5 && r.tp >= st.top - 0.5 && r.b <= st.bottom + 0.5 && r.l >= 0 && r.r <= vw && r.tp >= 0 && r.b <= vh;
+      let ovl = 0; bs.forEach((a, i) => bs.forEach((b, j) => { if (j > i && a.l < b.r - 0.5 && b.l < a.r - 0.5 && a.tp < b.b - 0.5 && b.tp < a.b - 0.5) ovl++; }));
+      const vis = [...document.querySelectorAll('.ai-nb')].every(e => e.offsetParent !== null), tbl = document.querySelector('#ai-btns').hidden;
+      return { n: bs.length, bs, card, vis, tbl, allIn: bs.every(inside), ovl, minw: Math.min(...bs.map(r => r.w)), minh: Math.min(...bs.map(r => r.h)),
+        homeOvl: bs.filter(r => r.l < hb.right && hb.left < r.r && r.tp < hb.bottom && hb.top < r.b).length, hs: document.documentElement.scrollWidth > vw || document.body.scrollWidth > vw }; });
+    const g = await geo();
+    console.log('info ' + tag + ' dims ' + JSON.stringify(await p.evaluate(() => ['#stage-aiueo', '.ai-top', '.ai-ctl', '#ai-mode', '#ai-nums'].map(q => { const r = document.querySelector(q).getBoundingClientRect(); return [q, Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(' '); }))));
+    console.log('info ' + tag + ' num buttons min ' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ' card ' + Math.round(g.card.w) + 'x' + Math.round(g.card.h));
+    ok(g.n === 11 && g.vis && g.tbl, tag + ': 11 number buttons visible, kana table hidden (' + g.n + ')');
+    ok(g.bs.map(b => b.t).join(',') === '1,2,3,4,5,6,7,8,9,10,0', tag + ': order 1..10 then 0');
+    const lim = tiny ? 64 : 80;   /* 568x320 は 80 が はいらない（64 まで） */
+    ok(g.minw >= lim - 0.5 && g.minh >= lim - 0.5, tag + ': all buttons >= ' + lim + 'px (' + Math.round(g.minw) + 'x' + Math.round(g.minh) + ')');
+    ok(g.allIn && !g.hs, tag + ': buttons inside stage/viewport, no hscroll');
+    ok(g.ovl === 0 && g.homeOvl === 0, tag + ': no overlap between buttons or with 🏠 (' + g.ovl + '/' + g.homeOvl + ')');
+    const m = await p.evaluate(() => [...document.querySelectorAll('#ai-mode .ai-m')].map(b => { const r = b.getBoundingClientRect(); return [b.className.includes('on'), Math.round(r.height), Math.round(r.width)]; }));
+    ok(m[1][0] && !m[0][0] && m.every(x => x[1] >= (short ? 56 : 80) && x[2] >= 80), tag + ': mode toggle highlights 123, buttons big ' + JSON.stringify(m));
+    await clearSays(p);
+    await p.click('.ai-nb >> text="3"', { force: true }); await sleep(450);
+    let c = await p.evaluate(() => ({ l: document.querySelector('#ai-l').textContent, w: document.querySelector('#ai-w').textContent, n: document.querySelectorAll('#ai-e .ai-g span').length, ch: window.__ai._t().ch }));
+    ok(c.l === '3' && c.w === 'さん' && c.n === 3 && c.ch === '3', tag + ': 3 -> さん, 3 items ' + JSON.stringify(c));
+    ok((await says(p)).some(x => /さん/.test(x.t)), tag + ': says さん ' + JSON.stringify(await says(p)));
+    await p.click('.ai-nb >> text="10"', { force: true }); await sleep(450);
+    c = await p.evaluate(() => { const e = document.querySelector('#ai-e').getBoundingClientRect(), k = document.querySelector('#ai-card').getBoundingClientRect(), w = document.querySelector('#ai-w').getBoundingClientRect();
+      return { l: document.querySelector('#ai-l').textContent, w: document.querySelector('#ai-w').textContent, n: document.querySelectorAll('#ai-e .ai-g span').length, fit: e.left >= k.left && e.right <= k.right && e.top >= k.top && w.bottom <= k.bottom + 1, hs: document.documentElement.scrollWidth > innerWidth }; });
+    ok(c.l === '10' && c.w === 'じゅう' && c.n === 10 && c.fit && !c.hs, tag + ': 10 -> じゅう, 10 items fit in the card ' + JSON.stringify(c));
+    await p.click('.ai-nb >> text="0"', { force: true }); await sleep(450);
+    c = await p.evaluate(() => ({ w: document.querySelector('#ai-w').textContent, e: document.querySelector('#ai-e').textContent }));
+    ok(c.w === 'ぜろ' && c.e.length > 0, tag + ': 0 -> ぜろ with an empty plate ' + JSON.stringify(c));
+    await p.screenshot({ path: SP + '/aiueo-num-' + vp.width + 'x' + vp.height + '.png' });
+    // trace 10
+    await p.click('.ai-nb >> text="10"', { force: true }); await sleep(300);
+    await p.click('#ai-tb', { force: true }); await sleep(500);
+    const tr = await p.evaluate(() => ({ t: window.__ai._t(), P: (r => ({ w: r.width, h: r.height }))(document.querySelector('#ai-play').getBoundingClientRect()), hs: document.documentElement.scrollWidth > innerWidth }));
+    ok(tr.t.tracing && tr.t.ch === '10' && tr.t.strokes === 2 && tr.t.anim === 'playing' && !tr.hs, tag + ': trace 10 -> 2 strokes (1 + 0), animating ' + JSON.stringify(tr));
+    await p.screenshot({ path: SP + '/aiueo-num-trace-' + vp.width + 'x' + vp.height + '.png' });
+    ok(await until(p, async () => (await p.evaluate(() => window.__ai._t().anim)) === 'done', 12000), tag + ': 10 animation done');
+    const nb = await p.evaluate(() => [...document.querySelectorAll('.ai-nb')].map(b => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
+    ok(vp.width > vp.height || nb.every(x => x[0] >= lim - 0.5 && x[1] >= lim - 0.5), tag + ': number buttons still >= ' + lim + ' while tracing (portrait) ' + JSON.stringify(nb[0]));
+    await clearSays(p);
+    const cb = await p.locator('#ai-cv').boundingBox();
+    await p.mouse.move(cb.x + cb.width * 0.4, cb.y + cb.height * 0.3); await p.mouse.down(); await p.mouse.move(cb.x + cb.width * 0.5, cb.y + cb.height * 0.6, { steps: 4 }); await p.mouse.up();
+    await p.click('#ai-done', { force: true }); await sleep(300);
+    ok((await says(p)).some(x => /じょうず！ じゅう/.test(x.t)), tag + ': できた praises with the reading ' + JSON.stringify(await says(p)));
+    await p.click('#ai-back', { force: true }); await sleep(300);
+    await p.click('#ai-mode .ai-m[data-m="kana"]', { force: true }); await sleep(400);
+    const k = await p.evaluate(() => ({ n: [...document.querySelectorAll('.ai-b')].filter(b => b.offsetParent !== null).length, nums: document.querySelector('#ai-nums').hidden, mode: window.__ai._t().mode }));
+    ok(k.n === 46 && k.nums && k.mode === 'kana', tag + ': back to あいう shows 46 kana cells ' + JSON.stringify(k));
     ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
   });
 

@@ -6,3 +6,7 @@
 - 「おみせやさん」は https 上ならフロントカメラでおもちゃの色を読み取って「ピッ」と鳴ります。
 - ホームの ⚙️ を 1.5 秒長押しで大人用の設定（音・カメラ・ABCなど）。
 - ホーム画面に追加して（Android / iOS）、オフラインでも遊べます（PWA: `manifest.webmanifest` / `sw.js`）。
+
+## クレジット
+
+- あいうえお／すうじの書き順（かきじゅん）データは KanjiVG（Ulrich Apel ほか、CC BY-SA 3.0、https://kanjivg.tagaini.net ）から作った `assets/kaki/` を使っています。
