@@ -86,8 +86,8 @@ const INIT = (voices) => `
 const ENV = [{ name: 'Kyoko', lang: 'ja-JP' }, { name: 'Samantha', lang: 'en-US' }, { name: 'Daniel', lang: 'en-GB' }];
 const JAV = [{ name: 'Kyoko', lang: 'ja-JP' }];
 
-async function newPage(br, vp, { voices = ENV, deny = false, storage, init, settle = 300 } = {}) {
-  const ctx = await br.newContext({ viewport: vp });
+async function newPage(br, vp, { voices = ENV, deny = false, storage, init, settle = 300, dsf } = {}) {
+  const ctx = await br.newContext(dsf ? { viewport: vp, deviceScaleFactor: dsf } : { viewport: vp });
   const p = await ctx.newPage();
   p.errs = [];
   p.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_|Failed to load resource/.test(m.text())) p.errs.push(m.text()); });
@@ -3512,6 +3512,101 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(SAME(await labsOf(p, '.hl-fav .tile'), want2) && SAME(await labsOf(p, '.hl-all .tile'), HLABS), tag + ': rotating rebuilds the band (' + want2.length + ')');
     ok(p.errs.length === 0, tag + ': no page errors after rotate ' + p.errs.join(' | '));
     await p.context().close();
+  });
+
+  // スクロールの かたちだけ: ひっぱって ふりおろす（かざり）
+  T('home-pull', async br => {
+    const ptr = p => p.evaluate(() => window.__ptr && window.__ptr());
+    const indVis = p => p.evaluate(() => { const e = document.querySelector('.hl-ptr'); if (!e) return null; const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return cs.visibility === 'visible' && +cs.opacity > 0.9 && r.width > 0 && r.right <= innerWidth && r.left >= 0; });
+    const drag = async (p, x, y, dx, dy, hold) => {
+      await p.mouse.move(x, y); await p.mouse.down();
+      const n = 20; for (let i = 1; i <= n; i++) { await p.mouse.move(x + dx * i / n, y + dy * i / n); await sleep(12); }
+      if (hold) await hold();
+      await p.mouse.up();
+    };
+    for (const vp of [{ width: 390, height: 844 }, { width: 568, height: 320 }]) {
+      const tag = 'pull ' + vp.width + 'x' + vp.height, land = vp.width > vp.height, nm = vp.width + 'x' + vp.height;
+      const p = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'scroll' } }), dsf: 2 });
+      ok(await p.locator('.hl-ptr').count() === 1 && (await ptr(p)).state === 'idle', tag + ': indicator exists, idle');
+      ok(await indVis(p) === false, tag + ': indicator hidden at rest');
+      ok(await noHScroll(p), tag + ': no horizontal overflow');
+      const x = vp.width / 2 + 20, y = land ? 160 : 400;
+      // みじかい ひっぱり（30px）は はしらない
+      await drag(p, x, y, 0, 30);
+      await sleep(700);
+      ok((await ptr(p)).state === 'idle' && await homeShown(p), tag + ': short pull springs back, no run');
+      // ふかく ひっぱる → ready → はなす → run
+      await drag(p, x, y, 0, 230, async () => {
+        const t = await ptr(p);
+        ok(t.state === 'ready' && t.pull >= 60 && t.pull <= 150, tag + ': ready while held past threshold (' + JSON.stringify(t) + ')');
+        ok(await noHScroll(p), tag + ': no horizontal overflow while pulling');
+        await sleep(200);
+        await p.screenshot({ path: SP + '/pull-' + nm + '-ready.png' });
+      });
+      await sleep(500);
+      let t = await ptr(p);
+      ok(t.state === 'run', tag + ': run after release (' + JSON.stringify(t) + ')');
+      ok(await indVis(p) === true, tag + ': indicator visible while running');
+      const fr0 = await p.evaluate(() => document.querySelector('.hl-ptr img').getAttribute('src')); await sleep(260);
+      const fr1 = await p.evaluate(() => document.querySelector('.hl-ptr img').getAttribute('src'));
+      ok(fr0 !== fr1, tag + ': run frame src changes (' + fr0 + ' -> ' + fr1 + ')');
+      ok(await p.evaluate(() => Promise.all([0, 1, 2, 3].map(i => new Promise(r => { const m = new Image(); m.onload = () => r(m.naturalWidth > 0); m.onerror = () => r(false); m.src = 'assets/usagi/run' + i + '.webp'; }))).then(a => a.every(Boolean)) && document.querySelector('.hl-ptr img').naturalWidth > 0), tag + ': usagi frames load');
+      ok(await homeShown(p), tag + ': no game opened after pull');
+      await sleep(200);
+      await p.screenshot({ path: SP + '/pull-' + nm + '-run.png' });
+      // はしっている あいだの あたらしい ひっぱりは むし
+      await drag(p, x, y, 0, 200); ok((await ptr(p)).state === 'run', tag + ': new pull ignored while running');
+      let n = 0; while ((await ptr(p)).state !== 'idle' && n++ < 30) await sleep(100);
+      t = await ptr(p);
+      ok(t.state === 'idle' && t.pull === 0, tag + ': back to idle within 3s (' + JSON.stringify(t) + ')');
+      await sleep(600);
+      ok(await indVis(p) === false && await homeShown(p), tag + ': indicator hidden again, home still shown');
+      // ひっぱった あとの ドラッグが ゲームを ひらかない（タイルの うえから）
+      const tg = await p.evaluate(() => { const r = [...document.querySelectorAll('.hl-all .tile')].map(t => t.getBoundingClientRect()).find(r => r.top > 100 && r.bottom < innerHeight - 5 && r.left >= 0 && r.right <= innerWidth); return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null; });
+      await drag(p, tg.x, tg.y, 0, 220); await sleep(300);
+      ok(await homeShown(p), tag + ': pull starting on a tile opens no game');
+      await sleep(2200);
+      if (land) {
+        // よこの ドラッグは ふつうの スクロール
+        const l0 = await p.evaluate(() => document.querySelector('.hl-scroll').scrollLeft);
+        const cdp = await p.context().newCDPSession(p);
+        await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+        const tp = (type, xx, yy) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: xx, y: yy }] });
+        await tp('touchStart', x + 150, y);
+        for (let d = 0; d <= 200; d += 10) { await tp('touchMove', x + 150 - d, y + d / 20); await sleep(14); }
+        await tp('touchEnd'); await sleep(500);
+        const l1 = await p.evaluate(() => document.querySelector('.hl-scroll').scrollLeft);
+        ok((await ptr(p)).state === 'idle' && l1 > l0 + 50, tag + ': horizontal drag still scrolls (' + l0 + ' -> ' + l1 + ')');
+        // うえへの ドラッグは はしらない
+        await drag(p, x, y, 0, -150); await sleep(300);
+        ok((await ptr(p)).state === 'idle', tag + ': upward drag does nothing');
+      } else {
+        // したへ スクロールしたあと（scrollTop>0）は ふつうに スクロール
+        await p.evaluate(() => { document.querySelector('.hl-scroll').scrollTop = 300; });
+        await sleep(100);
+        await drag(p, x, 300, 0, 120, async () => { ok((await ptr(p)).state === 'idle', tag + ': no pull while scrolled down'); });
+        await sleep(300);
+        ok((await ptr(p)).state === 'idle' && await homeShown(p), tag + ': downward drag when scrolled stays idle');
+        // タッチ（CDP）
+        await p.evaluate(() => { document.querySelector('.hl-scroll').scrollTop = 0; });
+        const cdp = await p.context().newCDPSession(p);
+        await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+        const tp = (type, yy) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: 200, y: yy }] });
+        await tp('touchStart', 300);
+        for (let d = 0; d <= 240; d += 12) { await tp('touchMove', 300 + d); await sleep(14); }
+        t = await ptr(p); ok(t.state === 'ready', tag + ': touch pull reaches ready (' + JSON.stringify(t) + ')');
+        await tp('touchEnd', 0); await sleep(400);
+        ok((await ptr(p)).state === 'run' && await homeShown(p), tag + ': touch release runs, no game opened');
+        n = 0; while ((await ptr(p)).state !== 'idle' && n++ < 30) await sleep(100);
+        ok((await ptr(p)).state === 'idle', tag + ': touch run ends');
+      }
+      ok(p.errs.length === 0, tag + ': no page errors ' + p.errs.join(' | '));
+      await p.context().close();
+    }
+    // ほかの かたちには ない
+    const q = await newPage(br, { width: 390, height: 844 }, { deny: true, init: hseed({ set: { home: 'page' } }) });
+    ok(await q.locator('.hl-ptr').count() === 0 && (await q.evaluate(() => window.__ptr())) === null, 'pull: page layout has no indicator');
+    await q.context().close();
   });
 
   TV('home-bubble', [{ width: 390, height: 844 }, { width: 360, height: 640 }, { width: 568, height: 320 }, { width: 1024, height: 768 }], async (br, vp) => {
