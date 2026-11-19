@@ -146,6 +146,43 @@
   .hm-alt.land .hl-row { grid-template-columns: repeat(2, var(--btw, 130px)); }
   .hm-alt.land .hl-fav .tile { height: var(--bth, 120px); }
   .hm-alt.land .hl-all { flex: none; grid-template-columns: none; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 2), var(--th, 120px)); grid-auto-columns: var(--tw, 120px); padding: 0; }
+  /* スクロールだけ: ひっぱって ふりおろすと ちいさな しろい こが はしる（かざりだけ。なにも よみこまない） */
+  .hl-scroll > .hl-fav, .hl-scroll > .hl-all { transform: translate3d(0, calc(var(--pl, 0) * 1px), 0); }
+  .hl-scroll.ease > .hl-fav, .hl-scroll.ease > .hl-all { transition: transform .38s cubic-bezier(.2,.9,.3,1.15); }
+  .hl-ptr { position: absolute; left: 50%; top: 6px; top: calc(6px + env(safe-area-inset-top)); width: 150px; margin-left: -75px; text-align: center; pointer-events: none; z-index: 0; visibility: hidden; opacity: 0; color: #5a3a2a; }
+  .hl-ptr:not(.s-idle) { visibility: visible; opacity: var(--pp, 0); }
+  .hl-ptr.s-ready, .hl-ptr.s-run { opacity: 1; }
+  .hl-ptr .pt-stage { transform-origin: 50% 100%; transform: translateY(calc((1 - var(--pp, 0)) * -26px)) scale(calc(.6 + var(--pp, 0) * .4)); }
+  .hl-ptr.s-ready .pt-stage, .hl-ptr.s-run .pt-stage { transform: none; }
+  .hl-ptr-t { height: 26px; line-height: 26px; font-size: 20px; font-weight: 800; letter-spacing: .06em; text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 6px #fff; }
+  .pt-stage { position: relative; width: 114px; height: 82px; margin: 0 auto; }
+  .pt-fx { position: absolute; left: 0; top: 0; width: 114px; height: 82px; overflow: visible; display: none; }
+  .s-run .pt-fx { display: block; }
+  .pt-fig { position: absolute; left: 24px; bottom: 6px; height: 68px; width: 60px; transform-origin: 50% 100%; }
+  .pt-fig img { display: block; height: 100%; width: auto; }
+  .s-ready .pt-fig { animation: ptHop .42s ease-in-out infinite alternate; }
+  .s-run .pt-fig { animation: ptBob .22s ease-in-out infinite alternate; }
+  .pt-gl { fill: none; stroke: #5a3a2a; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 14 10; opacity: .5; }
+  .pt-pf { fill: #fff; stroke: #5a3a2a; stroke-width: 2.2; transform-box: fill-box; transform-origin: 50% 50%; }
+  .pt-ln { fill: none; stroke: #5a3a2a; stroke-width: 3; stroke-linecap: round; opacity: .45; }
+  .s-run .pt-gl { animation: ptGround .3s linear infinite; }
+  .s-run .pt-pf { animation: ptPuff .7s ease-out infinite; }
+  .s-run .pt-pf.p2 { animation-delay: -.23s; }
+  .s-run .pt-pf.p3 { animation-delay: -.46s; }
+  .s-run .pt-ln { animation: ptLine .2s linear infinite; }
+  @keyframes ptBob { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+  @keyframes ptHop { from { transform: scale(1.08, .9); } to { transform: scale(.96, 1.02) translateY(-3px); } }
+  @keyframes ptGround { to { stroke-dashoffset: -24; } }
+  @keyframes ptPuff { 0% { transform: translateX(0) scale(.5); opacity: .95; } 100% { transform: translateX(-26px) scale(1.4); opacity: 0; } }
+  @keyframes ptLine { from { transform: translateX(4px); opacity: .15; } to { transform: translateX(-4px); opacity: .55; } }
+  .hl-scroll.pop .tile { animation: hlPop .42s cubic-bezier(.3,1.4,.5,1) both; animation-delay: calc(var(--i, 0) * 28ms); }
+  @keyframes hlPop { from { transform: scale(.9); } to { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .hl-scroll.ease > .hl-fav, .hl-scroll.ease > .hl-all { transition: none; }
+    .hl-ptr .pt-stage { transform: none; }
+    .pt-fig, .pt-fx * { animation: none !important; }
+    .hl-scroll.pop .tile { animation: none; }
+  }
   .hb { position: absolute; inset: 0; overflow: hidden; touch-action: none; }
   .hb .tile.bub { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform; gap: 2px; }
   .hm-alt .hb .tile .ico { font-size: 54cqmin; }
@@ -10365,13 +10402,108 @@
     var onMove = function (e) { if (!moved && (e.buttons || e.pointerType === 'touch') && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) moved = true; };
     var onClick = function (e) { if (moved) { moved = false; e.stopPropagation(); e.preventDefault(); } };
     sc.addEventListener('pointerdown', onDown); sc.addEventListener('pointermove', onMove); sc.addEventListener('click', onClick, true);
+
+    /* ひっぱって ふりおろす（かざりだけ）。うえで したへ ひっぱる → ゴムみたいに ついてくる → しきいを こえて はなすと ちいさな こが はしる */
+    var PTHR = 68, PHOLD = 112, PCAP = 150;
+    var ptr = { state: 'idle', pull: 0 }, gs = null, ptrBusy = false, fin = false;
+    var ptrEl = document.createElement('div'); ptrEl.className = 'hl-ptr s-idle'; ptrEl.setAttribute('aria-hidden', 'true');
+    ptrEl.innerHTML = PTR_HTML + '<div class="hl-ptr-t"></div>';
+    var ptrImg = ptrEl.querySelector('img'), ptrFr = 0, tFlip = 0;
+    PTR_FRAMES.forEach(function (u) { var i = new Image(); i.src = u; });
+    var ptrFlip = function (on) {
+      clearInterval(tFlip); tFlip = 0; ptrFr = 0; ptrImg.src = PTR_FRAMES[0];
+      if (on && !reduce) tFlip = setInterval(function () { ptrFr = (ptrFr + 1) % 4; ptrImg.src = PTR_FRAMES[ptrFr]; }, 110);
+    };
+    var ptrTxt = ptrEl.lastChild;
+    hmAlt.insertBefore(ptrEl, sc);
+    var tFin = 0, tSettle = 0, tPop = 0, tEase = 0;
+    var ptrSet = function (st) {
+      if ((st === 'run') !== (ptr.state === 'run')) ptrFlip(st === 'run');
+      ptr.state = st; ptrEl.className = 'hl-ptr s-' + (st === 'pull' ? 'pull' : st);
+      ptrTxt.textContent = st === 'ready' ? 'よーい…' : st === 'run' ? 'どん！' : '';
+    };
+    var ptrPull = function (v) {
+      ptr.pull = v; sc.style.setProperty('--pl', v.toFixed(1)); ptrEl.style.setProperty('--pp', Math.min(1, v / PTHR).toFixed(3));
+    };
+    var ptrEase = function () { sc.classList.add('ease'); clearTimeout(tEase); tEase = setTimeout(function () { sc.classList.remove('ease'); }, 460); };
+    var ptrBack = function () {
+      ptrBusy = true; ptrEase(); ptrPull(0);
+      clearTimeout(tSettle); tSettle = setTimeout(function () { ptrBusy = false; if (ptr.state === 'pull' || fin) { fin = false; ptrSet('idle'); } }, 460);
+    };
+    var gStart = function (x, y) {
+      if (ptr.state === 'run' || ptrBusy) { gs = null; return; }
+      clearTimeout(tEase); sc.classList.remove('ease');
+      gs = { x: x, y: y, mode: 'wait' };
+    };
+    var gMove = function (x, y) {   /* ひっぱり ちゅうなら true */
+      if (!gs || gs.mode === 'no') return false;
+      var dx = x - gs.x, dy = y - gs.y;
+      if (gs.mode === 'wait') {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return false;
+        if (dy > 0 && dy > Math.abs(dx) * 1.2 && (land || sc.scrollTop <= 0)) { gs.mode = 'pull'; gs.y0 = y - 6; moved = true; }
+        else { gs.mode = 'no'; return false; }
+      }
+      var d = Math.max(0, y - gs.y0), v = PCAP * (1 - Math.exp(-d * 0.5 / PCAP));
+      ptrPull(v);
+      var st = v >= PTHR ? 'ready' : 'pull';
+      if (st !== ptr.state) { ptrSet(st); if (st === 'ready') tone(440, 0.07, 'sine', 0.06, 560); }
+      return true;
+    };
+    var gEnd = function () {
+      var g = gs; gs = null;
+      if (!g || g.mode !== 'pull') return;
+      if (ptr.state === 'ready') ptrRun(); else ptrBack();
+    };
+    var ptrRun = function () {
+      ptrSet('run'); ptrEase(); ptrPull(PHOLD);
+      tone(523, 0.1, 'triangle', 0.08); tone(784, 0.14, 'triangle', 0.08, null, 0.1);
+      tFin = setTimeout(function () {
+        tone(660, 0.12, 'triangle', 0.07, 990);
+        fin = true; ptrBack();
+        if (!reduce) {
+          sc.querySelectorAll('.tile').forEach(function (t, i) { t.style.setProperty('--i', Math.min(i, 14)); });
+          sc.classList.add('pop'); clearTimeout(tPop);
+          tPop = setTimeout(function () { sc.classList.remove('pop'); }, 1100);
+        }
+      }, reduce ? 800 : 1800);
+    };
+    var onTS = function (e) { if (e.touches.length !== 1) { gs = null; return; } gStart(e.touches[0].clientX, e.touches[0].clientY); };
+    var onTM = function (e) { if (e.touches.length === 1 && gMove(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault(); };
+    var onTE = function () { gEnd(); };
+    var onMD = function (e) {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      gStart(e.clientX, e.clientY);
+      if (gs) { window.addEventListener('pointermove', onMM); window.addEventListener('pointerup', onMU); window.addEventListener('pointercancel', onMU); }
+    };
+    var onMM = function (e) { if (e.pointerType === 'mouse') gMove(e.clientX, e.clientY); };
+    var onMU = function () {
+      window.removeEventListener('pointermove', onMM); window.removeEventListener('pointerup', onMU); window.removeEventListener('pointercancel', onMU);
+      gEnd();
+    };
+    sc.addEventListener('touchstart', onTS, { passive: true });
+    sc.addEventListener('touchmove', onTM, { passive: false });
+    sc.addEventListener('touchend', onTE); sc.addEventListener('touchcancel', onTE);
+    sc.addEventListener('pointerdown', onMD);
+    hmPtr = ptr;
     hmScroll = { sc: sc, band: band, land: land };
     hmSizeScroll();
     return function () {
       sc.removeEventListener('pointerdown', onDown); sc.removeEventListener('pointermove', onMove); sc.removeEventListener('click', onClick, true);
-      hmScroll = null;
+      sc.removeEventListener('touchstart', onTS); sc.removeEventListener('touchmove', onTM);
+      sc.removeEventListener('touchend', onTE); sc.removeEventListener('touchcancel', onTE); sc.removeEventListener('pointerdown', onMD);
+      onMU(); gs = null;
+      clearInterval(tFlip); clearTimeout(tFin); clearTimeout(tSettle); clearTimeout(tPop); clearTimeout(tEase);
+      if (ptrEl.parentNode) ptrEl.parentNode.removeChild(ptrEl);
+      hmPtr = null; hmScroll = null;
     };
   }
+  var hmPtr = null; window.__ptr = function () { return hmPtr ? { state: hmPtr.state, pull: hmPtr.pull } : null; };
+  var PTR_FRAMES = ['assets/usagi/run0.webp', 'assets/usagi/run1.webp', 'assets/usagi/run2.webp', 'assets/usagi/run3.webp'];
+  var PTR_HTML = '<div class="pt-stage"><svg class="pt-fx" viewBox="0 0 114 82" aria-hidden="true">' +
+    '<path class="pt-gl" d="M4 78H110"/>' +
+    '<circle class="pt-pf" cx="22" cy="72" r="4"/><circle class="pt-pf p2" cx="22" cy="72" r="3"/><circle class="pt-pf p3" cx="22" cy="72" r="5"/>' +
+    '<path class="pt-ln" d="M6 30H16M2 42H12M8 54H16"/></svg>' +
+    '<div class="pt-fig"><img alt="" draggable="false" src="' + PTR_FRAMES[0] + '"></div></div>';
   var hmScroll = null;
   function hmSizeScroll() {
     var s = hmScroll; if (!s) return;
