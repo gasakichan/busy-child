@@ -3535,12 +3535,15 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       await drag(p, x, y, 0, 30);
       await sleep(700);
       ok((await ptr(p)).state === 'idle' && await homeShown(p), tag + ': short pull springs back, no run');
-      // ふかく ひっぱる → ready → はなす → run
+      // ふかく ひっぱる → ready（もう はしっている）→ はなす → run
       await drag(p, x, y, 0, 230, async () => {
         const t = await ptr(p);
         ok(t.state === 'ready' && t.pull >= 60 && t.pull <= 150, tag + ': ready while held past threshold (' + JSON.stringify(t) + ')');
         ok(await noHScroll(p), tag + ': no horizontal overflow while pulling');
-        await sleep(200);
+        const rf = () => p.evaluate(() => document.querySelector('.hl-ptr img').getAttribute('src'));
+        const f0 = await rf(); await sleep(400); const f1 = await rf();
+        ok(f0 !== f1, tag + ': bunny already running while held (' + f0 + ' -> ' + f1 + ')');
+        ok((await p.evaluate(() => document.querySelector('.hl-ptr-t').textContent)) === 'どん！' && (await ptr(p)).state === 'ready', tag + ': text どん！ while held');
         await p.screenshot({ path: SP + '/pull-' + nm + '-ready.png' });
       });
       await sleep(500);
