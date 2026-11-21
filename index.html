@@ -157,21 +157,19 @@
   .hl-ptr-t { height: 26px; line-height: 26px; font-size: 20px; font-weight: 800; letter-spacing: .06em; text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 6px #fff; }
   .pt-stage { position: relative; width: 114px; height: 82px; margin: 0 auto; }
   .pt-fx { position: absolute; left: 0; top: 0; width: 114px; height: 82px; overflow: visible; display: none; }
-  .s-run .pt-fx { display: block; }
+  .s-ready .pt-fx, .s-run .pt-fx { display: block; }
   .pt-fig { position: absolute; left: 24px; bottom: 6px; height: 68px; width: 60px; transform-origin: 50% 100%; }
   .pt-fig img { display: block; height: 100%; width: auto; }
-  .s-ready .pt-fig { animation: ptHop .42s ease-in-out infinite alternate; }
-  .s-run .pt-fig { animation: ptBob .22s ease-in-out infinite alternate; }
+  .s-ready .pt-fig, .s-run .pt-fig { animation: ptBob .22s ease-in-out infinite alternate; }
   .pt-gl { fill: none; stroke: #5a3a2a; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 14 10; opacity: .5; }
   .pt-pf { fill: #fff; stroke: #5a3a2a; stroke-width: 2.2; transform-box: fill-box; transform-origin: 50% 50%; }
   .pt-ln { fill: none; stroke: #5a3a2a; stroke-width: 3; stroke-linecap: round; opacity: .45; }
-  .s-run .pt-gl { animation: ptGround .3s linear infinite; }
-  .s-run .pt-pf { animation: ptPuff .7s ease-out infinite; }
-  .s-run .pt-pf.p2 { animation-delay: -.23s; }
-  .s-run .pt-pf.p3 { animation-delay: -.46s; }
-  .s-run .pt-ln { animation: ptLine .2s linear infinite; }
+  .s-ready .pt-gl, .s-run .pt-gl { animation: ptGround .3s linear infinite; }
+  .s-ready .pt-pf, .s-run .pt-pf { animation: ptPuff .7s ease-out infinite; }
+  .s-ready .pt-pf.p2, .s-run .pt-pf.p2 { animation-delay: -.23s; }
+  .s-ready .pt-pf.p3, .s-run .pt-pf.p3 { animation-delay: -.46s; }
+  .s-ready .pt-ln, .s-run .pt-ln { animation: ptLine .2s linear infinite; }
   @keyframes ptBob { from { transform: translateY(0); } to { transform: translateY(-4px); } }
-  @keyframes ptHop { from { transform: scale(1.08, .9); } to { transform: scale(.96, 1.02) translateY(-3px); } }
   @keyframes ptGround { to { stroke-dashoffset: -24; } }
   @keyframes ptPuff { 0% { transform: translateX(0) scale(.5); opacity: .95; } 100% { transform: translateX(-26px) scale(1.4); opacity: 0; } }
   @keyframes ptLine { from { transform: translateX(4px); opacity: .15; } to { transform: translateX(-4px); opacity: .55; } }
@@ -10403,7 +10401,7 @@
     var onClick = function (e) { if (moved) { moved = false; e.stopPropagation(); e.preventDefault(); } };
     sc.addEventListener('pointerdown', onDown); sc.addEventListener('pointermove', onMove); sc.addEventListener('click', onClick, true);
 
-    /* ひっぱって ふりおろす（かざりだけ）。うえで したへ ひっぱる → ゴムみたいに ついてくる → しきいを こえて はなすと ちいさな こが はしる */
+    /* ひっぱって ふりおろす（かざりだけ）。うえで したへ ひっぱる → ゴムみたいに ついてくる → しきいを こえると ちいさな こが はしりだす（はなすと そのまま 1.8びょう） */
     var PTHR = 68, PHOLD = 112, PCAP = 150;
     var ptr = { state: 'idle', pull: 0 }, gs = null, ptrBusy = false, fin = false;
     var ptrEl = document.createElement('div'); ptrEl.className = 'hl-ptr s-idle'; ptrEl.setAttribute('aria-hidden', 'true');
@@ -10418,9 +10416,10 @@
     hmAlt.insertBefore(ptrEl, sc);
     var tFin = 0, tSettle = 0, tPop = 0, tEase = 0;
     var ptrSet = function (st) {
-      if ((st === 'run') !== (ptr.state === 'run')) ptrFlip(st === 'run');
+      var runNow = st === 'ready' || st === 'run', runPrev = ptr.state === 'ready' || ptr.state === 'run';
+      if (runNow !== runPrev) ptrFlip(runNow);
       ptr.state = st; ptrEl.className = 'hl-ptr s-' + (st === 'pull' ? 'pull' : st);
-      ptrTxt.textContent = st === 'ready' ? 'よーい…' : st === 'run' ? 'どん！' : '';
+      ptrTxt.textContent = runNow ? 'どん！' : '';
     };
     var ptrPull = function (v) {
       ptr.pull = v; sc.style.setProperty('--pl', v.toFixed(1)); ptrEl.style.setProperty('--pp', Math.min(1, v / PTHR).toFixed(3));
@@ -10446,7 +10445,7 @@
       var d = Math.max(0, y - gs.y0), v = PCAP * (1 - Math.exp(-d * 0.5 / PCAP));
       ptrPull(v);
       var st = v >= PTHR ? 'ready' : 'pull';
-      if (st !== ptr.state) { ptrSet(st); if (st === 'ready') tone(440, 0.07, 'sine', 0.06, 560); }
+      if (st !== ptr.state) { ptrSet(st); if (st === 'ready') { tone(523, 0.1, 'triangle', 0.08); tone(784, 0.14, 'triangle', 0.08, null, 0.1); } }
       return true;
     };
     var gEnd = function () {
@@ -10456,7 +10455,6 @@
     };
     var ptrRun = function () {
       ptrSet('run'); ptrEase(); ptrPull(PHOLD);
-      tone(523, 0.1, 'triangle', 0.08); tone(784, 0.14, 'triangle', 0.08, null, 0.1);
       tFin = setTimeout(function () {
         tone(660, 0.12, 'triangle', 0.07, 990);
         fin = true; ptrBack();
