@@ -1,5 +1,5 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v18';
+var CACHE = 'ponpon-v19';
 var FONTS = 'ponpon-fonts-v1';
 /* へんしん カメラ（assets/face/ 約 13MB）は PRECACHE に いれない: あそんだ とき（または せっていの ボタン）に ふべつの キャッシュへ。
    なまえを あげるときは ponpon-face-v2 のように（ふるい ponpon-face-* は activate で けす） */
@@ -8,6 +8,10 @@ var FACE_FILES = ['./assets/face/vision.js', './assets/face/vision_wasm_internal
 var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'].concat([
   './assets/aiueo/mame.webp',
   './assets/kaki/kanjivg.js',
+  './assets/tsumiki/three.js',
+  './assets/tsumiki/cannon.js',
+  './assets/tsumiki/LICENSE-cannon-es.txt',
+  './assets/tsumiki/LICENSE-three.txt',
   './assets/ani/buta.webp',
   './assets/ani/hiyoko.webp',
   './assets/ani/inu.webp',

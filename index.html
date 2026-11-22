@@ -1496,6 +1496,14 @@
   }
   @media (prefers-reduced-motion: reduce) { #vc-ico.lis, #vc-ico.rec, .vc-b.on, .vc-b.pop { animation: none; } }
   /* へんしん */
+  #stage-tsumiki { background: linear-gradient(180deg, #CDEBFF 0%, #E8F6FF 60%, #CDEFB9 100%); }
+  #ts-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .ts-prep { position: absolute; left: 16px; right: 16px; top: 42%; transform: translateY(-50%); z-index: 3; text-align: center; font-size: clamp(22px, 6vw, 34px); font-weight: 800; line-height: 1.4; color: var(--ink); pointer-events: none; }
+  #ts-redo { position: absolute; right: 12px; right: calc(12px + env(safe-area-inset-right)); bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 5; width: 92px; height: 92px; padding: 0; border-radius: 46px; border: 4px solid rgba(91,58,41,.55); background: #FFF3C4; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
+  #ts-redo[hidden] { display: none; }
+  #ts-redo .ico { font-size: 30px; line-height: 1; }
+  #ts-redo .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
+  #ts-redo:active { transform: translateY(2px); }
   #stage-henshin { background: linear-gradient(170deg, #E9E1FF 0%, #FFE3EC 55%, #DDF1FF 100%); }
   #hs-gl, #hs-ov { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   #hs-ov { touch-action: none; }
@@ -1864,6 +1872,11 @@
       <div class="hs-sh-head"><span class="hs-sh-t">えらぶ</span><button class="hs-close" id="hs-close" type="button" aria-label="とじる"><span class="ico">✖</span><span class="lab">とじる</span></button></div>
       <div class="hs-list" id="hs-list"></div>
     </div>
+  </section>
+
+  <section class="stage" id="stage-tsumiki" aria-label="つみき" hidden>
+    <div class="ts-prep" id="ts-prep" hidden role="status">じゅんび ちゅう…</div>
+    <button id="ts-redo" type="button" aria-label="つみなおす" hidden><span class="ico">🔄</span><span class="lab">つみなおす</span></button>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -10421,6 +10434,417 @@
     _react: function () { hs.reactAt = -1e9; hsReact(performance.now(), hs.P.mx, hs.P.my); }
   };
 
+  /* ====== つみき（three.js ＋ cannon-es。はじめて はいった ときに ふつうの script で よむ） ====== */
+  var tsStage = $('#stage-tsumiki'), tsPrep = $('#ts-prep'), tsRedo = $('#ts-redo');
+  var TS_COLS = ['#FF9EB5', '#FFC785', '#FFE27A', '#A8E6A1', '#8FD3F4', '#C6B3F5', '#FFB3A7', '#9FE8D5'];
+  var TS_BALLS = ['#FF7A8A', '#FFC24D', '#6CCBF0', '#8AD97A', '#B79BF2', '#FF9E6B'];
+  var TS_BW = 5.4, TS_BH = 6.1, TS_G = 9.8;   /* くみたての はば・たかさ（どの かたちでも おさまる おおきさ）／じゅうりょく */
+  var ts = {
+    on: false, gen: 0, ready: false, raf: 0, last: 0, clock: 0, loading: false, waiters: [], failed: false,
+    R: null, scene: null, cam: null, world: null, mat: null, W: 0, H: 0,
+    blocks: [], balls: [], layout: -1, nextLayout: 0, rebuilding: false, rbT: 0, rbOld: [], rbNew: [],
+    goal: false, goalAt: 0, lastTap: 0, snd: [], fr: 0, frAcc: 0, shadow: true, geo: {}, mats: {}, own: [], lights: [], ballN: 0, cv: null, down: 0
+  };
+  function tsLoadOne(src, test, done) {
+    if (test()) { done(true); return; }
+    var sc = document.createElement('script');
+    sc.src = src;
+    sc.onload = function () { done(test()); };
+    sc.onerror = function () { if (sc.parentNode) sc.parentNode.removeChild(sc); done(false); };
+    document.head.appendChild(sc);
+  }
+  function tsLoad(cb) {
+    if (window.THREE && window.CANNON) { cb(true); return; }
+    ts.waiters.push(cb);
+    if (ts.loading) return;
+    ts.loading = true;
+    var n = 0, all = true;
+    function fin(ok) {
+      all = all && ok;
+      if (++n < 2) return;
+      ts.loading = false;
+      var ws = ts.waiters; ts.waiters = [];
+      ws.forEach(function (f) { f(all); });
+    }
+    tsLoadOne('assets/tsumiki/three.js', function () { return !!window.THREE; }, fin);
+    tsLoadOne('assets/tsumiki/cannon.js', function () { return !!window.CANNON; }, fin);
+  }
+  /* まるい かどの はこ（BoxGeometry の ちょうてんを うちがわへ よせて ふくらませる） */
+  function tsRoundBox(w, h, d, r) {
+    var g = new THREE.BoxGeometry(w, h, d, 6, 6, 6), p = g.attributes.position, nr = g.attributes.normal;
+    var hw = w / 2 - r, hh = h / 2 - r, hd = d / 2 - r, v = new THREE.Vector3(), q = new THREE.Vector3();
+    for (var i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i);
+      q.set(Math.max(-hw, Math.min(hw, v.x)), Math.max(-hh, Math.min(hh, v.y)), Math.max(-hd, Math.min(hd, v.z)));
+      v.sub(q);
+      if (v.lengthSq() > 1e-9) { v.normalize(); nr.setXYZ(i, v.x, v.y, v.z); p.setXYZ(i, q.x + v.x * r, q.y + v.y * r, q.z + v.z * r); }
+    }
+    return g;
+  }
+  /* さんかくの やね: ずけいは じゅうしんが げんてん */
+  function tsPrismVerts(w, h, d) {
+    var yb = -h / 3, yt = 2 * h / 3, a = [[-w / 2, yb], [w / 2, yb], [0, yt]], vs = [];
+    [d / 2, -d / 2].forEach(function (z) { a.forEach(function (p) { vs.push(new CANNON.Vec3(p[0], p[1], z)); }); });
+    return vs;
+  }
+  function tsPrismShape(w, h, d) {
+    var vs = tsPrismVerts(w, h, d);
+    var fs = [[0, 1, 2], [5, 4, 3], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]];
+    return new CANNON.ConvexPolyhedron({ vertices: vs, faces: fs });
+  }
+  function tsPrismGeo(w, h, d) {
+    var yb = -h / 3, yt = 2 * h / 3, sh = new THREE.Shape();
+    sh.moveTo(-w / 2, yb); sh.lineTo(w / 2, yb); sh.lineTo(0, yt); sh.closePath();
+    var g = new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false });
+    g.translate(0, 0, -d / 2);
+    return g;
+  }
+  function tsMat(c) {
+    return ts.mats[c] || (ts.mats[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, metalness: 0 }));
+  }
+  function tsGeo(key, make) { return ts.geo[key] || (ts.geo[key] = make()); }
+  /* 3 つの くみかた（x,y,z は ブロックの ちゅうしん。y は ゆかから。やねは じゅうしんが ちゅうしん） */
+  function tsSpecs(L) {
+    var o = [], i, j, k, n, ci = 0;
+    function box(x, y, z, w, h, d, c) { o.push({ k: 'box', x: x, y: y, z: z, w: w, h: h, d: d, c: c }); }
+    function cyl(x, y, r, h, c) { o.push({ k: 'cyl', x: x, y: y, z: 0, r: r, h: h, c: c }); }
+    function prism(x, y, w, h, d, c) { o.push({ k: 'prism', x: x, y: y, z: 0, w: w, h: h, d: d, c: c }); }
+    if (L === 0) {   /* かべ */
+      for (i = 0; i < 9; i++) {
+        var y = 0.25 + i * 0.5;
+        if (i % 2 === 0) { for (j = 0; j < 4; j++) box(-1.5 + j, y, 0, 1, 0.5, 0.8, (i + j) % 8); }
+        else {
+          box(-1.75, y, 0, 0.5, 0.5, 0.8, (i + 5) % 8);
+          for (j = 0; j < 3; j++) box(-1 + j, y, 0, 1, 0.5, 0.8, (i + j) % 8);
+          box(1.75, y, 0, 0.5, 0.5, 0.8, (i + 6) % 8);
+        }
+      }
+      cyl(-1.5, 4.8, 0.28, 0.6, 3); cyl(1.5, 4.8, 0.28, 0.6, 4); prism(0, 4.8, 1.4, 0.9, 0.8, 0);
+    } else if (L === 1) {   /* おしろ */
+      [-1.7, 1.7].forEach(function (tx, ti) {
+        for (i = 0; i < 6; i++) { for (j = 0; j < 2; j++) box(tx + (j ? 0.4 : -0.4), 0.3 + i * 0.6, 0, 0.8, 0.6, 0.8, (i + j + ti * 3) % 8); }
+        cyl(tx * 1.24, 3.9, 0.3, 0.6, 2 + ti * 4);
+      });
+      for (i = 0; i < 3; i++) cyl(0, 0.6 + i * 1.2, 0.3, 1.2, 4);   /* まんなかの はしら */
+      box(0, 3.85, 0, 3.4, 0.5, 0.8, 3);
+      box(0, 4.5, 0, 0.8, 0.8, 0.8, 2);
+      prism(0, 5.2, 1.1, 0.9, 0.9, 6);
+      prism(-1.2, 4.4, 0.9, 0.9, 0.8, 0); prism(1.2, 4.4, 0.9, 0.9, 0.8, 0);
+    } else {   /* ピラミッド */
+      var cs = 0.9;
+      for (i = 0; i < 4; i++) {
+        n = 4 - i;
+        for (j = 0; j < n; j++) for (k = 0; k < n; k++) box((j - (n - 1) / 2) * cs, cs / 2 + i * cs, (k - (n - 1) / 2) * cs, cs, cs, cs, (ci++ + i) % 8);
+      }
+      prism(0, 3.9, 1.1, 0.9, 1.1, 0);
+      cyl(-2.6, 0.45, 0.4, 0.9, 4); cyl(2.6, 0.45, 0.4, 0.9, 3);
+    }
+    return o;
+  }
+  /* シーン・ざいりょう・ちから をつくる。WebGL が つかえなければ false */
+  function tsInit() {
+    var R;
+    try { R = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' }); } catch (e) { return false; }
+    if (!R || !R.getContext()) return false;
+    ts.R = R;
+    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFShadowMap;
+    ts.cv = R.domElement; ts.cv.id = 'ts-cv'; ts.cv.setAttribute('aria-label', 'つみき');
+    tsStage.insertBefore(ts.cv, tsStage.firstChild);
+    var sky = new THREE.Color('#CDEBFF');
+    var sc = ts.scene = new THREE.Scene();
+    sc.background = sky; sc.fog = new THREE.Fog(sky, 30, 70);
+    ts.cam = new THREE.PerspectiveCamera(45, 1, 0.1, 120);
+    var hemi = new THREE.HemisphereLight(0xFFFFFF, 0xCDE8BE, 1.05); sc.add(hemi);
+    var sun = new THREE.DirectionalLight(0xFFF6E6, 1.5);
+    sun.position.set(4.5, 10, 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    var sh = sun.shadow.camera; sh.left = -7; sh.right = 7; sh.top = 8; sh.bottom = -5; sh.near = 1; sh.far = 30;
+    sun.shadow.bias = -0.0008;
+    sc.add(sun); ts.sun = sun;
+    ts.lights = [hemi, sun];
+    /* ゆか・しきもの・くも */
+    var gm = new THREE.Mesh(tsGeo('ground', function () { return new THREE.CircleGeometry(60, 40); }), tsMat('#C5ECB4'));
+    gm.rotation.x = -Math.PI / 2; gm.position.y = -0.001; gm.receiveShadow = true; sc.add(gm);
+    var rug = new THREE.Mesh(tsGeo('rug', function () { return new THREE.CylinderGeometry(3.7, 3.7, 0.08, 48); }), tsMat('#FFF1CC'));
+    rug.position.y = 0; rug.receiveShadow = true; sc.add(rug);
+    var cm = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, fog: false }); ts.mats.cloud = cm;
+    var cg = tsGeo('cloud', function () { return new THREE.SphereGeometry(1, 16, 10); });
+    [[-9, 8, -16, 1], [8, 10, -20, 1.3], [-2, 12, -26, 1.6]].forEach(function (c) {
+      [[0, 0, 1], [1.1, -0.2, 0.75], [-1.1, -0.25, 0.7], [0.4, 0.45, 0.7]].forEach(function (p) {
+        var m = new THREE.Mesh(cg, cm); m.scale.setScalar(p[2] * c[3]); m.position.set(c[0] + p[0] * c[3], c[1] + p[1] * c[3], c[2]); sc.add(m);
+      });
+    });
+    /* ちから */
+    var wd = ts.world = new CANNON.World({ gravity: new CANNON.Vec3(0, -TS_G, 0) });
+    wd.allowSleep = true;
+    wd.solver.iterations = 24; wd.solver.tolerance = 0.0005;
+    var mt = ts.mat = new CANNON.Material('tsumiki');
+    wd.defaultMaterial = mt;
+    wd.defaultContactMaterial = new CANNON.ContactMaterial(mt, mt, { friction: 0.6, restitution: 0.05, contactEquationStiffness: 1e8, contactEquationRelaxation: 4, frictionEquationStiffness: 1e8, frictionEquationRelaxation: 4 });
+    wd.addContactMaterial(wd.defaultContactMaterial);
+    var gb = new CANNON.Body({ mass: 0, material: mt, shape: new CANNON.Plane() });
+    gb.quaternion.setFromEuler(-Math.PI / 2, 0, 0); gb.position.set(0, 0.04, 0);
+    wd.addBody(gb);
+    ts.blocks = []; ts.balls = []; ts.rbOld = []; ts.rebuilding = false; ts.goal = false; ts.down = 0; ts.snd = [];
+    ts.fr = 0; ts.frAcc = 0; ts.shadow = true;
+    ts.W = 0; ts.H = 0;
+    tsFit();
+    ts.ready = true;
+    return true;
+  }
+  /* がめんの おおきさ（たて・よこ）に あわせて カメラを ひく */
+  function tsFit() {
+    var R = ts.R; if (!R) return;
+    var w = tsStage.clientWidth, h = tsStage.clientHeight;
+    if (!w || !h) return;
+    ts.W = w; ts.H = h;
+    R.setSize(w, h, false);
+    ts.cv.style.width = '100%'; ts.cv.style.height = '100%';
+    var cam = ts.cam, asp = w / h, fov = asp < 1 ? 52 : 42, th = Math.tan(fov * Math.PI / 360);
+    var dv = (TS_BH / 2 * 1.3) / th, dh = (TS_BW / 2 * 1.12) / (th * asp);
+    cam.fov = fov; cam.aspect = asp; cam.updateProjectionMatrix();
+    var d = Math.max(dv, dh) + 0.8, ty = 2.6;
+    cam.position.set(0, ty + Math.min(3.4, d * 0.2), d);
+    cam.lookAt(0, ty - 0.1, 0);
+    cam.updateMatrixWorld(true);
+  }
+  function tsBlockOf(sp) {
+    var g, shp, vol, mass, mesh, e = 0.012, c = TS_COLS[sp.c % TS_COLS.length];
+    if (sp.k === 'box') {
+      var bw = sp.w - e, bh = sp.h - e, bd = sp.d - e;
+      g = tsGeo('b' + bw + '_' + bh + '_' + bd, function () { return tsRoundBox(bw, bh, bd, Math.min(bw, bh, bd) * 0.13); });
+      shp = new CANNON.Box(new CANNON.Vec3(bw / 2, bh / 2, bd / 2)); vol = bw * bh * bd;
+    } else if (sp.k === 'cyl') {
+      var cr = sp.r - e / 2, ch = sp.h - e;
+      g = tsGeo('c' + cr + '_' + ch, function () { return new THREE.CylinderGeometry(cr, cr, ch, 20); });
+      shp = new CANNON.Cylinder(cr, cr, ch, 12); vol = Math.PI * cr * cr * ch;
+    } else {
+      var pw = sp.w - e, ph = sp.h - e, pd = sp.d - e;
+      g = tsGeo('p' + pw + '_' + ph + '_' + pd, function () { return tsPrismGeo(pw, ph, pd); });
+      shp = tsPrismShape(pw, ph, pd); vol = pw * ph * pd / 2;
+    }
+    mesh = new THREE.Mesh(g, tsMat(c));
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    var b = new CANNON.Body({ mass: vol * 1.2, material: ts.mat, shape: shp, allowSleep: true, sleepSpeedLimit: 0.35, sleepTimeLimit: 0.4, linearDamping: 0.04, angularDamping: 0.12 });
+    var blk = { sp: sp, mesh: mesh, body: b, hx: sp.x, hy: sp.y + 0.04 + e / 2, hz: sp.z, down: false, t0: 0 };
+    b.position.set(blk.hx, blk.hy, blk.hz);
+    b.addEventListener('collide', tsHit);
+    b.__ts = blk;
+    ts.scene.add(mesh);
+    return blk;
+  }
+  /* ぶつかった おと（100ms に 3 かいまで） */
+  function tsHit(e) {
+    if (!ts.on) return;
+    var v = 0;
+    try { v = Math.abs(e.contact.getImpactVelocityAlongNormal()); } catch (x) {}
+    var now = performance.now();
+    ts.snd = ts.snd.filter(function (t) { return now - t < 100; });
+    if (ts.snd.length >= 3) return;
+    var ball = (e.body && e.body.__ball) || (e.target && e.target.__ball);
+    if (ball && v > 2.5) { ts.snd.push(now); tone(rand(150, 230), 0.18, 'triangle', Math.min(0.22, 0.05 + v * 0.01), 70); }
+    else if (v > 1.3) { ts.snd.push(now); tone(SCALE[(Math.random() * 10) | 0] * 1.5, 0.07, 'triangle', Math.min(0.1, 0.02 + v * 0.01)); }
+  }
+  function tsRemoveBlock(b) {
+    try { ts.world.removeBody(b.body); } catch (e) {}
+    ts.scene.remove(b.mesh);
+  }
+  function tsClearBalls() {
+    ts.balls.forEach(function (b) { try { ts.world.removeBody(b.body); } catch (e) {} ts.scene.remove(b.mesh); });
+    ts.balls = [];
+  }
+  /* くみなおし: ふるい ブロックは ちいさく きえて、あたらしい ブロックが うえから ぽとぽと おりてくる */
+  function tsBuild(L) {
+    if (!ts.scene) return;
+    ts.rbOld.forEach(function (b) { ts.scene.remove(b.mesh); });
+    ts.rbOld = ts.blocks.slice();
+    ts.rbOld.forEach(function (b) { try { ts.world.removeBody(b.body); } catch (e) {} });
+    tsClearBalls();
+    ts.layout = L; ts.nextLayout = (L + 1) % 3;
+    ts.goal = false; ts.down = 0; ts.goalAt = 0;
+    ts.blocks = tsSpecs(L).map(tsBlockOf);
+    var top = 0; ts.blocks.forEach(function (b) { top = Math.max(top, b.hy); });
+    ts.blocks.forEach(function (b) {
+      b.t0 = reduce ? 0 : 0.12 + (b.hy / (top || 1)) * 0.5;
+      b.mesh.position.set(b.hx, b.hy + (reduce ? 0 : 7), b.hz);
+      b.mesh.scale.setScalar(reduce ? 1 : 0.5);
+    });
+    ts.rbT = 0; ts.rebuilding = true;
+  }
+  function tsRebuild() { if (ts.ready && !ts.rebuilding) tsBuild(ts.nextLayout); }
+  function tsBuildStep(dt) {
+    ts.rbT += dt;
+    var t = ts.rbT, dur = reduce ? 0.3 : 0.6, i, b, u, all = true;
+    ts.rbOld.forEach(function (o) {
+      var s = Math.max(0, 1 - t / 0.25);
+      if (s <= 0) { ts.scene.remove(o.mesh); o.dead = true; } else o.mesh.scale.setScalar(s);
+    });
+    ts.rbOld = ts.rbOld.filter(function (o) { return !o.dead; });
+    for (i = 0; i < ts.blocks.length; i++) {
+      b = ts.blocks[i];
+      u = Math.max(0, Math.min(1, (t - b.t0) / dur));
+      if (u < 1) all = false;
+      var e = 1 - Math.pow(1 - u, 3);
+      b.mesh.position.y = b.hy + (reduce ? 0 : 7) * (1 - e);
+      b.mesh.scale.setScalar(0.5 + 0.5 * Math.min(1, u * 2.2));
+    }
+    if (all && t > 0.3) {
+      ts.rbOld.forEach(function (o) { ts.scene.remove(o.mesh); }); ts.rbOld = [];
+      ts.blocks.forEach(function (b) {
+        b.mesh.position.set(b.hx, b.hy, b.hz); b.mesh.scale.setScalar(1); b.mesh.quaternion.set(0, 0, 0, 1);
+        b.body.position.set(b.hx, b.hy, b.hz); b.body.quaternion.set(0, 0, 0, 1);
+        b.body.velocity.set(0, 0, 0); b.body.angularVelocity.set(0, 0, 0);
+        ts.world.addBody(b.body); b.body.sleep();
+      });
+      ts.rebuilding = false;
+      if (!reduce) tone(660, 0.12, 'triangle', 0.08);
+    }
+  }
+  function tsScreen(x, y, z) {
+    var v = new THREE.Vector3(x, y, z).project(ts.cam), r = ts.cv.getBoundingClientRect();
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  }
+  /* たまを うつ（nx, ny は がめんの 0〜1）。ぶつかる ばしょへ とどく はやさ */
+  function tsFire(nx, ny) {
+    if (!ts.ready || !ts.on || ts.rebuilding) return false;
+    var cam = ts.cam, rc = new THREE.Raycaster(), tg = new THREE.Vector3();
+    rc.setFromCamera({ x: nx * 2 - 1, y: 1 - ny * 2 }, cam);
+    var hits = rc.intersectObjects(ts.blocks.map(function (b) { return b.mesh; }), false);
+    if (hits.length) tg.copy(hits[0].point);
+    else if (!rc.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), tg)) tg.copy(rc.ray.direction).multiplyScalar(12).add(cam.position);
+    tg.x = Math.max(-9, Math.min(9, tg.x)); tg.y = Math.max(0.3, Math.min(10, tg.y));
+    var st = new THREE.Vector3(0, -0.86, 0.5).unproject(cam).sub(cam.position).normalize().multiplyScalar(3).add(cam.position);
+    var dist = st.distanceTo(tg), T = Math.max(0.5, Math.min(0.78, dist * 0.045));
+    var vx = (tg.x - st.x) / T, vy = (tg.y - st.y) / T + 0.5 * TS_G * T, vz = (tg.z - st.z) / T;
+    if (ts.balls.length >= 6) { var o = ts.balls.shift(); try { ts.world.removeBody(o.body); } catch (e) {} ts.scene.remove(o.mesh); }
+    var col = TS_BALLS[ts.ballN++ % TS_BALLS.length];
+    var mesh = new THREE.Mesh(tsGeo('ball', function () { return new THREE.SphereGeometry(0.42, 24, 16); }), tsMat(col));
+    mesh.castShadow = true; mesh.position.copy(st); ts.scene.add(mesh);
+    var body = new CANNON.Body({ mass: 6, material: ts.mat, shape: new CANNON.Sphere(0.42), allowSleep: true, sleepSpeedLimit: 0.3, sleepTimeLimit: 0.6, linearDamping: 0.01, angularDamping: 0.2 });
+    body.position.set(st.x, st.y, st.z); body.velocity.set(vx, vy, vz);
+    body.__ball = true;
+    body.addEventListener('collide', tsHit);
+    ts.world.addBody(body);
+    ts.balls.push({ body: body, mesh: mesh });
+    ts.lastTap = performance.now();
+    tone(rand(300, 380), 0.14, 'triangle', 0.16, rand(520, 640));
+    return true;
+  }
+  function tsDown(e) {
+    var t = e.target;
+    if (t && t.closest && t.closest('#ts-redo')) return;
+    e.preventDefault(); audio();
+    if (!ts.cv) return;
+    var r = ts.cv.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    tsFire((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+  }
+  function tsRedoDown(e) { if (e.type === 'click' && e.detail !== 0) return; e.preventDefault(); audio(); tsRebuild(); }
+  function tsVis() { if (!document.hidden) ts.last = 0; }
+  function tsCount() {
+    var n = 0;
+    ts.blocks.forEach(function (b) {
+      var p = b.body.position, q = b.body.quaternion;
+      var dx = p.x - b.hx, dy = p.y - b.hy, dz = p.z - b.hz, up = 1 - 2 * (q.x * q.x + q.z * q.z);
+      b.down = dx * dx + dy * dy + dz * dz > 0.5 || up < 0.8 || p.y < b.hy - 0.35;
+      if (b.down) n++;
+    });
+    return n;
+  }
+  function tsFrame(t) {
+    ts.raf = requestAnimationFrame(tsFrame);
+    if (!ts.on || !ts.ready || document.hidden) { ts.last = 0; return; }
+    var dt = ts.last ? Math.min(0.1, (t - ts.last) / 1000) : 1 / 60; ts.last = t;
+    var i, now = performance.now();
+    if (ts.rebuilding) tsBuildStep(dt);
+    else {
+      ts.world.step(1 / 60, dt, 3);
+      for (i = 0; i < ts.blocks.length; i++) {
+        var b = ts.blocks[i];
+        b.mesh.position.copy(b.body.position); b.mesh.quaternion.copy(b.body.quaternion);
+      }
+      for (i = ts.balls.length - 1; i >= 0; i--) {
+        var bl = ts.balls[i], p = bl.body.position;
+        bl.mesh.position.copy(p); bl.mesh.quaternion.copy(bl.body.quaternion);
+        if (p.y < -5 || Math.abs(p.x) > 30 || p.z < -30 || p.z > 40) {
+          try { ts.world.removeBody(bl.body); } catch (e) {} ts.scene.remove(bl.mesh); ts.balls.splice(i, 1);
+        }
+      }
+      ts.down = tsCount();
+      if (!ts.goal && ts.blocks.length && ts.down >= ts.blocks.length * 0.6) {
+        ts.goal = true; ts.goalAt = now;
+        /* こえは ださない（ユーザーの きぼう）: こうかおんだけ。どーん ＋ きらきらの のぼる おと */
+        tone(196, 0.5, 'triangle', 0.2, 110);
+        [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.16, 'sine', 0.09, null, 0.25 + i * 0.09); });
+      }
+      if (ts.goal && now - Math.max(ts.goalAt, ts.lastTap) > 4000) tsRebuild();
+    }
+    /* おもい ところでは かげを やめる */
+    if (ts.shadow && ts.fr < 40) {
+      ts.fr++; ts.frAcc += dt;
+      if (ts.fr === 40 && ts.frAcc / 40 > 0.05 && !(window.__tsKeepShadow)) {
+        ts.shadow = false; ts.sun.castShadow = false; ts.R.shadowMap.enabled = false;
+        Object.keys(ts.mats).forEach(function (k) { ts.mats[k].needsUpdate = true; });
+      }
+    }
+    ts.R.render(ts.scene, ts.cam);
+  }
+  function tsTeardown() {
+    if (ts.raf) { cancelAnimationFrame(ts.raf); ts.raf = 0; }
+    var R = ts.R;
+    Object.keys(ts.geo).forEach(function (k) { try { ts.geo[k].dispose(); } catch (e) {} });
+    Object.keys(ts.mats).forEach(function (k) { try { ts.mats[k].dispose(); } catch (e) {} });
+    ts.geo = {}; ts.mats = {};
+    ts.lights.forEach(function (l) { try { if (l.shadow) l.shadow.dispose(); l.dispose && l.dispose(); } catch (e) {} });
+    ts.lights = [];
+    if (R) {
+      try { R.dispose(); R.forceContextLoss(); } catch (e) {}
+      if (ts.cv && ts.cv.parentNode) ts.cv.parentNode.removeChild(ts.cv);
+    }
+    ts.R = null; ts.cv = null; ts.scene = null; ts.cam = null; ts.world = null; ts.sun = null;
+    ts.blocks = []; ts.balls = []; ts.rbOld = []; ts.ready = false; ts.rebuilding = false; ts.down = 0; ts.goal = false;
+  }
+  function tsFail() {
+    ts.failed = true; tsRedo.hidden = true;
+    tsPrep.hidden = false; tsPrep.textContent = 'いまは つみきが ひらけないよ。もういちど はいってね';
+  }
+  games.tsumiki = {
+    el: tsStage,
+    enter: function () {
+      ts.on = true; ts.gen++; ts.ready = false; ts.failed = false; ts.lastTap = 0; ts.last = 0;
+      var g = ts.gen;
+      tsRedo.hidden = true; tsPrep.hidden = false; tsPrep.textContent = 'じゅんび ちゅう…';
+      tsStage.addEventListener('pointerdown', tsDown);
+      tsRedo.addEventListener('pointerdown', tsRedoDown); tsRedo.addEventListener('click', tsRedoDown);
+      document.addEventListener('visibilitychange', tsVis);
+      tsLoad(function (ok) {
+        if (!ts.on || g !== ts.gen) return;
+        if (!ok || !tsInit()) { tsFail(); return; }
+        tsPrep.hidden = true; tsRedo.hidden = false;
+        tsBuild(ts.nextLayout);
+        ts.raf = requestAnimationFrame(tsFrame);
+      });
+    },
+    leave: function () {
+      ts.on = false; ts.gen++;
+      tsStage.removeEventListener('pointerdown', tsDown);
+      tsRedo.removeEventListener('pointerdown', tsRedoDown); tsRedo.removeEventListener('click', tsRedoDown);
+      document.removeEventListener('visibilitychange', tsVis);
+      tsTeardown();
+      tsPrep.hidden = true;
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: function () { if (ts.on && ts.R) tsFit(); },
+    /* テスト用 */
+    _t: function () {
+      return { ready: ts.ready, blocks: ts.blocks.length, balls: ts.balls.length, down: ts.down, layout: ts.layout, rebuilding: ts.rebuilding, rafActive: !!ts.raf, goal: ts.goal, shadow: ts.shadow, failed: ts.failed, loaded: !!(window.THREE && window.CANNON), canvas: !!ts.cv, rbOld: ts.rbOld.length, awake: ts.world ? ts.world.bodies.filter(function (b) { return b.sleepState !== 2 && b.mass > 0; }).length : 0 };
+    },
+    _fire: function (nx, ny) { return tsFire(nx, ny); },
+    _screen: function (x, y, z) { return ts.cam ? tsScreen(x, y, z) : null; },
+    _rebuild: function () { tsRebuild(); }
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var ICO = {
@@ -10490,13 +10914,14 @@
     kaeru: { ico: '🐸', lab: 'かえる', c: '#C9F2C0', say: 'かえる！' },
     dokoka: { ico: '🚪', lab: 'どこかな', c: '#FFD9E4', say: 'どこかな！' },
     henshin: { ico: '👻', lab: 'へんしん', c: '#E3D4FF', say: 'へんしん かめら！' },
-    kao:   { ico: '🐼', lab: 'かおスロット', br: 'かお', c: '#FFE3C8', say: 'かおすろっと！' }
+    kao:   { ico: '🐼', lab: 'かおスロット', br: 'かお', c: '#FFE3C8', say: 'かおすろっと！' },
+    tsumiki: { ico: '🧱', lab: 'つみき', c: '#FFE0C2', say: 'つみき！' }
   };
   // ホームの並び。新しいゲームは最後に足す（9 個ずつ自動でページになる）
   var HORDER = ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker',
     'touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi',
     'koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix', 'suna',
-    'kiru', 'hami', 'kaeru', 'dokoka', 'henshin', 'kao'];
+    'kiru', 'hami', 'kaeru', 'dokoka', 'henshin', 'kao', 'tsumiki'];
   /* ---- ホームの かたち: page / scroll / bubble / box（S.home）。かくした あそびは ponpon.home.v1 ---- */
   var HM_KEY = 'ponpon.home.v1', hmHide = {};
   (function () {
