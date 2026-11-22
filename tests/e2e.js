@@ -4139,7 +4139,7 @@ T('tsumiki', async br => { for (const vp of [{ width: 390, height: 844 }, { widt
   await until(async () => (await T()).goal, 25000);
   t = await T();
   console.log('info ' + tag + ' down ' + t.down + '/' + t.blocks + ' goal ' + t.goal + ' shadow ' + t.shadow);
-  if (t.goal) ok((await says(p)).some(x => x.t === 'がらがら どーん！'), tag + ': says がらがら どーん！ once the stack is down');
+  if (t.goal) ok(!(await says(p)).some(x => x.t !== 'つみき！'), tag + ': no voice in the game (only sound effects) once the stack is down ' + JSON.stringify(await says(p)));
   /* つみなおす */
   await sleep(300); await shot('c-down');
   await p.click('#ts-redo');
