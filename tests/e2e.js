@@ -3999,7 +3999,8 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
   });
 }
 /* ---------- つみき（3D。three.js + cannon-es を遅延ロード） ---------- */
-TV('tsumiki', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+// WebGL（SwiftShader）は CPU を たくさん つかうので 4 つの がめんを 1 ブロックで じゅんばんに（並列だと ほかの 時間ぎりぎりの テストが ゆれる）
+T('tsumiki', async br => { for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }, { width: 568, height: 320 }]) await (async vp => {
   const tag = 'tsumiki ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/tsumiki-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
   const p = await newPage(br, vp, { deny: true });
   const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(100); } };
@@ -4070,10 +4071,10 @@ TV('tsumiki', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width
   ok(!(await T()).rafActive && await p.locator('#ts-cv').count() === 0, tag + ': second leave also clean');
   ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
   await p.context().close();
-});
+})(vp); });
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'tsumiki-390x844': 50, 'tsumiki-360x740': 50, 'tsumiki-740x360': 50, 'tsumiki-568x320': 50, 'henshin-real': 35, 'henshin-390x844': 60, 'henshin-360x740': 60, 'henshin-568x320': 60, 'henshin-740x360': 60, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, tsumiki: 80, 'henshin-real': 35, 'henshin-390x844': 60, 'henshin-360x740': 60, 'henshin-568x320': 60, 'henshin-740x360': 60, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
