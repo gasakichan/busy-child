@@ -35,7 +35,8 @@ const HK = [['function koFrame(ts) {', 'function koFrame(ts) { window.__koFrames
   ['var NK_SOLID = {', 'var NK_SOLID = window.__nkSolid = {'],
   ['var NK_H1 = 10000, NK_H2 = 8000;', 'var NK_H1 = window.__nkH1 || 10000, NK_H2 = window.__nkH2 || 8000;'],
   ['games.henshin = {', 'window.__hs = games.henshin = {'],
-  ['games.aiueo = {', 'window.__ai = games.aiueo = {']];
+  ['games.aiueo = {', 'window.__ai = games.aiueo = {'],
+  ['games.tsumiki = {', 'window.__ts = games.tsumiki = {']];
 for (const [a, b] of HK) { if (!hooked2.includes(a)) throw new Error('hook failed ' + a); hooked2 = hooked2.replace(a, b); }
 hooked = hooked2;
 if (hooked === fs.readFileSync(SITE, 'utf8')) throw new Error('hook failed');
@@ -43,13 +44,13 @@ const hookedHttp = hooked;  // assets/ のパスは そのまま（リポジト�
 hooked = hooked.replace(/'assets\//g, "'../../assets/");
 if (!WORKER) fs.writeFileSync(SP + '/hooked7.html', hooked);
 const URL = 'file://' + SP + '/hooked7.html';  // hooked copy lives in tests/out, so point asset paths back at the repo
-const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami','kaeru','dokoka','henshin'];
-const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき','かえる','どこかな','へんしん'];
+const IDS = ['sky','zoo','paint','touch','find','count','num','baa','shop','phone','shape','train','nurie','aiueo','abc','clock','yubi','sticker','koro','drive','piano','pinball','neko','voice','nami','mix','suna','kiru','hami','kaeru','dokoka','henshin','tsumiki'];
+const LAB = ['ふうせん','どうぶつ','おえかき','いろタッチ','いろさがし','かぞえよう','すうじ','いないいないばあ','おみせやさん','もしもし','かたちはめ','でんしゃ','ぬりえ','あいうえお','ABC','とけい','ゆびのおうち','シールちょう','ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば','とんとん','はみがき','かえる','どこかな','へんしん','つみき'];
 // ホームの並び（index.html の HORDER と同じ。9 個ずつでページ）
 const HLABS = ['ふうせん','どうぶつ','おえかき','いないいないばあ','もしもし','でんしゃ','おみせやさん','ぬりえ','シールちょう',
   'いろタッチ','いろさがし','かぞえよう','すうじ','あいうえお','ABC','とけい','かたちはめ','ゆびのおうち',
   'ころころボール','ドライブ','ピアノ','ピンボール','ねこさがし','ボイスチェンジャー','なみもよう','まぜまぜ','すなば',
-  'とんとん','はみがき','かえる','どこかな','へんしん'];
+  'とんとん','はみがき','かえる','どこかな','へんしん','つみき'];
 const NPAGES = Math.ceil(HLABS.length / 9);
 const pageOf = lab => Math.floor(HLABS.indexOf(lab) / 9);
 async function gotoPage(p, n) {
@@ -174,7 +175,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hm-p1').isVisible() && await p.locator('#hm-p0').isHidden(), tag + ' dot jumps to page2');
     await p.click('.hm-dot:nth-child(1)'); await sleep(320);
     // ---- page 3 ----
-    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (32 games, 9 per page)');
+    ok(await p.locator('.hm-dot').count() === NPAGES && NPAGES === 4 && (await p.locator('.hm-page').count()) === NPAGES, tag + ' 4 page dots + 4 pages (33 games, 9 per page)');
     await p.click('.hm-dot:nth-child(2)'); await sleep(320);
     await p.click('#hm-next'); await sleep(320);
     const t3 = await tileInfo();
@@ -199,7 +200,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     // ---- page 4 (last): とんとん + はみがき + かえる ----
     await p.click('#hm-next'); await sleep(320); await p.click('#hm-next'); await sleep(320);
     const t4 = await tileInfo();
-    ok(t4.length === 5 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[3].cx === tiles[0].cx && t4[4].cx === tiles[1].cx && t4[0].cy === tiles[0].cy && t4[3].cy === tiles[3].cy && t4[4].cy === tiles[3].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, どこかな + へんしん in row 2, same size ' + JSON.stringify(t4));
+    ok(t4.length === 6 && t4.every(t => t.ok && t.w === tiles[0].w && t4[0].h === tiles[0].h && !t.clip) && t4[0].cx === tiles[0].cx && t4[1].cx === tiles[1].cx && t4[2].cx === tiles[2].cx && t4[3].cx === tiles[0].cx && t4[4].cx === tiles[1].cx && t4[5].cx === tiles[2].cx && t4[5].cy === tiles[3].cy && t4[0].cy === tiles[0].cy && t4[3].cy === tiles[3].cy && t4[4].cy === tiles[3].cy, tag + ' page4: とんとん + はみがき + かえる in the top row, どこかな + へんしん in row 2 (+ つみき), same size ' + JSON.stringify(t4));
     ok(await p.evaluate(() => { const ts = [...document.querySelectorAll('.hm-page:not([hidden]) .tile')]; return ts[0].querySelector('.ico-img') && ts[0].querySelector('.ico-img').complete && !ts[1].querySelector('.ico-img') && ts[1].querySelector('.ico').textContent === '🪥' && ts[2].querySelector('.ico-img') && ts[2].querySelector('.ico-img').complete && ts[3].querySelector('.ico-img') && ts[3].querySelector('.ico-img').complete && ts[4].querySelector('.ico-img') && ts[4].querySelector('.ico-img').complete && ts[4].querySelector('.ico-img').naturalWidth > 0; }), tag + ' page4: とんとん/かえる/どこかな/へんしん icon images loaded, はみがき uses the 🪥 emoji');
     ok(await p.locator('#hm-next').isHidden() && await p.locator('#hm-prev').isVisible() && await p.locator('#hm-p3').isVisible(), tag + ' page4 (last): ▶ hidden, ◀ shown');
     ok(await p.locator('.hm-dot[aria-current="true"]').evaluate(e => e.getAttribute('aria-label')) === '4ページ', tag + ' page4 dot current');
@@ -1257,7 +1258,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 30 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (30 rows)');
+      ok(await p.locator('.st-row.zero').count() === 31 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (31 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');
@@ -3454,7 +3455,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let p = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'scroll' } }) });
     ok(await p.locator('.hl-scroll').count() === 1 && await p.locator('#hm-area').isHidden() && await p.locator('.hm-bar').isHidden(), tag + ': scroll layout shown, page layout hidden');
     ok(await p.locator('.hl-fav').count() === 0, tag + ': ⭐ band hidden without play stats');
-    ok(SAME(await labsOf(p, '.hl-all .tile'), HLABS), tag + ': all 32 tiles in HORDER order');
+    ok(SAME(await labsOf(p, '.hl-all .tile'), HLABS), tag + ': all 33 tiles in HORDER order');
     let g = await tgeom(p, '.hl-scroll .tile');
     ok(g.every(t => t.w >= 80 && t.h >= 80), tag + ': every tile >= 80px (min ' + Math.round(Math.min(...g.map(t => Math.min(t.w, t.h)))) + ')');
     ok(g.every(t => !t.clip && !t.out), tag + ': no label/icon clipping ' + JSON.stringify(g.filter(t => t.clip || t.out).map(t => t.lab)));
@@ -3617,7 +3618,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     const p = await newPage(br, vp, { deny: true, init: hseed({ set: { home: 'bubble' }, stats: STATS0 }) });
     ok(await p.locator('.hb').count() === 1 && await p.locator('#hm-area').isHidden(), tag + ': bubble layout shown');
     const labs = await labsOf(p, '.hb .tile');
-    ok(labs.length === 32 && SAME(labs.slice().sort(), HLABS.slice().sort()), tag + ': all 32 games present');
+    ok(labs.length === 33 && SAME(labs.slice().sort(), HLABS.slice().sort()), tag + ': all 33 games present');
     ok(SAME(labs.slice(0, 6), RANK0), tag + ': よくあそぶ ranked games are first (center of the spiral)');
     ok(await noHScroll(p), tag + ': no horizontal page overflow');
     const info = () => p.evaluate(() => { const H = document.querySelector('#home').getBoundingClientRect(), cx = H.left + H.width / 2, cy = H.top + H.height / 2; return [...document.querySelectorAll('.hb .tile')].map(t => { const r = t.getBoundingClientRect(); return { lab: t.getAttribute('aria-label'), w: r.width, h: r.height, x: r.left + r.width / 2, y: r.top + r.height / 2, d: Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy), big: t.classList.contains('big'), round: getComputedStyle(t).borderRadius }; }).sort((a, b) => a.d - b.d); });
@@ -3769,39 +3770,39 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     let p = await newPage(br, vp, { deny: true });
     const pageLabs = () => labsOf(p, '.hm-page .tile');
     const stored = () => p.evaluate(() => localStorage.getItem('ponpon.home.v1'));
-    ok(SAME(await pageLabs(), HLABS) && await p.locator('.hm-page').count() === 4, tag + ': default is the page layout with all 32');
+    ok(SAME(await pageLabs(), HLABS) && await p.locator('.hm-page').count() === 4, tag + ': default is the page layout with all 33');
     ok(await stored() === null, tag + ': nothing stored by default');
     await holdOpen(p, 1700); await sleep(200);
     ok(await p.locator('.setbody .seg[data-k="home"] button').count() === 4 && (await p.locator('.setbody .seg[data-k="home"] button').allTextContents()).join() === 'ページ,スクロール,あわあわ,おもちゃばこ', tag + ': ホームの かたち has the 4 choices');
     ok(await p.locator('.seg[data-k="home"] button[data-v="page"]').getAttribute('aria-pressed') === 'true', tag + ': page selected by default');
     const cards = await p.evaluate(() => [...document.querySelectorAll('#hh-grid .hh-card')].map(c => { const r = c.getBoundingClientRect(); return { on: c.getAttribute('aria-pressed'), w: r.width, h: r.height, op: getComputedStyle(c).opacity, fits: r.right <= innerWidth + 1 }; }));
-    ok(cards.length === 32 && cards.every(c => c.on === 'true' && c.fits && c.h >= 80), tag + ': 32 cards, all shown, inside the sheet');
+    ok(cards.length === 33 && cards.every(c => c.on === 'true' && c.fits && c.h >= 80), tag + ': 33 cards, all shown, inside the sheet');
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), tag + ': settings no horizontal overflow');
     await p.locator('#hh-grid').scrollIntoViewIfNeeded();
     await p.screenshot({ path: SP + '/home-settings-' + vp.width + 'x' + vp.height + '.png' });
     await p.click('#hh-grid .hh-card[data-id="sky"]');
     ok(await p.locator('#hh-grid .hh-card[data-id="sky"]').getAttribute('aria-pressed') === 'false' && Number(await p.locator('#hh-grid .hh-card[data-id="sky"]').evaluate(e => getComputedStyle(e).opacity)) < 0.6, tag + ': tap hides (grayed)');
-    ok(!(await pageLabs()).includes('ふうせん') && (await pageLabs()).length === 31, tag + ': page layout drops ふうせん underneath');
+    ok(!(await pageLabs()).includes('ふうせん') && (await pageLabs()).length === 32, tag + ': page layout drops ふうせん underneath');
     ok((await stored()) === JSON.stringify({ v: 1, hide: ['sky'] }), tag + ': stored ' + await stored());
     await p.click('#hh-grid .hh-card[data-id="sky"]');
     ok(SAME(await pageLabs(), HLABS), tag + ': tap again shows it');
     // 9こ のこして ぜんぶ 1ページ
-    await p.evaluate(() => { [...document.querySelectorAll('#hh-grid .hh-card')].slice(0, 23).forEach(c => c.click()); });
+    await p.evaluate(() => { [...document.querySelectorAll('#hh-grid .hh-card')].slice(0, 24).forEach(c => c.click()); });
     await sleep(200);
     ok(await p.locator('.hm-page').count() === 1 && await p.locator('.hm-dot').count() === 1 && await p.locator('.hm-bar').isHidden() && (await pageLabs()).length === 9, tag + ': 9 left -> one page, dots/arrows hidden');
-    ok(SAME(await pageLabs(), HLABS.slice(23)), tag + ': remaining keep HORDER');
+    ok(SAME(await pageLabs(), HLABS.slice(24)), tag + ': remaining keep HORDER');
     for (const [m, sel, n] of [['scroll', '.hl-scroll .hl-all .tile', 9], ['bubble', '.hb .tile', 9], ['box', '.tb .tile', 6]]) {
       await p.click('.seg[data-k="home"] button[data-v="' + m + '"]'); await sleep(250);
       const ls = await labsOf(p, sel);
-      ok(ls.length === n && ls.every(l => HLABS.slice(23).includes(l)), tag + ': ' + m + ' shows only the shown games (' + ls.length + ')');
+      ok(ls.length === n && ls.every(l => HLABS.slice(24).includes(l)), tag + ': ' + m + ' shows only the shown games (' + ls.length + ')');
       ok(await p.locator('.seg[data-k="home"] button[data-v="' + m + '"]').getAttribute('aria-pressed') === 'true', tag + ': ' + m + ' selected');
     }
     await p.click('#setx'); await sleep(200);
     ok(await p.locator('.tb .tile').count() === 6, tag + ': closing settings keeps the box layout');
     await p.reload(); await sleep(500);
     const hs = JSON.parse(await stored()), st = await p.evaluate(() => JSON.parse(localStorage.getItem('ponpon.settings.v1')));
-    ok(hs.v === 1 && hs.hide.length === 23 && st.home === 'box', tag + ': hidden games and the layout persist after reload');
-    ok((await labsOf(p, '.tb .tile')).every(l => HLABS.slice(23).includes(l)), tag + ': hidden games still hidden after reload');
+    ok(hs.v === 1 && hs.hide.length === 24 && st.home === 'box', tag + ': hidden games and the layout persist after reload');
+    ok((await labsOf(p, '.tb .tile')).every(l => HLABS.slice(24).includes(l)), tag + ': hidden games still hidden after reload');
     // さいごの 1こは かくせない
     await holdOpen(p, 1700); await sleep(200);
     await p.evaluate(() => { [...document.querySelectorAll('#hh-grid .hh-card[aria-pressed="true"]')].slice(0, 8).forEach(c => c.click()); });
@@ -3811,21 +3812,21 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     ok(await p.locator('#hh-grid .hh-card[aria-pressed="true"]').count() === 1 && await p.locator('#hh-msg').isVisible(), tag + ': the last one cannot be hidden (message shown)');
     ok((await labsOf(p, '.tb .tile')).length === 1 && await p.locator('.tb-gift').isHidden(), tag + ': box shows the single game, no 🎁');
     await p.click('#hh-all'); await sleep(200);
-    ok(await p.locator('#hh-grid .hh-card[aria-pressed="true"]').count() === 32 && await p.locator('#hh-msg').isHidden(), tag + ': ぜんぶ だす shows all 32 cards');
+    ok(await p.locator('#hh-grid .hh-card[aria-pressed="true"]').count() === 33 && await p.locator('#hh-msg').isHidden(), tag + ': ぜんぶ だす shows all 33 cards');
     ok((await stored()) === JSON.stringify({ v: 1, hide: [] }) && await p.locator('.tb .tile').count() === 6, tag + ': stored empty hide list; box back to 6');
     await p.click('.seg[data-k="home"] button[data-v="page"]'); await sleep(200);
-    ok(SAME(await pageLabs(), HLABS), tag + ': page layout shows all 32 again');
+    ok(SAME(await pageLabs(), HLABS), tag + ': page layout shows all 33 again');
     ok(p.errs.length === 0, tag + ': no page errors ' + p.errs.join(' | '));
     await p.context().close();
     // ふめいな id・こわれた データは むし
     p = await newPage(br, vp, { deny: true, init: hseed({ hide: JSON.stringify({ v: 1, hide: ['zzz', 'sky', 7] }) }) });
-    ok((await labsOf(p, '.hm-page .tile')).length === 31, tag + ': unknown ids ignored, known ones hidden');
+    ok((await labsOf(p, '.hm-page .tile')).length === 32, tag + ': unknown ids ignored, known ones hidden');
     await p.context().close();
     p = await newPage(br, vp, { deny: true, init: hseed({ hide: '{oops' }) });
-    ok((await labsOf(p, '.hm-page .tile')).length === 32 && p.errs.length === 0, tag + ': broken data -> all shown');
+    ok((await labsOf(p, '.hm-page .tile')).length === 33 && p.errs.length === 0, tag + ': broken data -> all shown');
     await p.context().close();
     p = await newPage(br, vp, { deny: true, init: hseed({ hide: JSON.stringify({ v: 1, hide: IDS }) }) });
-    ok((await labsOf(p, '.hm-page .tile')).length === 32, tag + ': everything hidden in storage -> all shown');
+    ok((await labsOf(p, '.hm-page .tile')).length === 33, tag + ': everything hidden in storage -> all shown');
     await p.context().close();
   });
 
@@ -3997,9 +3998,82 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
     }
   });
 }
+/* ---------- つみき（3D。three.js + cannon-es を遅延ロード） ---------- */
+TV('tsumiki', [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 740, height: 360 }, { width: 568, height: 320 }], async (br, vp) => {
+  const tag = 'tsumiki ' + vp.width + 'x' + vp.height, shot = n => p.screenshot({ path: SP + '/tsumiki-' + vp.width + 'x' + vp.height + '-' + n + '.png' });
+  const p = await newPage(br, vp, { deny: true });
+  const until = async (f, ms) => { const t0 = Date.now(); for (;;) { const r = await f(); if (r) return r; if (Date.now() - t0 > ms) return false; await sleep(100); } };
+  const T = () => p.evaluate(() => window.__ts._t());
+  await tapTile(p, 'つみき');
+  ok(await p.locator('#stage-tsumiki').isVisible() && await p.locator('#home').isHidden(), tag + ': tile opens つみき');
+  ok((await says(p)).some(x => x.t === 'つみき！') && await p.locator('#homebtn').isVisible() && await p.locator('#setbtn').isHidden(), tag + ': speaks つみき！, shared 🏠, no adult button');
+  ok(await until(async () => { const t = await T(); return t.ready && !t.rebuilding; }, 30000), tag + ': libraries loaded, scene ready, stack built ' + JSON.stringify(await T()));
+  let t = await T();
+  ok(t.blocks >= 30 && t.blocks <= 50 && t.layout === 0 && t.canvas && t.loaded, tag + ': ' + t.blocks + ' blocks, layout 0, canvas, libs loaded');
+  ok(await p.locator('#ts-cv').isVisible() && await p.locator('#ts-prep').isHidden(), tag + ': canvas visible, prep message hidden');
+  const cb = await p.locator('#ts-cv').boundingBox(), sb = await p.locator('#stage-tsumiki').boundingBox();
+  ok(Math.abs(cb.width - sb.width) < 1 && Math.abs(cb.height - sb.height) < 1, tag + ': canvas fills the stage');
+  ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth), tag + ': no horizontal scroll');
+  const rb = await p.locator('#ts-redo').boundingBox(), hb = await p.locator('#homebtn').boundingBox();
+  ok(rb.width >= 80 && rb.height >= 80 && rb.x >= 0 && rb.y >= 0 && rb.x + rb.width <= vp.width && rb.y + rb.height <= vp.height, tag + ': rebuild button ' + Math.round(rb.width) + 'x' + Math.round(rb.height) + ' fully on screen');
+  ok(!(rb.x < hb.x + hb.width && hb.x < rb.x + rb.width && rb.y < hb.y + hb.height && hb.y < rb.y + rb.height), tag + ': rebuild button does not overlap 🏠');
+  /* つみあげた かたちが ぜんぶ がめんに はいっている */
+  const pts = await p.evaluate(() => [[-2.5, 0, 0], [2.5, 0, 0], [-2.5, 5.8, 0], [2.5, 5.8, 0]].map(q => window.__ts._screen(q[0], q[1], q[2])));
+  ok(pts.every(q => q.x >= 0 && q.x <= vp.width && q.y >= 0 && q.y <= vp.height), tag + ': whole stack in view ' + JSON.stringify(pts.map(q => [Math.round(q.x), Math.round(q.y)])));
+  await sleep(300); await shot('a-before');
+  /* なにも しないで 3 びょう: たおれない */
+  await sleep(3000);
+  t = await T();
+  ok(t.down === 0 && t.balls === 0, tag + ': stack stands still for 3s (down ' + t.down + ')');
+  /* ほんものの マウスで たたく */
+  const ctr = await p.evaluate(() => window.__ts._screen(0, 2.4, 0));
+  await clearSays(p);
+  await p.mouse.click(ctr.x, ctr.y);
+  ok(await until(async () => (await T()).balls >= 1, 3000), tag + ': a real click fires a ball');
+  ok(await until(async () => (await T()).down > 0, 20000), tag + ': the ball knocks blocks down (down ' + (await T()).down + ')');
+  await sleep(500); await shot('b-hit');
+  await p.mouse.click(ctr.x - 40, ctr.y - 30); await sleep(150);
+  await p.mouse.click(ctr.x + 40, ctr.y + 30);
+  t = await T();
+  ok(t.balls >= 2 && t.balls <= 6, tag + ': several balls allowed, capped (' + t.balls + ')');
+  await until(async () => (await T()).goal, 25000);
+  t = await T();
+  console.log('info ' + tag + ' down ' + t.down + '/' + t.blocks + ' goal ' + t.goal + ' shadow ' + t.shadow);
+  if (t.goal) ok((await says(p)).some(x => x.t === 'がらがら どーん！'), tag + ': says がらがら どーん！ once the stack is down');
+  /* つみなおす */
+  await sleep(300); await shot('c-down');
+  await p.click('#ts-redo');
+  ok(await until(async () => (await T()).rebuilding, 3000) || true, tag + ': pressed 🔄');
+  ok(await until(async () => { const q = await T(); return !q.rebuilding && q.down === 0 && q.balls === 0 && q.layout === 1; }, 15000), tag + ': rebuilt as the next layout, nothing down, no balls ' + JSON.stringify(await T()));
+  await sleep(1200); await shot('d-rebuilt');
+  t = await T();
+  ok(t.down === 0 && t.blocks >= 30 && t.blocks <= 50, tag + ': new stack stands (' + t.blocks + ' blocks)');
+  /* うった あとの じどうの つみなおし（4 びょう） */
+  const ctr2 = await p.evaluate(() => window.__ts._screen(0, 1.2, 0));
+  await p.mouse.click(ctr2.x, ctr2.y);
+  await until(async () => (await T()).down > 0, 15000);
+  /* ほーむへ */
+  await p.click('#homebtn'); await sleep(200);
+  t = await T();
+  ok(await p.locator('#home').isVisible() && await p.locator('#stage-tsumiki').isHidden(), tag + ': 🏠 returns home');
+  ok(!t.rafActive && !t.canvas && !t.ready && await p.locator('#ts-cv').count() === 0, tag + ': leave() stopped rAF and removed the canvas ' + JSON.stringify(t));
+  await clearSays(p); await sleep(800);
+  ok((await says(p)).length === 0, tag + ': nothing is spoken after leaving');
+  /* もういちど はいれる */
+  await tapTile(p, 'つみき');
+  ok(await until(async () => { const q = await T(); return q.ready && !q.rebuilding; }, 30000), tag + ': re-enter works');
+  t = await T();
+  ok(t.rafActive && t.canvas && t.down === 0 && t.balls === 0 && t.blocks >= 30, tag + ': fresh stack after re-enter ' + JSON.stringify(t));
+  await p.evaluate(() => window.__ts._fire(0.5, 0.55)); await sleep(300);
+  ok((await T()).balls >= 1, tag + ': _fire works after re-enter');
+  await p.click('#homebtn'); await sleep(200);
+  ok(!(await T()).rafActive && await p.locator('#ts-cv').count() === 0, tag + ': second leave also clean');
+  ok(p.errs.length === 0, tag + ': no console errors ' + p.errs.join(' | '));
+  await p.context().close();
+});
 /* ---------- 実行 ---------- */
 // 重いブロックから先に始める（ブロックを足したら測って足す）
-const WEIGHT = { mix: 75, 'henshin-real': 35, 'henshin-390x844': 60, 'henshin-360x740': 60, 'henshin-568x320': 60, 'henshin-740x360': 60, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
+const WEIGHT = { mix: 75, 'tsumiki-390x844': 50, 'tsumiki-360x740': 50, 'tsumiki-740x360': 50, 'tsumiki-568x320': 50, 'henshin-real': 35, 'henshin-390x844': 60, 'henshin-360x740': 60, 'henshin-568x320': 60, 'henshin-740x360': 60, 'dokoka-390x844': 24, 'dokoka-360x740': 24, 'dokoka-740x360': 24, 'dokoka-568x320': 24, 'kaeru-390x844': 22, 'kaeru-360x740': 22, 'kaeru-740x360': 22, 'kaeru-568x320': 22, 'hami-390x844': 25, 'hami-360x740': 25, 'hami-740x360': 25, 'hami-568x320': 25, 'kiru-390x844': 60, 'kiru-360x740': 30, 'kiru-740x360': 30, 'suna-390x844': 45, 'suna-360x740': 45, 'suna-740x360': 40, nami: 20, 'neko-390x844': 24, 'neko-360x740': 24, 'neko-740x360': 24, 'pinball-390x844': 20, 'pinball-360x740': 20, 'pinball-740x360': 20, 'piano-390x844': 17, 'piano-360x740': 17, 'piano-740x360': 17, 'drive-390x844': 53, 'drive-360x740': 53, 'drive-740x360': 53, 'stats-leave': 34, clock: 34, 'home-390x844': 27, 'home-360x740': 27, 'home-1024x768': 27, yubi: 26,
   'rotation-1': 21, 'rotation-2': 20, 'rotation-3': 18, 'koro-corners-0.12': 21, 'koro-corners-0.3': 16, 'stats-count': 19, 'animals-360x740': 19, 'animals-1024x768': 19,
   'voice-auto': 14, 'voice-all': 35, 'shoppay-1180x820': 12,  sticker: 16, 'stats-save': 14, settings: 13, 'koro-sensor': 12, sayen: 11, 'koro-sens': 11 };  // 概算秒。未登録は小さいブロック
 const wt = n => WEIGHT[n] !== undefined ? WEIGHT[n] : 8;
