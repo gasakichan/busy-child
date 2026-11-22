@@ -2,7 +2,7 @@
 """かおスロット の絵: マゼンタ背景のシート（3x3）を切り分けて透過 WebP にする。
 使い方: python3 tools/make-kao.py シート.png
  左上から右へ inu neko usagi / kuma buta panda / raion kaeru robo（どうぶつの かお）
- → assets/kao/<id>.webp（256x256 の正方形・透過。どの かおも おなじ ばいりつで、めの せんを y=138 に そろえる → 3 だんに きると みみ / め・はな / くち）
+ → assets/kao/<id>.webp（256x256 の正方形・透過。どの かおも おなじ ばいりつで、めの せんを y=138 に そろえ、だんの さかいで かおの はばを そろえる → 3 だんに きると みみ / め・はな / くち で りんかくが つながる）
  → ホームのアイコン assets/ico/kao.webp（192px。うえ 1/3 = inu、まんなか 1/3 = neko、した 1/3 = buta を つないだ かお）
 元シートはリポジトリに置かない。キーイングは make-dokoka.py と同じ。"""
 import os
@@ -117,13 +117,48 @@ def place(cell, cw, name):
     if e is None:
         print('%s: めが みつからないので まんなかに おきます' % name)
         e = ((ys.min() + ys.max()) / 2, (xs.min() + xs.max()) / 2)
-    s = 240.0 / cw
+    s = 2 * 240.0 / cw   # 2 ばいで おいて、よこを そろえて から 256 に もどす
     t = crop(cell, 0)
     x0, y0 = xs.min(), ys.min()
     t = t.resize((max(1, round(t.size[0] * s)), max(1, round(t.size[1] * s))), Image.LANCZOS)
-    c = Image.new('RGBA', (256, 256), (0, 0, 0, 0))
-    c.paste(t, (round(128 - (e[1] - x0) * s), round(EYE_Y - (e[0] - y0) * s)), t)
-    return c
+    c = Image.new('RGBA', (512, 512), (0, 0, 0, 0))
+    c.paste(t, (round(256 - (e[1] - x0) * s), round(2 * EYE_Y - (e[0] - y0) * s)), t)
+    return np.asarray(c).astype(np.float32)
+
+
+CUTS = (85, 171)   # 3 だんの さかい（256px の なか）
+
+
+def span(a, y):
+    """y の あたり（2 ばいの え）での かおの はしから はし（ひだり, みぎ）。"""
+    rows = a[2 * y - 3:2 * y + 4, :, 3] > 128
+    xs = np.where(rows.any(axis=0))[0]
+    return (float(xs.min()), float(xs.max())) if len(xs) else (200.0, 312.0)
+
+
+def even_up(faces):
+    """だんの さかいで どの かおも おなじ はばと まんなかに なるよう、ぎょうごとに よこだけ のばす。
+    さかいの あいだは なめらかに つなぎ、うえと したは さかいの ばいりつの まま。"""
+    sp = {n: [span(a, y) for y in CUTS] for n, a in faces.items()}
+    tw = [float(np.median([sp[n][k][1] - sp[n][k][0] for n in faces])) for k in range(2)]
+    ys2 = np.array([2 * y for y in CUTS], np.float32)
+    out = {}
+    for n, a in faces.items():
+        sc = [tw[k] / max(1.0, sp[n][k][1] - sp[n][k][0]) for k in range(2)]
+        cx = [(sp[n][k][0] + sp[n][k][1]) / 2 for k in range(2)]
+        pm = a.copy(); pm[..., :3] *= pm[..., 3:4] / 255.0
+        res = np.zeros_like(a)
+        X = np.arange(512, dtype=np.float32)
+        for y in range(512):
+            k = np.interp(y, ys2, sc); c = np.interp(y, ys2, cx)
+            src = c + (X - 256) / k
+            for ch in range(4):
+                res[y, :, ch] = np.interp(src, X, pm[y, :, ch], left=0, right=0)
+        al = res[..., 3:4]
+        res[..., :3] = np.where(al > 0, res[..., :3] * 255.0 / np.maximum(al, 1e-3), 0)
+        img = Image.fromarray(np.clip(res, 0, 255).astype(np.uint8), 'RGBA').resize((256, 256), Image.LANCZOS)
+        out[n] = img
+    return out
 
 
 def main():
@@ -146,6 +181,8 @@ def main():
         if not (cell[..., 3] > 40).any():
             sys.exit('%s: セルが からっぽです' % n)
         faces[n] = place(cell, W / 3.0, n)
+    faces = even_up(faces)
+    for n in GRID:
         save(faces[n], '%s/%s.webp' % (KAO_DIR, n))
     # ホームのアイコン: 3 つの かおの 上・中・下を つなぐ
     whole = Image.new('RGBA', (256, 256), (0, 0, 0, 0))
