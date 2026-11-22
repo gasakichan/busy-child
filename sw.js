@@ -1,5 +1,5 @@
 /* ぽんぽんあそび service worker: オフライン対応。index.html 以外のプリキャッシュ対象を変えたら CACHE を上げる。 */
-var CACHE = 'ponpon-v18';
+var CACHE = 'ponpon-v19';
 var FONTS = 'ponpon-fonts-v1';
 /* へんしん カメラ（assets/face/ 約 13MB）は PRECACHE に いれない: あそんだ とき（または せっていの ボタン）に ふべつの キャッシュへ。
    なまえを あげるときは ponpon-face-v2 のように（ふるい ponpon-face-* は activate で けす） */
@@ -42,6 +42,16 @@ var PRECACHE = ['./', './index.html', './manifest.webmanifest', './icons/icon.sv
   './assets/ico/kiru.webp',
   './assets/ico/kaeru.webp',
   './assets/ico/dokoka.webp',
+  './assets/ico/kao.webp',
+  './assets/kao/inu.webp',
+  './assets/kao/neko.webp',
+  './assets/kao/usagi.webp',
+  './assets/kao/kuma.webp',
+  './assets/kao/buta.webp',
+  './assets/kao/panda.webp',
+  './assets/kao/raion.webp',
+  './assets/kao/kaeru.webp',
+  './assets/kao/robo.webp',
   './assets/dokoka/tokei.webp',
   './assets/dokoka/ringo.webp',
   './assets/dokoka/banana.webp',
