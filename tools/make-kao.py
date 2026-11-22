@@ -2,7 +2,7 @@
 """かおスロット の絵: マゼンタ背景のシート（3x3）を切り分けて透過 WebP にする。
 使い方: python3 tools/make-kao.py シート.png
  左上から右へ inu neko usagi / kuma buta panda / raion kaeru robo（どうぶつの かお）
- → assets/kao/<id>.webp（256x256 の正方形・透過。かおが 248px に おさまる大きさで まんなかに）
+ → assets/kao/<id>.webp（256x256 の正方形・透過。どの かおも おなじ ばいりつで、めの せんを y=138 に そろえる → 3 だんに きると みみ / め・はな / くち）
  → ホームのアイコン assets/ico/kao.webp（192px。うえ 1/3 = inu、まんなか 1/3 = neko、した 1/3 = buta を つないだ かお）
 元シートはリポジトリに置かない。キーイングは make-dokoka.py と同じ。"""
 import os
@@ -16,6 +16,7 @@ ICO_DIR = os.path.join(ROOT, 'assets', 'ico')
 KAO_DIR = os.path.join(ROOT, 'assets', 'kao')
 GRID = 'inu neko usagi kuma buta panda raion kaeru robo'.split()   # 3x3（左上から右へ）
 OUTLINE_M = -35.0
+EYE_Y = 138   # めの せんの たかさ（256px の なか）
 
 
 def key(a):
@@ -86,6 +87,45 @@ def square(t, size, fit):
     return c
 
 
+def eyes(cell, cw):
+    """めの たかさと まんなか: こげちゃの ぬりつぶし まる が よこに 2 つ ならんだ くみの うち いちばん したの もの（かえるの あたまの こぶより した）。"""
+    a = cell[..., :3].astype(np.float32)
+    dark = (cell[..., 3] > 200) & (a.mean(axis=2) < 95)
+    r = max(3, int(cw * 0.022))
+    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
+    blob = ndi.binary_opening(dark, structure=(xx * xx + yy * yy) <= r * r)
+    lab, nl = ndi.label(blob)
+    if nl < 2:
+        return None
+    ids = np.arange(1, nl + 1)
+    cy, cx = (np.array(v) for v in zip(*ndi.center_of_mass(blob, lab, ids)))
+    best = None
+    for i in range(nl):
+        for j in range(i + 1, nl):
+            if abs(cy[i] - cy[j]) < cw * 0.06 and cw * 0.15 < abs(cx[i] - cx[j]) < cw * 0.6:
+                y = (cy[i] + cy[j]) / 2
+                if best is None or y > best[0]:
+                    best = (y, (cx[i] + cx[j]) / 2)
+    return best
+
+
+def place(cell, cw, name):
+    """みんな おなじ 大きさ（セルの はば → 256px）で、めの せんを そろえて おく。
+    うえ 1/3 = みみ・あたま、まんなか 1/3 = め・はな、した 1/3 = くち・あご に なる（めは EYE_Y、まんなかと したの さかいは 171px）。"""
+    e = eyes(cell, cw)
+    ys, xs = np.where(cell[..., 3] > 40)
+    if e is None:
+        print('%s: めが みつからないので まんなかに おきます' % name)
+        e = ((ys.min() + ys.max()) / 2, (xs.min() + xs.max()) / 2)
+    s = 240.0 / cw
+    t = crop(cell, 0)
+    x0, y0 = xs.min(), ys.min()
+    t = t.resize((max(1, round(t.size[0] * s)), max(1, round(t.size[1] * s))), Image.LANCZOS)
+    c = Image.new('RGBA', (256, 256), (0, 0, 0, 0))
+    c.paste(t, (round(128 - (e[1] - x0) * s), round(EYE_Y - (e[0] - y0) * s)), t)
+    return c
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -105,7 +145,7 @@ def main():
         cell, _ = clean(cell)
         if not (cell[..., 3] > 40).any():
             sys.exit('%s: セルが からっぽです' % n)
-        faces[n] = square(crop(cell), 256, 248)
+        faces[n] = place(cell, W / 3.0, n)
         save(faces[n], '%s/%s.webp' % (KAO_DIR, n))
     # ホームのアイコン: 3 つの かおの 上・中・下を つなぐ
     whole = Image.new('RGBA', (256, 256), (0, 0, 0, 0))

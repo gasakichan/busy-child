@@ -9490,7 +9490,7 @@
     { n: 'くま', e: '🐻', id: 'kuma' }, { n: 'ぶた', e: '🐷', id: 'buta' }, { n: 'ぱんだ', e: '🐼', id: 'panda' },
     { n: 'らいおん', e: '🦁', id: 'raion' }, { n: 'かえる', e: '🐸', id: 'kaeru' }, { n: 'ろぼっと', e: '🤖', id: 'robo' }
   ];
-  var KAO_IMG = {};   // 絵が できたら { inu: 'assets/kao/inu.webp', ... }。ないものは えもじを canvas に かいて つかう
+  var KAO_IMG = { inu: 'assets/kao/inu.webp', neko: 'assets/kao/neko.webp', usagi: 'assets/kao/usagi.webp', kuma: 'assets/kao/kuma.webp', buta: 'assets/kao/buta.webp', panda: 'assets/kao/panda.webp', raion: 'assets/kao/raion.webp', kaeru: 'assets/kao/kaeru.webp', robo: 'assets/kao/robo.webp' };   // よみこめない ものは えもじを canvas に かいて つかう
   var kaStage = $('#stage-kao'), kaFace = $('#ka-face'), kaBtn = $('#ka-btn'), kaBi = $('#ka-bi'), kaBl = $('#ka-bl'), kaFx = $('#fx-kao');
   var ka = { on: false, phase: '', next: 0, stopped: [null, null, null], reels: [], ready: false, raf: 0, last: 0, tm: [], anims: [], b: 0, S: 0, rnd: Math.random, urls: {}, css: null };
   window.__ka = ka;
@@ -10454,7 +10454,8 @@
     suna: 'assets/ico/suna.webp',
     kiru: 'assets/ico/kiru.webp',
     kaeru: 'assets/ico/kaeru.webp',
-    dokoka: 'assets/ico/dokoka.webp'
+    dokoka: 'assets/ico/dokoka.webp',
+    kao: 'assets/ico/kao.webp'
   };
   var TD = {
     sky:   { ico: '🎈', lab: 'ふうせん',       c: '#9FDCFF', say: 'ふうせん！' },
