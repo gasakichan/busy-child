@@ -1504,6 +1504,23 @@
   #ts-redo .ico { font-size: 30px; line-height: 1; }
   #ts-redo .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
   #ts-redo:active { transform: translateY(2px); }
+  /* ほりほり */
+  #stage-horu { background: #A97B4A; }
+  #hr-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .hr-prep { position: absolute; left: 16px; right: 16px; top: 42%; transform: translateY(-50%); z-index: 3; text-align: center; font-size: clamp(22px, 6vw, 34px); font-weight: 800; line-height: 1.4; color: #fff; text-shadow: 0 2px 0 rgba(91,58,41,.6); pointer-events: none; }
+  #hr-tray { position: absolute; top: 12px; top: calc(12px + env(safe-area-inset-top)); left: 80px; left: calc(80px + env(safe-area-inset-left)); z-index: 4; display: flex; gap: 8px; pointer-events: none; }
+  .hr-slot { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; line-height: 1; font-weight: 800; color: #B98A52; background: rgba(255,248,230,.82); border: 3px solid rgba(91,58,41,.35); }
+  .hr-slot.got { background: #FFF3C4; border-color: #FFC83D; color: inherit; animation: hrpop 480ms ease-out; }
+  @keyframes hrpop { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  #hr-fx { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+  .hr-sp { position: absolute; font-size: 26px; line-height: 1; font-style: normal; margin: -13px 0 0 -13px; animation: hrsp 1000ms ease-out forwards; }
+  @keyframes hrsp { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.3) rotate(40deg); } }
+  #hr-redo { position: absolute; right: 12px; right: calc(12px + env(safe-area-inset-right)); bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 5; width: 92px; height: 92px; padding: 0; border-radius: 46px; border: 4px solid rgba(91,58,41,.55); background: #FFF3C4; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; box-shadow: 0 4px 0 var(--shadow); -webkit-tap-highlight-color: transparent; }
+  #hr-redo[hidden] { display: none; }
+  #hr-redo .ico { font-size: 30px; line-height: 1; }
+  #hr-redo .lab { font-size: 14px; line-height: 1.1; white-space: nowrap; font-weight: 700; }
+  #hr-redo:active { transform: translateY(2px); }
+  @media (prefers-reduced-motion: reduce) { .hr-sp, .hr-slot.got { animation: none; } .hr-sp { opacity: 0; } }
   #stage-henshin { background: linear-gradient(170deg, #E9E1FF 0%, #FFE3EC 55%, #DDF1FF 100%); }
   #hs-gl, #hs-ov { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   #hs-ov { touch-action: none; }
@@ -1877,6 +1894,13 @@
   <section class="stage" id="stage-tsumiki" aria-label="つみき" hidden>
     <div class="ts-prep" id="ts-prep" hidden role="status">じゅんび ちゅう…</div>
     <button id="ts-redo" type="button" aria-label="つみなおす" hidden><span class="ico">🔄</span><span class="lab">つみなおす</span></button>
+  </section>
+
+  <section class="stage" id="stage-horu" aria-label="ほりほり" hidden>
+    <div id="hr-fx" aria-hidden="true"></div>
+    <div id="hr-tray" aria-hidden="true"></div>
+    <div class="hr-prep" id="hr-prep" hidden role="status">じゅんび ちゅう…</div>
+    <button id="hr-redo" type="button" aria-label="もういちど" hidden><span class="ico">🔄</span><span class="lab">もういちど</span></button>
   </section>
 
   <section class="stage" id="stage-neko" aria-label="ねこさがし" hidden>
@@ -10845,6 +10869,559 @@
     _rebuild: function () { tsRebuild(); }
   };
 
+  /* ====== ほりほり（three.js だけ。すなを ゆびで うごかして、うまっている いきものブロックを さがす。つみきと おなじ three.js を つかう） ====== */
+  var hrStage = $('#stage-horu'), hrPrep = $('#hr-prep'), hrRedo = $('#hr-redo'), hrTray = $('#hr-tray'), hrFx = $('#hr-fx');
+  var HRC = { H0: 1.0, HMAX: 2.0, SHORT: 5, NS: 44, FW: 0.32, FH: 1.5, TILT: 17, SLOPE: 0.85, DIGK: 1.0 };
+  var HR_EYE = '#4A3226';
+  /* いきもの: [x, した(y), z, はば, たかさ, ふかさ, いろ]。ぜんぶ たかさ 0.7 いか。まえは -z */
+  var HR_KINDS = [
+    { k: 'kame', e: '🐢', b: [
+      [0, 0.10, 0.05, 0.84, 0.30, 0.74, '#6CC26A'], [0, 0.40, 0.05, 0.60, 0.20, 0.52, '#3FA35C'], [0, 0.60, 0.05, 0.22, 0.04, 0.20, '#8ED67E'],
+      [0, 0.12, -0.52, 0.30, 0.30, 0.30, '#A6DE8A'], [-0.08, 0.42, -0.58, 0.07, 0.07, 0.07, HR_EYE], [0.08, 0.42, -0.58, 0.07, 0.07, 0.07, HR_EYE],
+      [-0.36, 0, -0.22, 0.22, 0.16, 0.22, '#A6DE8A'], [0.36, 0, -0.22, 0.22, 0.16, 0.22, '#A6DE8A'], [-0.36, 0, 0.32, 0.22, 0.16, 0.22, '#A6DE8A'], [0.36, 0, 0.32, 0.22, 0.16, 0.22, '#A6DE8A'],
+      [0, 0.12, 0.50, 0.12, 0.12, 0.16, '#A6DE8A']] },
+    { k: 'kani', e: '🦀', b: [
+      [0, 0.08, 0.05, 0.70, 0.30, 0.50, '#F2685A'], [0, 0.38, 0.05, 0.52, 0.14, 0.36, '#FF8A70'],
+      [-0.16, 0.38, -0.20, 0.07, 0.18, 0.07, '#F2685A'], [0.16, 0.38, -0.20, 0.07, 0.18, 0.07, '#F2685A'],
+      [-0.16, 0.56, -0.20, 0.11, 0.11, 0.11, HR_EYE], [0.16, 0.56, -0.20, 0.11, 0.11, 0.11, HR_EYE],
+      [-0.48, 0.12, -0.12, 0.26, 0.20, 0.16, '#F2685A'], [0.48, 0.12, -0.12, 0.26, 0.20, 0.16, '#F2685A'],
+      [-0.52, 0.12, -0.34, 0.34, 0.26, 0.20, '#FF8A70'], [0.52, 0.12, -0.34, 0.34, 0.26, 0.20, '#FF8A70'],
+      [-0.44, 0, 0.12, 0.24, 0.12, 0.08, '#D9503F'], [0.44, 0, 0.12, 0.24, 0.12, 0.08, '#D9503F'], [-0.44, 0, 0.30, 0.24, 0.12, 0.08, '#D9503F'], [0.44, 0, 0.30, 0.24, 0.12, 0.08, '#D9503F']] },
+    { k: 'hiyoko', e: '🐤', b: [
+      [0, 0.04, 0.14, 0.62, 0.40, 0.50, '#FFE066'], [0, 0.22, -0.18, 0.50, 0.38, 0.44, '#FFE066'],
+      [-0.13, 0.60, -0.28, 0.08, 0.07, 0.08, HR_EYE], [0.13, 0.60, -0.28, 0.08, 0.07, 0.08, HR_EYE],
+      [0, 0.28, -0.46, 0.16, 0.10, 0.14, '#FF9F43'], [0, 0.60, -0.12, 0.09, 0.10, 0.09, '#FFD23F'],
+      [-0.36, 0.14, 0.14, 0.10, 0.24, 0.34, '#FFD23F'], [0.36, 0.14, 0.14, 0.10, 0.24, 0.34, '#FFD23F']] },
+    { k: 'sakana', e: '🐟', b: [
+      [0, 0.08, -0.05, 0.50, 0.46, 0.80, '#5BB8F0'], [0, 0.54, 0.05, 0.10, 0.14, 0.46, '#3C8FD6'],
+      [-0.17, 0.54, -0.32, 0.09, 0.08, 0.09, HR_EYE], [0.17, 0.54, -0.32, 0.09, 0.08, 0.09, HR_EYE],
+      [0, 0.14, 0.52, 0.30, 0.30, 0.22, '#4AA6E6'], [0, 0.12, 0.72, 0.56, 0.32, 0.12, '#3C8FD6'],
+      [-0.34, 0.16, 0.02, 0.16, 0.08, 0.26, '#3C8FD6'], [0.34, 0.16, 0.02, 0.16, 0.08, 0.26, '#3C8FD6']] },
+    { k: 'tentou', e: '🐞', b: [
+      [0, 0.04, 0.05, 0.82, 0.22, 0.72, '#E8403F'], [0, 0.26, 0.05, 0.66, 0.18, 0.58, '#EE4B49'], [0, 0.44, 0.05, 0.46, 0.14, 0.40, '#F5605C'],
+      [0, 0.08, -0.42, 0.36, 0.26, 0.22, '#2E2A33'], [-0.10, 0.34, -0.46, 0.08, 0.05, 0.07, '#FFFFFF'], [0.10, 0.34, -0.46, 0.08, 0.05, 0.07, '#FFFFFF'],
+      [-0.27, 0.44, 0.00, 0.13, 0.03, 0.13, '#2E2A33'], [0.27, 0.44, 0.16, 0.13, 0.03, 0.13, '#2E2A33'], [-0.09, 0.58, 0.12, 0.11, 0.03, 0.11, '#2E2A33'], [0.10, 0.58, -0.04, 0.11, 0.03, 0.11, '#2E2A33']] },
+    { k: 'katatsumuri', e: '🐌', b: [
+      [0, 0.04, 0.12, 0.40, 0.20, 0.92, '#F5C894'], [0, 0.04, -0.40, 0.32, 0.30, 0.28, '#F5C894'],
+      [-0.09, 0.34, -0.46, 0.05, 0.14, 0.05, '#F5C894'], [0.09, 0.34, -0.46, 0.05, 0.14, 0.05, '#F5C894'],
+      [-0.09, 0.48, -0.46, 0.09, 0.09, 0.09, HR_EYE], [0.09, 0.48, -0.46, 0.09, 0.09, 0.09, HR_EYE],
+      [0, 0.24, 0.22, 0.64, 0.20, 0.62, '#E58FD0'], [0, 0.44, 0.22, 0.46, 0.14, 0.44, '#F4B6E6'], [0, 0.58, 0.22, 0.28, 0.10, 0.28, '#E58FD0']] }
+  ];
+  (function () {   /* ふみだいの まんなかに ずけいを そろえ、はんけい rf を もとめる */
+    HR_KINDS.forEach(function (K) {
+      var x0 = 9, x1 = -9, z0 = 9, z1 = -9, rf = 0;
+      K.b.forEach(function (b) { x0 = Math.min(x0, b[0] - b[3] / 2); x1 = Math.max(x1, b[0] + b[3] / 2); z0 = Math.min(z0, b[2] - b[5] / 2); z1 = Math.max(z1, b[2] + b[5] / 2); });
+      var cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+      K.b.forEach(function (b) { b[0] -= cx; b[2] -= cz; rf = Math.max(rf, Math.hypot(Math.abs(b[0]) + b[3] / 2, Math.abs(b[2]) + b[5] / 2)); });
+      K.rf = rf;
+    });
+  })();
+  var hr = {
+    on: false, gen: 0, ready: false, raf: 0, last: 0, loading: false, waiters: [], failed: false,
+    R: null, scene: null, cam: null, cv: null, rc: null, v3: null, lights: [], geo: {}, mats: {}, tm: [],
+    W: 0, H: 0, asp: 0, cols: 0, rows: 0, cs: 0.1, Wd: 0, Dp: 0, h: null, nz: null, pos: null, nor: null, col: null, sand: null, field: [], gnd: null,
+    cr: [], found: 0, done: false, doneAt: 0, lastTouch: 0, roundN: 1, rb: null, act: 0, dirty: false, need: 0, snd: 0, ptr: {}, nbuf: null, brushR: 3.7, md: 0.1, wi: new Int32Array(900), ww: new Float32Array(900), cTop: null, cDeep: null, cFloor: null
+  };
+  function hrLoad(cb) {
+    if (window.THREE) { cb(true); return; }
+    if (ts.loading) { ts.waiters.push(function () { cb(!!window.THREE); }); return; }
+    hr.waiters.push(cb);
+    if (hr.loading) return;
+    hr.loading = true;
+    tsLoadOne('assets/tsumiki/three.js', function () { return !!window.THREE; }, function (ok) {
+      hr.loading = false;
+      var ws = hr.waiters; hr.waiters = [];
+      ws.forEach(function (f) { f(ok); });
+    });
+  }
+  function hrBoxGeo(w, h, d) {
+    var key = w + '_' + h + '_' + d;
+    return hr.geo[key] || (hr.geo[key] = tsRoundBox(w, h, d, Math.min(w, h, d) * 0.25));
+  }
+  function hrMat(c, rough) {
+    return hr.mats[c] || (hr.mats[c] = new THREE.MeshStandardMaterial({ color: c, roughness: rough || 0.7, metalness: 0 }));
+  }
+  /* カメラを ほぼ まうえから。はこ ぜんたいが ちょうど はいる ところまで ひく。[よこ, たて] の はみだし ぐあい（NDC）を かえす */
+  function hrCamPlace(Wd, Dp, asp) {
+    var cam = hr.cam, th = HRC.TILT * Math.PI / 180, sn = Math.sin(th), cn = Math.cos(th), v = hr.v3;
+    cam.aspect = asp; cam.fov = 40; cam.updateProjectionMatrix();
+    var hx = Wd / 2 + HRC.FW, hz = Dp / 2 + HRC.FW, F = HRC.FH;
+    var cor = [[-hx, F, -hz], [hx, F, -hz], [-hx, F, hz], [hx, F, hz], [-hx, 0, -hz], [hx, 0, -hz], [-hx, 0, hz], [hx, 0, hz]];
+    function place(d) {
+      cam.position.set(0, 0.5 + d * cn, d * sn); cam.lookAt(0, 0.5, 0); cam.updateMatrixWorld(true);
+      var mx = 0, my = 0;
+      for (var i = 0; i < 8; i++) { v.set(cor[i][0], cor[i][1], cor[i][2]).project(cam); mx = Math.max(mx, Math.abs(v.x)); my = Math.max(my, Math.abs(v.y)); }
+      return [mx, my];
+    }
+    var lo = 2, hi = 140, i;
+    for (i = 0; i < 26; i++) { var mid = (lo + hi) / 2, e = place(mid); if (Math.max(e[0], e[1]) > 0.985) lo = mid; else hi = mid; }
+    return place(hi);
+  }
+  /* がめんの たて・よこに あわせて はこの ひろさを きめる（はこが がめんを いっぱいに うめる） */
+  function hrDims(asp) {
+    var q = asp, i, Wd, Dp, e;
+    for (i = 0; i < 4; i++) {
+      if (q >= 1) { Dp = HRC.SHORT; Wd = HRC.SHORT * q; } else { Wd = HRC.SHORT; Dp = HRC.SHORT / q; }
+      e = hrCamPlace(Wd, Dp, asp);
+      var ratio = e[1] / Math.max(0.05, e[0]);   /* よこに あまれば ひろげる */
+      q = Math.max(asp * 0.6, Math.min(asp * 1.8, q * Math.pow(ratio, 0.95)));
+    }
+    var cs = Math.max(HRC.SHORT / HRC.NS, Math.max(Wd, Dp) / 92), cols = Math.round(Wd / cs), rows = Math.round(Dp / cs);
+    cols = Math.max(30, Math.min(96, cols)); rows = Math.max(30, Math.min(96, rows));
+    hr.cs = cs; hr.cols = cols; hr.rows = rows; hr.Wd = cols * cs; hr.Dp = rows * cs;
+  }
+  function hrFlat(arr) {   /* ひらたい すな（ゆるい でこぼこ） */
+    var p1 = rand(0, 6.3), p2 = rand(0, 6.3), p3 = rand(0, 6.3), C = hr.cols + 1, i, j;
+    for (j = 0; j <= hr.rows; j++) for (i = 0; i <= hr.cols; i++) {
+      var x = i * hr.cs, z = j * hr.cs;
+      arr[j * C + i] = HRC.H0 - 0.02 + 0.035 * Math.sin(x * 1.1 + p1) * Math.cos(z * 0.9 + p2) + 0.02 * Math.sin((x + z) * 2.3 + p3) + rand(-0.008, 0.008);
+    }
+  }
+  function hrScreenRel(x, y, z) {
+    var v = hr.v3.set(x, y, z).project(hr.cam);
+    return { x: (v.x + 1) / 2 * hr.W, y: (1 - v.y) / 2 * hr.H };
+  }
+  function hrScreen(x, y, z) {
+    var v = hr.v3.set(x, y, z).project(hr.cam), r = hr.cv.getBoundingClientRect();
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  }
+  function hrDropCreatures() {
+    hr.cr.forEach(function (cr) {
+      hr.scene.remove(cr.group);
+      Object.keys(cr.mats).forEach(function (k) { try { cr.mats[k].dispose(); } catch (e) {} });
+    });
+    hr.cr = [];
+  }
+  /* 3 びきを ばらばらに おく。ひょうの あたりと フチは さける */
+  function hrSpawn() {
+    var idx = [0, 1, 2, 3, 4, 5].sort(function () { return Math.random() - 0.5; }).slice(0, 3), out = [], tries = 0;
+    var tr = hrTray.getBoundingClientRect(), sr = hrStage.getBoundingClientRect();
+    var zx = tr.width ? tr.right - sr.left + 40 : 260, zy = tr.height ? tr.bottom - sr.top + 40 : 90;
+    idx.forEach(function (ki, n) {
+      var K = HR_KINDS[ki], ok = false, x, z, t;
+      for (t = 0; t < 400 && !ok; t++) {
+        var m = K.rf + 0.4 - (t > 250 ? 0.15 : 0);
+        x = rand(-hr.Wd / 2 + m, hr.Wd / 2 - m); z = rand(-hr.Dp / 2 + m, hr.Dp / 2 - m);
+        ok = true;
+        for (var q = 0; q < out.length; q++) if (Math.hypot(out[q].x - x, out[q].z - z) < out[q].rf + K.rf + (t > 300 ? 0.05 : 0.3)) ok = false;
+        if (ok && t < 330) { var s = hrScreenRel(x, 0.6, z); if (s.x < zx && s.y < zy) ok = false; }
+      }
+      var ry = rand(0, Math.PI * 2), g = new THREE.Group(), cr = { kind: K.k, e: K.e, K: K, x: x, z: z, ry: ry, rf: K.rf, group: g, mats: {}, found: false, glow: 0, solid: null };
+      K.b.forEach(function (b) {
+        var m2 = cr.mats[b[6]] || (cr.mats[b[6]] = new THREE.MeshStandardMaterial({ color: b[6], roughness: 0.5, metalness: 0 }));
+        var me = new THREE.Mesh(hrBoxGeo(b[3], b[4], b[5]), m2);
+        me.position.set(b[0], b[1] + b[4] / 2, b[2]); g.add(me);
+      });
+      g.position.set(x, 0, z); g.rotation.y = ry;
+      hr.scene.add(g);
+      /* あしあと の たかさ（ct）: しっかり した ところ（0.3 いじょう）だけ ひろう */
+      var C = hr.cols + 1, cs = hr.cs, ci = Math.round(x / cs + hr.cols / 2), cj = Math.round(z / cs + hr.rows / 2), r = Math.ceil(K.rf / cs) + 1;
+      var si = [], sc = [], cosr = Math.cos(ry), sinr = Math.sin(ry);
+      for (var j = Math.max(0, cj - r); j <= Math.min(hr.rows, cj + r); j++) for (var i = Math.max(0, ci - r); i <= Math.min(hr.cols, ci + r); i++) {
+        var dx = (i - hr.cols / 2) * cs - x, dz = (j - hr.rows / 2) * cs - z, lx = dx * cosr - dz * sinr, lz = dx * sinr + dz * cosr, top = 0;
+        for (var b2 = 0; b2 < K.b.length; b2++) {
+          var bb = K.b[b2];
+          if (Math.abs(lx - bb[0]) <= bb[3] / 2 && Math.abs(lz - bb[2]) <= bb[5] / 2) top = Math.max(top, bb[1] + bb[4]);
+        }
+        if (top >= 0.3) { si.push(j * C + i); sc.push(top); }
+      }
+      cr.solid = { idx: si, ct: sc };
+      out.push(cr);
+    });
+    hr.cr = out;
+  }
+  function hrTrayReset() {
+    hrTray.textContent = '';
+    for (var i = 0; i < 3; i++) { var s = document.createElement('span'); s.className = 'hr-slot'; s.textContent = '？'; hrTray.appendChild(s); }
+  }
+  function hrDropField() {
+    if (hr.scene) {
+      hrDropCreatures();
+      hr.field.forEach(function (m) { hr.scene.remove(m); });
+      if (hr.sand) { hr.scene.remove(hr.sand); try { hr.sand.geometry.dispose(); hr.sand.material.dispose(); } catch (e) {} }
+    }
+    hr.field = []; hr.sand = null; hr.rb = null;
+  }
+  /* はこ と すな と いきものを つくる（はじめと、がめんの かたちが おおきく かわった とき） */
+  function hrField(asp) {
+    hrDropField();
+    hrDims(asp); hr.asp = asp;
+    var cols = hr.cols, rows = hr.rows, C = cols + 1, n = C * (rows + 1), cs = hr.cs, i, j, k;
+    hr.h = new Float32Array(n); hr.nz = new Float32Array(n);
+    for (k = 0; k < n; k++) hr.nz[k] = rand(-0.045, 0.045);
+    hr.brushR = 0.095 * Math.min(cols, rows); hr.md = HRC.SLOPE * cs;
+    /* きの わく */
+    var fw = HRC.FW, fh = HRC.FH + 0.3, wm = hrMat('#C98F55', 0.75), Wd = hr.Wd, Dp = hr.Dp;
+    [[0, -Dp / 2 - fw / 2, Wd + fw * 2, fw], [0, Dp / 2 + fw / 2, Wd + fw * 2, fw], [-Wd / 2 - fw / 2, 0, fw, Dp], [Wd / 2 + fw / 2, 0, fw, Dp]].forEach(function (p) {
+      var m = new THREE.Mesh(hrBoxGeo(p[2], fh, p[3]), wm);
+      m.position.set(p[0], fh / 2 - 0.3, p[1]); hr.scene.add(m); hr.field.push(m);
+    });
+    /* すな */
+    var g = new THREE.BufferGeometry(), pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), col = new Float32Array(n * 3);
+    for (j = 0; j <= rows; j++) for (i = 0; i <= cols; i++) { k = j * C + i; pos[k * 3] = (i - cols / 2) * cs; pos[k * 3 + 2] = (j - rows / 2) * cs; nor[k * 3 + 1] = 1; }
+    var idx = new Uint16Array(cols * rows * 6), q = 0;
+    for (j = 0; j < rows; j++) for (i = 0; i < cols; i++) {
+      var a = j * C + i, b = a + 1, c = a + C, d = c + 1;
+      idx[q++] = a; idx[q++] = c; idx[q++] = b; idx[q++] = b; idx[q++] = c; idx[q++] = d;
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setIndex(new THREE.BufferAttribute(idx, 1));
+    hr.pos = pos; hr.nor = nor; hr.col = col;
+    var sm = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true }));
+    sm.frustumCulled = false; hr.scene.add(sm); hr.sand = sm;
+    hrFlat(hr.h);
+    hrCamPlace(Wd, Dp, asp);
+    hrSpawn();
+    hr.found = 0; hr.done = false; hr.doneAt = 0; hr.act = 0; hr.ptr = {};
+    hrRedo.hidden = true; hrTrayReset();
+    hr.dirty = true; hr.need = 3;
+  }
+  function hrFit() {
+    var R = hr.R; if (!R) return;
+    var w = hrStage.clientWidth, h = hrStage.clientHeight;
+    if (!w || !h) return;
+    hr.W = w; hr.H = h;
+    R.setSize(w, h, false);
+    hr.cv.style.width = '100%'; hr.cv.style.height = '100%';
+    var asp = w / h;
+    if (!hr.h || Math.abs(Math.log(asp / hr.asp)) > 0.12) hrField(asp);
+    else hrCamPlace(hr.Wd, hr.Dp, asp);
+    hr.need = 3;
+  }
+  function hrInit() {
+    var R;
+    try { R = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' }); } catch (e) { return false; }
+    if (!R || !R.getContext()) return false;
+    hr.R = R;
+    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    hr.cv = R.domElement; hr.cv.id = 'hr-cv'; hr.cv.setAttribute('aria-label', 'ほりほり');
+    hrStage.insertBefore(hr.cv, hrStage.firstChild);
+    var bg = new THREE.Color('#A97B4A');
+    var sc = hr.scene = new THREE.Scene(); sc.background = bg;
+    hr.cam = new THREE.PerspectiveCamera(40, 1, 0.1, 160);
+    hr.rc = new THREE.Raycaster(); hr.v3 = new THREE.Vector3();
+    var hemi = new THREE.HemisphereLight(0xFFF8EA, 0xC9A472, 0.95); sc.add(hemi);
+    var sun = new THREE.DirectionalLight(0xFFF1D6, 2.4); sun.position.set(-6, 6, -2); sc.add(sun);
+    hr.lights = [hemi, sun];
+    var gm = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), hrMat('#A97B4A', 0.9));
+    gm.rotation.x = -Math.PI / 2; gm.position.y = -0.31; sc.add(gm); hr.gnd = gm;
+    hr.cTop = new THREE.Color('#F2D59A'); hr.cDeep = new THREE.Color('#C98E50'); hr.cFloor = new THREE.Color('#946A3C');
+    hr.W = 0; hr.H = 0; hr.asp = 0; hr.h = null;
+    hr.ready = true;
+    hrFit();
+    return !!hr.h;
+  }
+  /* すなの たかさ → いち・ほうせん・いろ */
+  function hrMesh() {
+    var h = hr.h, cols = hr.cols, rows = hr.rows, C = cols + 1, cs = hr.cs, pos = hr.pos, nor = hr.nor, col = hr.col, nz = hr.nz, T = hr.cTop, D = hr.cDeep, F = hr.cFloor;
+    for (var j = 0; j <= rows; j++) for (var i = 0; i <= cols; i++) {
+      var k = j * C + i, hc = h[k];
+      var il = i > 0 ? k - 1 : k, ir = i < cols ? k + 1 : k, ju = j > 0 ? k - C : k, jd = j < rows ? k + C : k;
+      var nx, nzz;
+      /* ふちは 1 ます ぶん、なかは 2 ます ぶんの さ */
+      nx = (h[il] - h[ir]) / (((i > 0 ? 1 : 0) + (i < cols ? 1 : 0)) * cs);
+      nzz = (h[ju] - h[jd]) / (((j > 0 ? 1 : 0) + (j < rows ? 1 : 0)) * cs);
+      var il2 = 1 / Math.sqrt(nx * nx + 1 + nzz * nzz);
+      pos[k * 3 + 1] = hc;
+      nor[k * 3] = nx * il2; nor[k * 3 + 1] = il2; nor[k * 3 + 2] = nzz * il2;
+      var t = (HRC.H0 - hc) / 0.85; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      var r = T.r + (D.r - T.r) * t, g = T.g + (D.g - T.g) * t, b = T.b + (D.b - T.b) * t;
+      if (hc < 0.05) { var u = 1 - hc / 0.05; r += (F.r - r) * u; g += (F.g - g) * u; b += (F.b - b) * u; }
+      var cv = (h[il] + h[ir] + h[ju] + h[jd]) / 4 - hc;   /* へこみは くらく、もりあがりは あかるく */
+      var m = 1 + nz[k] + (cv > 0 ? -Math.min(0.3, cv * 5) : Math.min(0.08, -cv * 2));
+      col[k * 3] = r * m; col[k * 3 + 1] = g * m; col[k * 3 + 2] = b * m;
+    }
+    var at = hr.sand.geometry.attributes;
+    at.position.needsUpdate = true; at.normal.needsUpdate = true; at.color.needsUpdate = true;
+  }
+  /* すなの ほぐれ: たかい ほうから ひくい ほうへ、ゆうりょうを かえずに くずす */
+  function hrRelax() {
+    var h = hr.h, cols = hr.cols, rows = hr.rows, C = cols + 1, mA = hr.md, mD = mA * 1.414, f = 0.3, moved = 0, i, j, a, d, t;
+    function ed(a, b, md) {
+      d = h[a] - h[b];
+      if (d > md) { t = (d - md) * f; h[a] -= t; h[b] += t; moved += t; }
+      else if (d < -md) { t = (-d - md) * f; h[a] += t; h[b] -= t; moved += t; }
+    }
+    for (j = 0; j <= rows; j++) for (i = 0; i <= cols; i++) {
+      a = j * C + i;
+      if (i < cols) ed(a, a + 1, mA);
+      if (j < rows) {
+        ed(a, a + C, mA);
+        if (i < cols) ed(a, a + C + 1, mD);
+        if (i > 0) ed(a, a + C - 1, mD);
+      }
+    }
+    return moved;
+  }
+  /* ブラシ 1 ほ: した の すなを けずって、まえと よこへ おしだす（tap は まわりへ） */
+  function hrBrush(cx, cz, dx, dz, dig, tap) {
+    var R = tap ? hr.brushR * 0.85 : hr.brushR, R2 = R * R, h = hr.h, cols = hr.cols, rows = hr.rows, C = cols + 1;
+    var i0 = Math.max(0, Math.floor(cx - R)), i1 = Math.min(cols, Math.ceil(cx + R)), j0 = Math.max(0, Math.floor(cz - R)), j1 = Math.min(rows, Math.ceil(cz + R));
+    var removed = 0, i, j, k, r2, w, a;
+    for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) {
+      r2 = (i - cx) * (i - cx) + (j - cz) * (j - cz);
+      if (r2 >= R2) continue;
+      k = j * C + i; a = dig * (1 - r2 / R2);
+      if (a > h[k]) a = h[k];
+      h[k] -= a; removed += a;
+    }
+    if (removed < 1e-5) return;
+    var wi = hr.wi, ww = hr.ww, n = 0, W = 0, hole2 = R2 * 0.72;
+    var ax = cx + dx * 1.35 * R, az = cz + dz * 1.35 * R, sx = -dz * 1.3 * R, sz = dx * 1.3 * R, sR2 = (0.8 * R) * (0.8 * R), ex = 2.4 * R;
+    i0 = Math.max(0, Math.floor(cx - ex)); i1 = Math.min(cols, Math.ceil(cx + ex)); j0 = Math.max(0, Math.floor(cz - ex)); j1 = Math.min(rows, Math.ceil(cz + ex));
+    for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) {
+      var ux = i - cx, uz = j - cz; r2 = ux * ux + uz * uz;
+      if (r2 < hole2 || n >= 890) continue;
+      if (tap) { var rr = Math.sqrt(r2) / R; w = 1 - Math.abs(rr - 1.35) / 0.45; }
+      else {
+        var d1 = (i - ax) * (i - ax) + (j - az) * (j - az), d2 = (i - cx - sx) * (i - cx - sx) + (j - cz - sz) * (j - cz - sz), d3 = (i - cx + sx) * (i - cx + sx) + (j - cz + sz) * (j - cz + sz);
+        w = (d1 < R2 ? 1 - d1 / R2 : 0) + (d2 < sR2 ? 0.5 * (1 - d2 / sR2) : 0) + (d3 < sR2 ? 0.5 * (1 - d3 / sR2) : 0);
+      }
+      if (w <= 0) continue;
+      wi[n] = j * C + i; ww[n] = w; W += w; n++;
+    }
+    if (W <= 0) { h[Math.max(0, Math.min(h.length - 1, Math.round(cz) * C + Math.round(cx)))] += removed; return; }
+    for (k = 0; k < n; k++) { var kk = wi[k], nv = h[kk] + removed * ww[k] / W; h[kk] = nv > HRC.HMAX ? HRC.HMAX : nv; }
+  }
+  function hrPick(cx, cy) {
+    if (!hr.cv || !hr.h) return null;
+    var r = hr.cv.getBoundingClientRect(); if (!r.width) return null;
+    hr.rc.setFromCamera({ x: (cx - r.left) / r.width * 2 - 1, y: 1 - (cy - r.top) / r.height * 2 }, hr.cam);
+    var o = hr.rc.ray.origin, d = hr.rc.ray.direction, yy = HRC.H0, gx = 0, gz = 0, C = hr.cols + 1;
+    for (var k = 0; k < 3; k++) {
+      var t = (yy - o.y) / d.y; if (!(t > 0)) return null;
+      gx = (o.x + d.x * t) / hr.cs + hr.cols / 2; gz = (o.z + d.z * t) / hr.cs + hr.rows / 2;
+      var ci = Math.max(0, Math.min(hr.cols, Math.round(gx))), cj = Math.max(0, Math.min(hr.rows, Math.round(gz)));
+      yy = hr.h[cj * C + ci];
+    }
+    if (gx < -1.5 || gx > hr.cols + 1.5 || gz < -1.5 || gz > hr.rows + 1.5) return null;
+    return { x: gx, z: gz };
+  }
+  function hrShh(v) {
+    var c = audio(); if (!c || quiet()) return;
+    var now = performance.now(); if (now - hr.snd < 90) return; hr.snd = now;
+    if (!hr.nbuf || hr.nbuf.sampleRate !== c.sampleRate) {
+      var len = Math.floor(c.sampleRate * 0.14), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / len);
+      hr.nbuf = buf;
+    }
+    var src = c.createBufferSource(); src.buffer = hr.nbuf;
+    var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = rand(1500, 2600); bp.Q.value = 0.7;
+    var g = c.createGain(); g.gain.value = 0.05 + Math.min(1, v) * 0.16;
+    src.connect(bp); bp.connect(g); g.connect(c.destination);
+    src.start();
+  }
+  function hrDragTo(p, c, x, y, now) {
+    var ddx = c.x - p.gx, ddz = c.z - p.gz, L = Math.sqrt(ddx * ddx + ddz * ddz);
+    if (L < 0.3) return;
+    var ux = ddx / L, uz = ddz / L;
+    if (p.dx === 0 && p.dz === 0) { p.dx = ux; p.dz = uz; }
+    else { p.dx = p.dx * 0.55 + ux * 0.45; p.dz = p.dz * 0.55 + uz * 0.45; var m = Math.sqrt(p.dx * p.dx + p.dz * p.dz) || 1; p.dx /= m; p.dz /= m; }
+    var R = hr.brushR, n = Math.ceil(L / (R * 0.4)), sl = L / n, dig = HRC.DIGK * sl / R;
+    for (var s = 1; s <= n; s++) hrBrush(p.gx + ddx * s / n, p.gz + ddz * s / n, p.dx, p.dz, dig, false);
+    p.dist += L; p.gx = c.x; p.gz = c.z;
+    var dt = Math.max(1, now - p.pt), dp = Math.hypot(x - p.px, y - p.py);
+    p.v = p.v * 0.6 + (dp / dt) * 0.4; p.px = x; p.py = y; p.pt = now;
+    hrShh(p.v / 1.2);
+    hr.act = 14; hr.dirty = true; hr.lastTouch = now;
+  }
+  function hrPD(e) {
+    var t = e.target;
+    if (t && t.closest && t.closest('#hr-redo')) return;
+    if (e.preventDefault) e.preventDefault();
+    audio();
+    if (!hr.ready || hr.rb) return;
+    var c = hrPick(e.clientX, e.clientY), now = performance.now();
+    hr.lastTouch = now;
+    if (!c) return;
+    try { hrStage.setPointerCapture(e.pointerId); } catch (er) {}
+    hr.ptr[e.pointerId] = { gx: c.x, gz: c.z, dx: 0, dz: 0, dist: 0, t0: now, px: e.clientX, py: e.clientY, pt: now, v: 0 };
+  }
+  function hrPM(e) {
+    var p = hr.ptr[e.pointerId]; if (!p || !hr.ready || hr.rb) return;
+    var c = hrPick(e.clientX, e.clientY), now = performance.now();
+    if (!c) return;
+    hrDragTo(p, c, e.clientX, e.clientY, now);
+  }
+  function hrPU(e) {
+    var p = hr.ptr[e.pointerId]; if (!p) return;
+    delete hr.ptr[e.pointerId];
+    var now = performance.now();
+    if (e.type === 'pointerup' && p.dist < 0.8 && now - p.t0 < 600 && hr.ready && !hr.rb) {
+      hrBrush(p.gx, p.gz, 0, 0, 0.42, true);
+      hr.act = 14; hr.dirty = true; hr.lastTouch = now; hrShh(0.35);
+    }
+  }
+  function hrRedoDown(e) { if (e.type === 'click' && e.detail !== 0) return; e.preventDefault(); audio(); hrNext(); }
+  function hrVis() { if (!document.hidden) hr.last = 0; }
+  function hrTimer(fn, ms) { var id = setTimeout(function () { var i = hr.tm.indexOf(id); if (i >= 0) hr.tm.splice(i, 1); fn(); }, ms); hr.tm.push(id); }
+  function hrSparkle(x, y, z, n, spread) {
+    if (!hr.cam || !hr.W) return;
+    var s = hrScreenRel(x, y, z); if (reduce) n = Math.min(n, 3);
+    var ico = ['✨', '⭐', '✨', '💛'];
+    for (var i = 0; i < n; i++) {
+      var el = document.createElement('i'); el.className = 'hr-sp'; el.textContent = ico[i % 4];
+      el.style.left = s.x + 'px'; el.style.top = s.y + 'px';
+      el.style.setProperty('--dx', Math.round(rand(-1, 1) * spread) + 'px'); el.style.setProperty('--dy', Math.round(rand(-1.1, 0.5) * spread) + 'px');
+      el.style.animationDelay = Math.round(rand(0, 220)) + 'ms';
+      hrFx.appendChild(el);
+      (function (el) { hrTimer(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1300); })(el);
+    }
+  }
+  function hrFound(cr, i) {
+    cr.found = true; cr.glow = 1; hr.found++;
+    /* みつけたら まわりの すなが すべって、いきものが すがたを みせる */
+    var C = hr.cols + 1, cs = hr.cs, ci = Math.round(cr.x / cs + hr.cols / 2), cj = Math.round(cr.z / cs + hr.rows / 2), r = Math.ceil((cr.rf + 0.4) / cs) + 1, rv = { idx: [], tg: [], t: 0.9 };
+    for (var j = Math.max(0, cj - r); j <= Math.min(hr.rows, cj + r); j++) for (var ii = Math.max(0, ci - r); ii <= Math.min(hr.cols, ci + r); ii++) {
+      var d = Math.hypot((ii - hr.cols / 2) * cs - cr.x, (j - hr.rows / 2) * cs - cr.z);
+      if (d < cr.rf + 0.4) { rv.idx.push(j * C + ii); rv.tg.push(0.06 + Math.max(0, d - cr.rf * 0.85) * 2.4); }
+    }
+    cr.rev = rv;
+    var sl = hrTray.children[i]; if (sl) { sl.textContent = cr.e; sl.className = 'hr-slot got'; }
+    hrSparkle(cr.x, 0.7, cr.z, 9, 70);
+    [659, 784, 988].forEach(function (f, k) { tone(f, 0.22, 'triangle', 0.15, 0, k * 0.1); });
+    if (hr.found >= hr.cr.length && !hr.done) {
+      hr.done = true; hr.doneAt = performance.now();
+      [523, 659, 784, 1047, 1319, 1568].forEach(function (f, k) { tone(f, 0.34, 'sine', 0.13, 0, 0.35 + k * 0.1); });
+      tone(196, 0.5, 'triangle', 0.14, 392, 0.3);
+      hr.cr.forEach(function (c, k) { hrTimer(function () { if (hr.on && hr.cam) hrSparkle(c.x, 0.7, c.z, 8, 90); }, 350 + k * 180); });
+    }
+  }
+  function hrCheck() {
+    var h = hr.h;
+    hr.cr.forEach(function (cr, i) {
+      if (cr.found) return;
+      var s = cr.solid, n = 0, m = s.idx.length;
+      for (var q = 0; q < m; q++) if (h[s.idx[q]] < s.ct[q] - 0.02) n++;
+      cr.frac = n / Math.max(1, m);
+      if (m && n >= m * 0.35) hrFound(cr, i);
+    });
+  }
+  /* あたらしい ラウンド: すなが もどって（そそがれて）、あたらしい いきものが うまる */
+  function hrNext() {
+    if (hr.rb || !hr.ready || !hr.h) return;
+    hr.roundN++; hr.found = 0; hr.done = false; hr.doneAt = 0; hr.ptr = {};
+    hrRedo.hidden = true; hrTrayReset();
+    var ht = new Float32Array(hr.h.length); hrFlat(ht);
+    hr.rb = { t: 0, swapped: false, h0: Float32Array.from(hr.h), ht: ht };
+    tone(330, 0.5, 'sine', 0.08, 200);
+  }
+  function hrRbStep(dt) {
+    var rb = hr.rb, h = hr.h, n = h.length, k;
+    rb.t += dt;
+    var s = Math.min(1, rb.t / 1.0), e = 1 - (1 - s) * (1 - s);
+    for (k = 0; k < n; k++) h[k] = rb.h0[k] + (rb.ht[k] - rb.h0[k]) * e;
+    var sink = Math.min(1, rb.t / 0.7);
+    if (!rb.swapped) hr.cr.forEach(function (cr) { cr.group.position.y = -1.2 * sink * sink; });
+    if (!rb.swapped && rb.t >= 0.72) { rb.swapped = true; hrDropCreatures(); hrSpawn(); }
+    if (s >= 1) hr.rb = null;
+    hr.dirty = true; hr.need = 2;
+  }
+  function hrFrame(t) {
+    hr.raf = requestAnimationFrame(hrFrame);
+    if (!hr.on || !hr.ready || document.hidden || !hr.h) { hr.last = 0; return; }
+    var dt = hr.last ? Math.min(0.1, (t - hr.last) / 1000) : 1 / 60; hr.last = t;
+    var now = performance.now();
+    if (hr.rb) hrRbStep(dt);
+    else if (hr.act > 0) {
+      hr.act--;
+      var mv = hrRelax(); mv += hrRelax();
+      if (mv > 0.003) hr.act = Math.max(hr.act, 3);
+      hr.dirty = true;
+    }
+    hr.cr.forEach(function (cr) {
+      var rv = cr.rev; if (!rv || rv.t <= 0) return;
+      rv.t -= dt; hr.dirty = true; hr.act = Math.max(hr.act, 6);
+      for (var q = 0; q < rv.idx.length; q++) { var k = rv.idx[q]; if (hr.h[k] > rv.tg[q]) hr.h[k] = Math.max(rv.tg[q], hr.h[k] - dt * 2.2); }
+    });
+    if (hr.dirty) { hrMesh(); hr.dirty = false; hr.need = 2; if (!hr.rb) hrCheck(); }
+    hr.cr.forEach(function (cr) {
+      if (cr.glow > 0) {
+        cr.glow = Math.max(0, cr.glow - dt * 1.2); hr.need = 2;
+        var g = cr.glow * cr.glow * 0.5;
+        Object.keys(cr.mats).forEach(function (k) { cr.mats[k].emissive.setRGB(g, g * 0.85, g * 0.35); });
+      }
+    });
+    if (hr.done && !hr.rb) {
+      if (hrRedo.hidden && now - hr.doneAt > 1200) hrRedo.hidden = false;
+      if (now - Math.max(hr.doneAt, hr.lastTouch) > 8000) hrNext();
+    }
+    if (hr.need > 0) { hr.need--; hr.R.render(hr.scene, hr.cam); }
+  }
+  function hrTeardown() {
+    if (hr.raf) { cancelAnimationFrame(hr.raf); hr.raf = 0; }
+    hr.tm.forEach(clearTimeout); hr.tm = [];
+    hrDropField();
+    Object.keys(hr.geo).forEach(function (k) { try { hr.geo[k].dispose(); } catch (e) {} });
+    Object.keys(hr.mats).forEach(function (k) { try { hr.mats[k].dispose(); } catch (e) {} });
+    if (hr.gnd) { try { hr.gnd.geometry.dispose(); } catch (e) {} }
+    hr.geo = {}; hr.mats = {}; hr.lights.forEach(function (l) { try { l.dispose && l.dispose(); } catch (e) {} }); hr.lights = [];
+    var R = hr.R;
+    if (R) {
+      try { R.dispose(); R.forceContextLoss(); } catch (e) {}
+      if (hr.cv && hr.cv.parentNode) hr.cv.parentNode.removeChild(hr.cv);
+    }
+    hr.R = null; hr.cv = null; hr.scene = null; hr.cam = null; hr.rc = null; hr.v3 = null; hr.gnd = null; hr.h = null; hr.pos = null; hr.nor = null; hr.col = null; hr.nz = null;
+    hr.ready = false; hr.rb = null; hr.ptr = {}; hr.cols = 0; hr.rows = 0; hr.found = 0; hr.done = false; hr.W = 0; hr.H = 0; hr.asp = 0;
+    hrFx.textContent = ''; hrTray.textContent = '';
+  }
+  function hrFail() {
+    hr.failed = true; hrRedo.hidden = true;
+    hrPrep.hidden = false; hrPrep.textContent = 'いまは ほりほりが ひらけないよ。もういちど はいってね';
+  }
+  games.horu = {
+    el: hrStage,
+    enter: function () {
+      hr.on = true; hr.gen++; hr.ready = false; hr.failed = false; hr.last = 0; hr.roundN = 1; hr.lastTouch = 0; hr.ptr = {};
+      var g = hr.gen;
+      hrRedo.hidden = true; hrPrep.hidden = false; hrPrep.textContent = 'じゅんび ちゅう…';
+      hrStage.addEventListener('pointerdown', hrPD); hrStage.addEventListener('pointermove', hrPM);
+      hrStage.addEventListener('pointerup', hrPU); hrStage.addEventListener('pointercancel', hrPU);
+      hrRedo.addEventListener('pointerdown', hrRedoDown); hrRedo.addEventListener('click', hrRedoDown);
+      document.addEventListener('visibilitychange', hrVis);
+      hrLoad(function (ok) {
+        if (!hr.on || g !== hr.gen) return;
+        var good = false;
+        if (ok) { try { good = hrInit(); } catch (e) { good = false; } }
+        if (!good) { hrTeardown(); hrFail(); return; }
+        hrPrep.hidden = true;
+        hr.raf = requestAnimationFrame(hrFrame);
+      });
+    },
+    leave: function () {
+      hr.on = false; hr.gen++;
+      hrStage.removeEventListener('pointerdown', hrPD); hrStage.removeEventListener('pointermove', hrPM);
+      hrStage.removeEventListener('pointerup', hrPU); hrStage.removeEventListener('pointercancel', hrPU);
+      hrRedo.removeEventListener('pointerdown', hrRedoDown); hrRedo.removeEventListener('click', hrRedoDown);
+      document.removeEventListener('visibilitychange', hrVis);
+      hrTeardown();
+      hrPrep.hidden = true; hrRedo.hidden = true;
+      if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    },
+    resize: function () { if (hr.on && hr.R) hrFit(); },
+    /* テスト用 */
+    _t: function () {
+      var vol = 0, mn = 9, mx = 0;
+      if (hr.h) for (var k = 0; k < hr.h.length; k++) { vol += hr.h[k]; if (hr.h[k] < mn) mn = hr.h[k]; if (hr.h[k] > mx) mx = hr.h[k]; }
+      return { ready: hr.ready, failed: hr.failed, loaded: !!window.THREE, canvas: !!hr.cv, rafActive: !!hr.raf, cells: [hr.cols, hr.rows], vol: vol, min: mn, max: mx, found: hr.found, total: hr.cr.length,
+        creatures: hr.cr.map(function (c) { return { kind: c.kind, found: c.found, x: c.x, z: c.z, frac: c.frac || 0 }; }), done: hr.done, redo: !hrRedo.hidden, roundN: hr.roundN, rb: !!hr.rb, act: hr.act };
+    },
+    _screen: function (x, y, z) { return hr.cam && hr.cv ? hrScreen(x, y, z) : null; },
+    _rub: function (pts, id) {
+      id = id || 9001;
+      var o = { pointerId: id, target: hrStage, clientX: pts[0][0], clientY: pts[0][1], type: 'pointerdown' };
+      hrPD(o);
+      for (var i = 1; i < pts.length; i++) { o.clientX = pts[i][0]; o.clientY = pts[i][1]; o.type = 'pointermove'; hrPM(o); }
+      o.type = 'pointerup'; hrPU(o);
+    },
+    _reveal: function (i) {
+      var cr = hr.cr[i]; if (!cr || !hr.h) return;
+      var s = cr.solid, C = hr.cols + 1, cx = Math.round(cr.x / hr.cs + hr.cols / 2), cz = Math.round(cr.z / hr.cs + hr.rows / 2), r = Math.ceil(cr.rf / hr.cs) + 2;
+      for (var j = Math.max(0, cz - r); j <= Math.min(hr.rows, cz + r); j++) for (var ii = Math.max(0, cx - r); ii <= Math.min(hr.cols, cx + r); ii++) hr.h[j * C + ii] = Math.min(hr.h[j * C + ii], 0.12);
+      hr.act = 14; hr.dirty = true;
+    }
+  };
+
   /* ---------- ホーム ---------- */
   var homeEl = $('#home'), homeBtn = $('#homebtn');
   var ICO = {
@@ -10915,13 +11492,14 @@
     dokoka: { ico: '🚪', lab: 'どこかな', c: '#FFD9E4', say: 'どこかな！' },
     henshin: { ico: '👻', lab: 'へんしん', c: '#E3D4FF', say: 'へんしん かめら！' },
     kao:   { ico: '🐼', lab: 'かおスロット', br: 'かお', c: '#FFE3C8', say: 'かおすろっと！' },
-    tsumiki: { ico: '🧱', lab: 'つみき', c: '#FFE0C2', say: 'つみき！' }
+    tsumiki: { ico: '🧱', lab: 'つみき', c: '#FFE0C2', say: 'つみき！' },
+    horu:  { ico: '🦀', lab: 'ほりほり', c: '#F3DDB0', say: 'ほりほり！' }
   };
   // ホームの並び。新しいゲームは最後に足す（9 個ずつ自動でページになる）
   var HORDER = ['sky', 'zoo', 'paint', 'baa', 'phone', 'train', 'shop', 'nurie', 'sticker',
     'touch', 'find', 'count', 'num', 'aiueo', 'abc', 'clock', 'shape', 'yubi',
     'koro', 'drive', 'piano', 'pinball', 'neko', 'voice', 'nami', 'mix', 'suna',
-    'kiru', 'hami', 'kaeru', 'dokoka', 'henshin', 'kao', 'tsumiki'];
+    'kiru', 'hami', 'kaeru', 'dokoka', 'henshin', 'kao', 'tsumiki', 'horu'];
   /* ---- ホームの かたち: page / scroll / bubble / box（S.home）。かくした あそびは ponpon.home.v1 ---- */
   var HM_KEY = 'ponpon.home.v1', hmHide = {};
   (function () {
