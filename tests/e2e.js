@@ -1260,7 +1260,7 @@ const TV = (name, vps, fn) => vps.forEach(vp => T(name + '-' + vp.width + 'x' + 
       ok((await txt('#st-fav')).includes('ふうせん'), 'stats 7d: favorite');
       ok((await txt('#st-sum')).includes('1にち へいきん'), 'stats 7d: daily average shown');
       ok((await txt('.st-row[data-id="sky"]')).includes('30ふん') && (await txt('.st-row[data-id="sky"]')).includes('5かい') && (await txt('.st-row[data-id="sky"]')).includes('へいきん 6ふん'), 'stats 7d: balloon row ' + await txt('.st-row[data-id="sky"]'));
-      ok(await p.locator('.st-row.zero').count() === 32 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (32 rows)');
+      ok(await p.locator('.st-row.zero').count() === 33 && await p.evaluate(() => getComputedStyle(document.querySelector('.st-row.zero')).opacity) < 0.6, 'stats 7d: zero-play games dimmed (33 rows)');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'sky', 'stats: sorted by time -> sky first');
       await p.click('#st-sort button[data-v="n"]');
       ok(await p.evaluate(() => document.querySelector('#st-games .st-row').getAttribute('data-id')) === 'zoo', 'stats: sort toggle by count -> zoo first');

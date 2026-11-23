@@ -10871,7 +10871,7 @@
 
   /* ====== ほりほり（three.js だけ。すなを ゆびで うごかして、うまっている いきものブロックを さがす。つみきと おなじ three.js を つかう） ====== */
   var hrStage = $('#stage-horu'), hrPrep = $('#hr-prep'), hrRedo = $('#hr-redo'), hrTray = $('#hr-tray'), hrFx = $('#hr-fx');
-  var HR = { H0: 1.0, HMAX: 2.0, SHORT: 5, NS: 44, FW: 0.32, FH: 1.5, TILT: 17, SLOPE: 0.85, DIGK: 1.0 };
+  var HRC = { H0: 1.0, HMAX: 2.0, SHORT: 5, NS: 44, FW: 0.32, FH: 1.5, TILT: 17, SLOPE: 0.85, DIGK: 1.0 };
   var HR_EYE = '#4A3226';
   /* いきもの: [x, した(y), z, はば, たかさ, ふかさ, いろ]。ぜんぶ たかさ 0.7 いか。まえは -z */
   var HR_KINDS = [
@@ -10943,9 +10943,9 @@
   }
   /* カメラを ほぼ まうえから。はこ ぜんたいが ちょうど はいる ところまで ひく。[よこ, たて] の はみだし ぐあい（NDC）を かえす */
   function hrCamPlace(Wd, Dp, asp) {
-    var cam = hr.cam, th = HR.TILT * Math.PI / 180, sn = Math.sin(th), cn = Math.cos(th), v = hr.v3;
+    var cam = hr.cam, th = HRC.TILT * Math.PI / 180, sn = Math.sin(th), cn = Math.cos(th), v = hr.v3;
     cam.aspect = asp; cam.fov = 40; cam.updateProjectionMatrix();
-    var hx = Wd / 2 + HR.FW, hz = Dp / 2 + HR.FW, F = HR.FH;
+    var hx = Wd / 2 + HRC.FW, hz = Dp / 2 + HRC.FW, F = HRC.FH;
     var cor = [[-hx, F, -hz], [hx, F, -hz], [-hx, F, hz], [hx, F, hz], [-hx, 0, -hz], [hx, 0, -hz], [-hx, 0, hz], [hx, 0, hz]];
     function place(d) {
       cam.position.set(0, 0.5 + d * cn, d * sn); cam.lookAt(0, 0.5, 0); cam.updateMatrixWorld(true);
@@ -10961,12 +10961,12 @@
   function hrDims(asp) {
     var q = asp, i, Wd, Dp, e;
     for (i = 0; i < 4; i++) {
-      if (q >= 1) { Dp = HR.SHORT; Wd = HR.SHORT * q; } else { Wd = HR.SHORT; Dp = HR.SHORT / q; }
+      if (q >= 1) { Dp = HRC.SHORT; Wd = HRC.SHORT * q; } else { Wd = HRC.SHORT; Dp = HRC.SHORT / q; }
       e = hrCamPlace(Wd, Dp, asp);
       var ratio = e[1] / Math.max(0.05, e[0]);   /* よこに あまれば ひろげる */
       q = Math.max(asp * 0.6, Math.min(asp * 1.8, q * Math.pow(ratio, 0.95)));
     }
-    var cs = Math.max(HR.SHORT / HR.NS, Math.max(Wd, Dp) / 92), cols = Math.round(Wd / cs), rows = Math.round(Dp / cs);
+    var cs = Math.max(HRC.SHORT / HRC.NS, Math.max(Wd, Dp) / 92), cols = Math.round(Wd / cs), rows = Math.round(Dp / cs);
     cols = Math.max(30, Math.min(96, cols)); rows = Math.max(30, Math.min(96, rows));
     hr.cs = cs; hr.cols = cols; hr.rows = rows; hr.Wd = cols * cs; hr.Dp = rows * cs;
   }
@@ -10974,7 +10974,7 @@
     var p1 = rand(0, 6.3), p2 = rand(0, 6.3), p3 = rand(0, 6.3), C = hr.cols + 1, i, j;
     for (j = 0; j <= hr.rows; j++) for (i = 0; i <= hr.cols; i++) {
       var x = i * hr.cs, z = j * hr.cs;
-      arr[j * C + i] = HR.H0 - 0.02 + 0.035 * Math.sin(x * 1.1 + p1) * Math.cos(z * 0.9 + p2) + 0.02 * Math.sin((x + z) * 2.3 + p3) + rand(-0.008, 0.008);
+      arr[j * C + i] = HRC.H0 - 0.02 + 0.035 * Math.sin(x * 1.1 + p1) * Math.cos(z * 0.9 + p2) + 0.02 * Math.sin((x + z) * 2.3 + p3) + rand(-0.008, 0.008);
     }
   }
   function hrScreenRel(x, y, z) {
@@ -11049,9 +11049,9 @@
     var cols = hr.cols, rows = hr.rows, C = cols + 1, n = C * (rows + 1), cs = hr.cs, i, j, k;
     hr.h = new Float32Array(n); hr.nz = new Float32Array(n);
     for (k = 0; k < n; k++) hr.nz[k] = rand(-0.045, 0.045);
-    hr.brushR = 0.095 * Math.min(cols, rows); hr.md = HR.SLOPE * cs;
+    hr.brushR = 0.095 * Math.min(cols, rows); hr.md = HRC.SLOPE * cs;
     /* きの わく */
-    var fw = HR.FW, fh = HR.FH + 0.3, wm = hrMat('#C98F55', 0.75), Wd = hr.Wd, Dp = hr.Dp;
+    var fw = HRC.FW, fh = HRC.FH + 0.3, wm = hrMat('#C98F55', 0.75), Wd = hr.Wd, Dp = hr.Dp;
     [[0, -Dp / 2 - fw / 2, Wd + fw * 2, fw], [0, Dp / 2 + fw / 2, Wd + fw * 2, fw], [-Wd / 2 - fw / 2, 0, fw, Dp], [Wd / 2 + fw / 2, 0, fw, Dp]].forEach(function (p) {
       var m = new THREE.Mesh(hrBoxGeo(p[2], fh, p[3]), wm);
       m.position.set(p[0], fh / 2 - 0.3, p[1]); hr.scene.add(m); hr.field.push(m);
@@ -11124,7 +11124,7 @@
       var il2 = 1 / Math.sqrt(nx * nx + 1 + nzz * nzz);
       pos[k * 3 + 1] = hc;
       nor[k * 3] = nx * il2; nor[k * 3 + 1] = il2; nor[k * 3 + 2] = nzz * il2;
-      var t = (HR.H0 - hc) / 0.85; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      var t = (HRC.H0 - hc) / 0.85; t = t < 0 ? 0 : t > 1 ? 1 : t;
       var r = T.r + (D.r - T.r) * t, g = T.g + (D.g - T.g) * t, b = T.b + (D.b - T.b) * t;
       if (hc < 0.05) { var u = 1 - hc / 0.05; r += (F.r - r) * u; g += (F.g - g) * u; b += (F.b - b) * u; }
       var cv = (h[il] + h[ir] + h[ju] + h[jd]) / 4 - hc;   /* へこみは くらく、もりあがりは あかるく */
@@ -11181,13 +11181,13 @@
       wi[n] = j * C + i; ww[n] = w; W += w; n++;
     }
     if (W <= 0) { h[Math.max(0, Math.min(h.length - 1, Math.round(cz) * C + Math.round(cx)))] += removed; return; }
-    for (k = 0; k < n; k++) { var kk = wi[k], nv = h[kk] + removed * ww[k] / W; h[kk] = nv > HR.HMAX ? HR.HMAX : nv; }
+    for (k = 0; k < n; k++) { var kk = wi[k], nv = h[kk] + removed * ww[k] / W; h[kk] = nv > HRC.HMAX ? HRC.HMAX : nv; }
   }
   function hrPick(cx, cy) {
     if (!hr.cv || !hr.h) return null;
     var r = hr.cv.getBoundingClientRect(); if (!r.width) return null;
     hr.rc.setFromCamera({ x: (cx - r.left) / r.width * 2 - 1, y: 1 - (cy - r.top) / r.height * 2 }, hr.cam);
-    var o = hr.rc.ray.origin, d = hr.rc.ray.direction, yy = HR.H0, gx = 0, gz = 0, C = hr.cols + 1;
+    var o = hr.rc.ray.origin, d = hr.rc.ray.direction, yy = HRC.H0, gx = 0, gz = 0, C = hr.cols + 1;
     for (var k = 0; k < 3; k++) {
       var t = (yy - o.y) / d.y; if (!(t > 0)) return null;
       gx = (o.x + d.x * t) / hr.cs + hr.cols / 2; gz = (o.z + d.z * t) / hr.cs + hr.rows / 2;
@@ -11217,7 +11217,7 @@
     var ux = ddx / L, uz = ddz / L;
     if (p.dx === 0 && p.dz === 0) { p.dx = ux; p.dz = uz; }
     else { p.dx = p.dx * 0.55 + ux * 0.45; p.dz = p.dz * 0.55 + uz * 0.45; var m = Math.sqrt(p.dx * p.dx + p.dz * p.dz) || 1; p.dx /= m; p.dz /= m; }
-    var R = hr.brushR, n = Math.ceil(L / (R * 0.4)), sl = L / n, dig = HR.DIGK * sl / R;
+    var R = hr.brushR, n = Math.ceil(L / (R * 0.4)), sl = L / n, dig = HRC.DIGK * sl / R;
     for (var s = 1; s <= n; s++) hrBrush(p.gx + ddx * s / n, p.gz + ddz * s / n, p.dx, p.dz, dig, false);
     p.dist += L; p.gx = c.x; p.gz = c.z;
     var dt = Math.max(1, now - p.pt), dp = Math.hypot(x - p.px, y - p.py);
